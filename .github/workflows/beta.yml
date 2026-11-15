@@ -1,8 +1,8 @@
 name: Beta Build
 
-# push 到 main 时自动构建一个测试包：universal flavor、正式签名、与 release 同配置（R8/资源压缩），
-# 仅 applicationId 后缀 .beta（com.minime.code.beta，可与正式版同机共存）。
-# 产物上传到 Actions Artifacts（默认保留 90 天），不进 GitHub Release。
+# push 到 main 时自动构建一个测试包：armsolo flavor（仅 arm64-v8a 真机）、正式签名、
+# 与 release 同配置（R8/资源压缩），仅 applicationId 后缀 .beta（com.minime.code.beta，可与正式版同机共存）。
+# 只保留真机 arm64-v8a 适配，不构建 universal/x86。产物上传到 Actions Artifacts（默认保留 90 天），不进 GitHub Release。
 # 打 v* tag 的正式发版走 android-release.yml；合入前门禁走 ci.yml。
 on:
   push:
@@ -31,7 +31,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # 版本号已在 app/build.gradle.kts 固定为 1.0.0（versionCode=1），不再依赖 git 历史。
           fetch-depth: 0
 
       - name: Set up JDK 17
@@ -71,25 +70,22 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      # 构建 universal beta（arm64-v8a + x86_64，含两套容器镜像的通用包）。
-      # --stacktrace：失败时输出完整调用栈，便于定位 OOM/内存类根因。
-      - name: Build universal beta APK
-        run: ./gradlew :app:assembleUniversalBeta --stacktrace
+      # 只构建 arm64 真机包（armsolo flavor）。--stacktrace：失败时输出完整调用栈。
+      - name: Build arm64 beta APK
+        run: ./gradlew :app:assembleArmsoloBeta --stacktrace
 
-      # 产物重命名为 minimecode-universal-beta-<sha7>.apk，短 sha 便于区分每次构建。
+      # 产物重命名为 minimecode-arm64-beta-<sha7>.apk，短 sha 便于区分每次构建。
       # 同时带上 R8 混淆映射（mapping.txt），供 beta 崩溃报告反混淆。
       - name: Rename APK & collect mapping
         run: |
           set -e
           mkdir -p dist
           sha7="${GITHUB_SHA::7}"
-          cp "app/build/outputs/apk/universal/beta/app-universal-beta.apk" \
-             "dist/minimecode-universal-beta-${sha7}.apk"
-          # AGP 8.x 的 mapping 输出目录是 variant 驼峰名（flavor + BuildType），
-          # 即 outputs/mapping/universalBeta/，不是 outputs/mapping/universal/beta/。
-          if [[ -f "app/build/outputs/mapping/universalBeta/mapping.txt" ]]; then
-            cp "app/build/outputs/mapping/universalBeta/mapping.txt" \
-               "dist/minimecode-universal-beta-${sha7}-mapping.txt"
+          cp "app/build/outputs/apk/armsolo/beta/app-armsolo-beta.apk" \
+             "dist/minimecode-arm64-beta-${sha7}.apk"
+          if [[ -f "app/build/outputs/mapping/armsoloBeta/mapping.txt" ]]; then
+            cp "app/build/outputs/mapping/armsoloBeta/mapping.txt" \
+               "dist/minimecode-arm64-beta-${sha7}-mapping.txt"
           fi
           ls -lh dist/
 
@@ -97,8 +93,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: minimecode-beta-${{ github.sha }}
-          # Artifacts 默认保留 90 天，无需显式配置。
           path: |
-            dist/minimecode-universal-beta-*.apk
-            dist/minimecode-universal-beta-*-mapping.txt
+            dist/minimecode-arm64-beta-*.apk
+            dist/minimecode-arm64-beta-*-mapping.txt
           if-no-files-found: error
