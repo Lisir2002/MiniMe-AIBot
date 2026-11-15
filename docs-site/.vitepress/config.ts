@@ -28,7 +28,7 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: 'Guide', link: '/en/guide/quick-start', activeMatch: '/en/guide/' },
-          { text: 'Download', link: 'https://github.com/jieapi/minimecode/releases/latest' },
+          { text: 'Download', link: 'https://github.com/Lisir2002/MiniMe-AIBot/releases/latest' },
           { text: 'User Agreement', link: '/en/terms' },
           { text: 'Privacy', link: '/en/privacy' }
         ],
@@ -59,7 +59,7 @@ export default defineConfig({
         sidebarMenuLabel: 'Menu',
         returnToTopLabel: 'Back to top',
         editLink: {
-          pattern: 'https://github.com/jieapi/minimecode/edit/main/docs-site/docs/:path',
+          pattern: 'https://github.com/Lisir2002/MiniMe-AIBot/edit/main/docs-site/docs/:path',
           text: 'Edit this page on GitHub'
         },
         footer: {
@@ -75,7 +75,7 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
   sitemap: {
-    hostname: 'https://minimecode.murk.top'
+    hostname: 'https://github.com/Lisir2002/MiniMe-AIBot'
   },
   head: [
     ['link', { rel: 'icon', href: '/logo.png', type: 'image/png' }],
@@ -86,18 +86,18 @@ export default defineConfig({
     ['meta', { property: 'og:site_name', content: 'MiniMe-Code' }],
     ['meta', { property: 'og:title', content: 'MiniMe-Code - 手机端 AI 编程工具与内置 Linux 终端' }],
     ['meta', { property: 'og:description', content: 'Android 端全功能 AI 编程工具：内置 Linux 容器与终端、AI Agent 自动修改代码与执行命令、MCP 工具扩展、Git 版本管理与远程 SSH 连接。' }],
-    ['meta', { property: 'og:image', content: 'https://minimecode.murk.top/logo.png' }],
-    ['meta', { property: 'og:url', content: 'https://minimecode.murk.top/' }],
+    ['meta', { property: 'og:image', content: 'https://github.com/Lisir2002/MiniMe-AIBot/logo.png' }],
+    ['meta', { property: 'og:url', content: 'https://github.com/Lisir2002/MiniMe-AIBot/' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:title', content: 'MiniMe-Code - 手机端 AI 编程工具与内置 Linux 终端' }],
     ['meta', { name: 'twitter:description', content: 'Android 端全功能 AI 编程工具：内置 Linux 容器与终端、AI Agent 自动修改代码与执行命令、MCP 工具扩展、Git 版本管理与远程 SSH 连接。' }],
-    ['meta', { name: 'twitter:image', content: 'https://minimecode.murk.top/logo.png' }]
+    ['meta', { name: 'twitter:image', content: 'https://github.com/Lisir2002/MiniMe-AIBot/logo.png' }]
   ],
   themeConfig: {
     nav: [
       { text: '使用手册', link: '/guide/quick-start', activeMatch: '/guide/' },
       { text: '进阶教程', link: '/advanced/build-android-app', activeMatch: '/advanced/' },
-      { text: '下载', link: 'https://github.com/jieapi/minimecode/releases/latest' },
+      { text: '下载', link: 'https://github.com/Lisir2002/MiniMe-AIBot/releases/latest' },
       { text: '用户协议', link: '/terms' },
       { text: '隐私政策', link: '/privacy' }
     ],
@@ -203,7 +203,7 @@ export default defineConfig({
       ]
     },
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/jieapi/minimecode' }
+      { icon: 'github', link: 'https://github.com/Lisir2002/MiniMe-AIBot' }
     ],
     search: {
       provider: 'local'
@@ -217,7 +217,7 @@ export default defineConfig({
     sidebarMenuLabel: '菜单',
     returnToTopLabel: '回到顶部',
     editLink: {
-      pattern: 'https://github.com/jieapi/minimecode/edit/main/docs-site/docs/:path',
+      pattern: 'https://github.com/Lisir2002/MiniMe-AIBot/edit/main/docs-site/docs/:path',
       text: '在 GitHub 上编辑此页'
     },
     footer: {

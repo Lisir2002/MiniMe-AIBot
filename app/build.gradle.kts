@@ -29,19 +29,11 @@ val APP_VERSION_NAME: String = providers.environmentVariable("GITHUB_REF_NAME")
     ?: "1.0.0"
 val APP_VERSION_CODE = 1
 
-// AI 内置文档（~/.minimecode/docs）的源在仓库根的 docs-site/docs：同一份 Markdown 既构建 VitePress
-// 文档站，也在这里复制进 assets/docs 打进 APK，保证「站上看到的」与「AI 读到的」永远一致。
-// 用纯 Gradle Copy 实现，APK 构建不依赖 Node —— CI 与 F-Droid 只装 JDK+Gradle 即可。
-val aiDocsGeneratedDir = layout.buildDirectory.dir("generated/aiDocs")
-val syncAiDocs = tasks.register<Sync>("syncAiDocs") {
-    description = "把 docs-site/docs 下的用户文档复制进 assets/docs，供 AI 在容器内查阅"
-    from(rootProject.layout.projectDirectory.dir("docs-site/docs")) {
-        include("**/*.md")
-        // index.md 是文档站首页（hero 布局的 frontmatter），对 AI 没有意义
-        exclude("index.md")
-    }
-    into(layout.buildDirectory.dir("generated/aiDocs/docs"))
-}
+// 内置使用手册 / AI 容器文档（~/.minimecode/docs）位于 app/src/main/assets/docs，由
+// scripts/sync-app-docs.py 从 docs-site/docs（与 VitePress 官网同源）转换生成：
+// 剥离 frontmatter、VitePress 容器语法转引用块、站内链接转 appdoc://，并附 manifest.json 目录。
+// 产物提交进仓库，构建不依赖 Node/Python —— CI 与 F-Droid 只装 JDK+Gradle 即可；
+// CI 用 `python3 scripts/sync-app-docs.py --check` 校验产物与源一致，防止文档漂移。
 
 android {
     namespace = "com.minime.code"
@@ -121,8 +113,7 @@ android {
         getByName("universal") { jniLibs.srcDirs("src/_armJniLibs", "src/_x86JniLibs") }
         getByName("armsolo") { jniLibs.srcDir("src/_armJniLibs") }
         getByName("x86solo") { jniLibs.srcDir("src/_x86JniLibs") }
-        // 文档不放在 app/src/main/assets 下，改由 syncAiDocs 从 docs-site/docs 生成后并入
-        getByName("main") { assets.srcDir(aiDocsGeneratedDir) }
+        // 内置文档直接放在 src/main/assets/docs（由 scripts/sync-app-docs.py 生成并提交），无需额外资产源
     }
 
     buildTypes {
@@ -381,6 +372,3 @@ tasks.register<Exec>("checkMigrations") {
     commandLine("python3", "scripts/check_migrations.py")
     workingDir(rootProject.projectDir)
 }
-
-// assets 合并前必须先生成文档，否则首次构建（或 clean 后）APK 里会没有 docs/。
-tasks.named("preBuild") { dependsOn(syncAiDocs) }

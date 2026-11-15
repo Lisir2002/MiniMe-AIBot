@@ -378,6 +378,9 @@
     <string name="settings_category_background">后台运行</string>
     <string name="settings_category_system_permissions">系统权限</string>
     <string name="settings_user_guide">使用手册</string>
+    <string name="docs_title">使用手册</string>
+    <string name="docs_index">目录</string>
+    <string name="docs_load_failed">文档加载失败</string>
 
     <!-- i18n: UI 文案 -->
     <!-- Common -->
@@ -524,7 +527,9 @@
     <string name="about_license">开源许可证</string>
     <string name="about_description">Android 上的通用 AI Coding Agent · Linux 开发环境 · 支持本地与远程 SSH</string>
     <string name="about_open_source_title">开源感谢</string>
-    <string name="about_open_source_desc">本项目基于众多优秀的开源项目构建，在此向所有开源贡献者致以诚挚感谢：Termux（终端与 PRoot 方案）、OpenCode（核心灵感来源）、Kelivo（界面参考），以及 AndroidX、Jetpack Compose、Hilt、Room、OkHttp、Jsoup、sshj、BouncyCastle 等库。项目基于 GPL-3.0 协议开源。</string>
+    <string name="about_open_source_desc">MiniMe-Code 基于上游项目 AiCode 二次开发，特别感谢 AiCode 及其贡献者打下坚实基础。同时感谢以下优秀开源项目：Termux（终端与 PRoot 方案）、OpenCode（核心灵感来源）、Kelivo（界面参考），以及 AndroidX、Jetpack Compose、Hilt、Room、OkHttp、Jsoup、sshj、BouncyCastle 等库。项目基于 GPL-3.0 协议开源。</string>
+    <string name="about_upstream_repo">上游项目 AiCode</string>
+    <string name="about_upstream_desc">MiniMe-Code 基于 jieapi/AiCode 二次开发，点击访问上游仓库</string>
     <string name="about_check_update">检查更新</string>
     <string name="about_checking_update">正在向 GitHub 查询最新版本…</string>
     <string name="about_up_to_date">已经是最新版本</string>
@@ -578,8 +583,8 @@
     <string name="agreement_notice_suffix">，了解使用规则与数据处理方式。\n\n点击“同意并继续”表示你已阅读并同意上述两份文件。</string>
     <string name="agreement_accept">同意并继续</string>
     <string name="agreement_decline">不同意</string>
-    <string name="agreement_terms_url">https://minimecode.murk.top/terms</string>
-    <string name="agreement_privacy_url">https://minimecode.murk.top/privacy</string>
+    <string name="agreement_terms_url">https://github.com/Lisir2002/MiniMe-AIBot/blob/main/docs-site/docs/terms.md</string>
+    <string name="agreement_privacy_url">https://github.com/Lisir2002/MiniMe-AIBot/blob/main/docs-site/docs/privacy.md</string>
 
     <!-- Ask User Question -->
     <string name="ask_confirm_title">AI 需要你的确认</string>

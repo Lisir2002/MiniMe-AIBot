@@ -378,6 +378,9 @@
     <string name="settings_category_background">Background</string>
     <string name="settings_category_system_permissions">System permissions</string>
     <string name="settings_user_guide">User Guide</string>
+    <string name="docs_title">User Guide</string>
+    <string name="docs_index">Contents</string>
+    <string name="docs_load_failed">Failed to load document</string>
 
     <!-- i18n: UI strings -->
     <!-- Common -->
@@ -524,7 +527,9 @@
     <string name="about_license">Open Source License</string>
     <string name="about_description">Universal AI Coding Agent for Android · Linux dev environment · Local &amp; remote SSH</string>
     <string name="about_open_source_title">Open Source Thanks</string>
-    <string name="about_open_source_desc">This project is built on many excellent open-source projects. We sincerely thank all open-source contributors: Termux (terminal &amp; PRoot), OpenCode (core inspiration), Kelivo (UI reference), as well as AndroidX, Jetpack Compose, Hilt, Room, OkHttp, Jsoup, sshj, BouncyCastle and more. Released under the GPL-3.0 license.</string>
+    <string name="about_open_source_desc">MiniMe-Code is a fork of the upstream project AiCode; special thanks to AiCode and its contributors for the solid foundation. We also thank these excellent open-source projects: Termux (terminal &amp; PRoot), OpenCode (core inspiration), Kelivo (UI reference), as well as AndroidX, Jetpack Compose, Hilt, Room, OkHttp, Jsoup, sshj, BouncyCastle and more. Released under the GPL-3.0 license.</string>
+    <string name="about_upstream_repo">Upstream: AiCode</string>
+    <string name="about_upstream_desc">MiniMe-Code is forked from jieapi/AiCode — tap to visit the upstream repo</string>
     <string name="about_check_update">Check for updates</string>
     <string name="about_checking_update">Querying GitHub for the latest version…</string>
     <string name="about_up_to_date">Already up to date</string>
@@ -578,8 +583,8 @@
     <string name="agreement_notice_suffix">" to understand the usage rules and data handling practices.\n\nBy tapping “Agree and continue”, you confirm that you have read and agree to both documents."</string>
     <string name="agreement_accept">Agree and continue</string>
     <string name="agreement_decline">Disagree</string>
-    <string name="agreement_terms_url">https://minimecode.murk.top/en/terms</string>
-    <string name="agreement_privacy_url">https://minimecode.murk.top/en/privacy</string>
+    <string name="agreement_terms_url">https://github.com/Lisir2002/MiniMe-AIBot/blob/main/docs-site/docs/en/terms.md</string>
+    <string name="agreement_privacy_url">https://github.com/Lisir2002/MiniMe-AIBot/blob/main/docs-site/docs/en/privacy.md</string>
 
     <!-- Ask User Question -->
     <string name="ask_confirm_title">AI needs your confirmation</string>

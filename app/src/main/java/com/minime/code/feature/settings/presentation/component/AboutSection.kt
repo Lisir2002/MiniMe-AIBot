@@ -179,6 +179,14 @@ internal fun AboutSection(
                 modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md)
             )
             SettingsDivider()
+            // 上游项目：MiniMe-Code 基于 AiCode 二次开发，专门致谢并提供入口
+            SettingsRow(
+                icon = MiniMeIcons.Github,
+                title = stringResource(R.string.about_upstream_repo),
+                subtitle = stringResource(R.string.about_upstream_desc),
+                onClick = { openUrl(context, UPSTREAM_REPO_URL) }
+            )
+            SettingsDivider()
             SettingsRow(
                 icon = MiniMeIcons.Github,
                 title = stringResource(R.string.about_github_repo),
@@ -534,6 +542,7 @@ private fun loadAppIconBitmap(context: Context): ImageBitmap? {
     }.getOrNull()
 }
 
-private const val GITHUB_REPO_URL = "https://github.com/jieapi/minimecode"
-private const val LICENSE_URL = "https://github.com/jieapi/minimecode/blob/main/LICENSE"
+private const val GITHUB_REPO_URL = "https://github.com/Lisir2002/MiniMe-AIBot"
+private const val LICENSE_URL = "https://github.com/Lisir2002/MiniMe-AIBot/blob/main/LICENSE"
+private const val UPSTREAM_REPO_URL = "https://github.com/jieapi/AiCode"
 private const val ICON_PX_DP = 48

@@ -10,7 +10,7 @@
         </div>
         <div class="cta-section__actions">
           <a
-            href="https://github.com/jieapi/minimecode/releases/latest"
+            href="https://github.com/Lisir2002/MiniMe-AIBot/releases/latest"
             target="_blank"
             rel="noopener noreferrer"
             class="btn btn--lg btn--primary"
@@ -20,7 +20,7 @@
           </a>
           <div class="cta-section__links">
             <a
-              href="https://github.com/jieapi/minimecode"
+              href="https://github.com/Lisir2002/MiniMe-AIBot"
               target="_blank"
               rel="noopener noreferrer"
               class="cta-section__link"

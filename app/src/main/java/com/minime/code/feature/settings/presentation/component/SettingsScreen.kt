@@ -1,7 +1,5 @@
 package com.minime.code.feature.settings.presentation.component
 
-import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -82,6 +80,7 @@ import com.minime.code.feature.agent.domain.mcp.McpServerStatus
 import com.minime.code.feature.agent.presentation.component.MarkdownContent
 import com.minime.code.feature.agent.presentation.component.MarkdownRenderCache
 import com.minime.code.feature.backup.presentation.BackupScreen
+import com.minime.code.feature.docs.presentation.DocsBrowserScreen
 import com.minime.code.feature.settings.data.repository.AppThemeMode
 import com.minime.code.feature.settings.data.repository.BackgroundSettingsRepository
 import com.minime.code.feature.settings.domain.model.AIProviderConfig
@@ -99,9 +98,6 @@ import com.minime.code.feature.onboarding.presentation.onboardingTarget
 import com.minime.code.feature.settings.data.local.ProviderPreset
 import com.minime.code.feature.terminal.data.repository.TerminalSettings
 import com.minime.code.feature.terminal.presentation.component.TerminalSettingsSheet
-
-/** 使用手册在线文档站地址。 */
-private const val USER_GUIDE_DOCS_URL = "https://minimecode.murk.top"
 
 /** 大屏设置页左侧常驻菜单宽度。 */
 private val SettingsMenuWidth = 320.dp
@@ -254,6 +250,8 @@ fun SettingsScreen(
     val proxyConfig by viewModel.proxyConfig.collectAsStateWithLifecycle()
     val proxyTestState by viewModel.proxyTestState.collectAsStateWithLifecycle()
     var showTerminalSettingsSheet by remember { mutableStateOf(false) }
+    // 内置使用手册浏览器：由「设置 → 使用手册」入口打开，全屏覆盖设置页。
+    var showDocs by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val currentLanguageDisplayName = if (languageTag.isNullOrBlank()) {
@@ -393,7 +391,8 @@ fun SettingsScreen(
     }
 
     // 有上一层时系统返回键先回上一层；没有则交还给上层导航。
-    BackHandler(enabled = parentSection != null) {
+    // 文档浏览器打开时交给它自己处理返回，避免两个 BackHandler 冲突。
+    BackHandler(enabled = parentSection != null && !showDocs) {
         parentSection?.let { section = it }
     }
 
@@ -458,11 +457,7 @@ fun SettingsScreen(
             onOpenTerminalSettingsSheet = { showTerminalSettingsSheet = true },
             onOpenBackgroundSheet = { showBackgroundSheet = true },
             onOpenLanguageSheet = { showLanguageSheet = true },
-            onOpenManual = {
-                context.startActivity(
-                    Intent(Intent.ACTION_VIEW, Uri.parse(USER_GUIDE_DOCS_URL))
-                )
-            },
+            onOpenManual = { showDocs = true },
             onRerunOnboarding = onRerunOnboarding,
             onOpen = {
                 if (it == SettingsSection.Log) {
@@ -1198,6 +1193,11 @@ fun SettingsScreen(
         } // AnimatedContent 结束
         } // 右栏结束
     } // Row 结束
+
+    // 内置使用手册：全屏覆盖设置页，返回/关闭由 DocsBrowserScreen 自己处理。
+    if (showDocs) {
+        DocsBrowserScreen(onExit = { showDocs = false })
+    }
 
     if (showMcpAddSheet) {
         McpAddSheet(

@@ -81,7 +81,7 @@ MiniMe-Code（以下简称“本应用”）是一款运行在 Android 上的开
 
 ## 八、开源与可审计
 
-本应用源代码基于 GPL-3.0 协议公开于 [GitHub](https://github.com/jieapi/minimecode)，你可以自行审阅代码以核实相关数据处理行为。
+本应用源代码基于 GPL-3.0 协议公开于 [GitHub](https://github.com/Lisir2002/MiniMe-AIBot)，你可以自行审阅代码以核实相关数据处理行为。
 
 ## 九、政策更新
 
@@ -93,5 +93,5 @@ MiniMe-Code（以下简称“本应用”）是一款运行在 Android 上的开
 
 - 开发者：jieapi（个人开发者）
 - 联系邮箱：xiaojieapi@qq.com
-- GitHub Issues：<https://github.com/jieapi/minimecode/issues>
-- 项目主页：<https://github.com/jieapi/minimecode>
+- GitHub Issues：<https://github.com/Lisir2002/MiniMe-AIBot/issues>
+- 项目主页：<https://github.com/Lisir2002/MiniMe-AIBot>

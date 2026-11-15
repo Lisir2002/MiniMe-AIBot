@@ -16,7 +16,7 @@
 
         <div class="hero__actions">
           <a
-            href="https://github.com/jieapi/minimecode/releases/latest"
+            href="https://github.com/Lisir2002/MiniMe-AIBot/releases/latest"
             target="_blank"
             rel="noopener noreferrer"
             class="btn btn--primary btn--lg"
@@ -25,7 +25,7 @@
             <span>{{ copy.site.hero.download }}</span>
           </a>
           <a
-            href="https://minimecode.murk.top"
+            href="https://github.com/Lisir2002/MiniMe-AIBot"
             target="_blank"
             rel="noopener noreferrer"
             class="btn btn--outline btn--lg btn--arrow"

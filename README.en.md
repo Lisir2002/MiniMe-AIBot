@@ -11,7 +11,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue.svg" alt="License GPL-3.0" /></a>
   <img src="https://img.shields.io/badge/Platform-Android-green.svg" alt="Android Platform" />
-  <a href="https://github.com/jieapi/minimecode/releases"><img src="https://img.shields.io/github/v/release/jieapi/minimecode?display_name=tag&include_prereleases" alt="Latest Release" /></a>
+  <a href="https://github.com/Lisir2002/MiniMe-AIBot/releases"><img src="https://img.shields.io/github/v/release/Lisir2002/MiniMe-AIBot?display_name=tag&include_prereleases" alt="Latest Release" /></a>
 </p>
 
 <p align="center">
@@ -86,16 +86,16 @@ There is nothing to set up beforehand: install the app, configure a model under 
 | Item | Description |
 |------|-------------|
 | System requirements | Android 8.0+ (API 26), arm64-v8a / x86_64 |
-| Download | [GitHub Releases](https://github.com/jieapi/minimecode/releases/latest): pick `armsolo` for real devices, `x86solo` for emulators, `universal` for both |
+| Download | [GitHub Releases](https://github.com/Lisir2002/MiniMe-AIBot/releases/latest): pick `armsolo` for real devices, `x86solo` for emulators, `universal` for both |
 | Quick start | Settings → AI Vendors to add a model → Container & Images to pick local or SSH → new session and chat |
-| Changelog | [Releases](https://github.com/jieapi/minimecode/releases) (all versions & notes) |
-| User guide | [Online docs](https://minimecode.murk.top): quick start, user manual and advanced guides (same content as the in-app docs) |
+| Changelog | [Releases](https://github.com/Lisir2002/MiniMe-AIBot/releases) (all versions & notes) |
+| User guide | [Online docs](https://github.com/Lisir2002/MiniMe-AIBot): quick start, user manual and advanced guides (same content as the in-app docs) |
 
 ### Feedback & Contribution
 
-- **Bug reports**: open an [Issue](https://github.com/jieapi/minimecode/issues) with reproduction steps, device model and OS version
-- **Feature requests**: discuss your ideas in [Issues](https://github.com/jieapi/minimecode/issues)
-- **Contributing**: submit a [Pull Request](https://github.com/jieapi/minimecode/pulls)
+- **Bug reports**: open an [Issue](https://github.com/Lisir2002/MiniMe-AIBot/issues) with reproduction steps, device model and OS version
+- **Feature requests**: discuss your ideas in [Issues](https://github.com/Lisir2002/MiniMe-AIBot/issues)
+- **Contributing**: submit a [Pull Request](https://github.com/Lisir2002/MiniMe-AIBot/pulls)
 - **Community**: join the [MiniMe-Code QQ group](https://qm.qq.com/q/ByvqODJdIs) (group number: 1107110698) to share tips and feedback
 
 ---

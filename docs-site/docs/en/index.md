@@ -21,10 +21,10 @@ hero:
       link: /en/guide/quick-start
     - theme: alt
       text: Download APK
-      link: https://minimecode.murk.top/download
+      link: https://github.com/Lisir2002/MiniMe-AIBot/releases/latest
     - theme: alt
       text: GitHub
-      link: https://github.com/jieapi/minimecode
+      link: https://github.com/Lisir2002/MiniMe-AIBot
 
 features:
   - title: AI Agent

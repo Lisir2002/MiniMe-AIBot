@@ -11,7 +11,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue.svg" alt="License GPL-3.0" /></a>
   <img src="https://img.shields.io/badge/Platform-Android-green.svg" alt="Android Platform" />
-  <a href="https://github.com/jieapi/minimecode/releases"><img src="https://img.shields.io/github/v/release/jieapi/minimecode?display_name=tag&include_prereleases" alt="Latest Release" /></a>
+  <a href="https://github.com/Lisir2002/MiniMe-AIBot/releases"><img src="https://img.shields.io/github/v/release/Lisir2002/MiniMe-AIBot?display_name=tag&include_prereleases" alt="Latest Release" /></a>
 </p>
 
 <p align="center">
@@ -86,16 +86,16 @@ MiniMe-Code 是运行在 Android 上的通用 AI Coding Agent，把一套完整�
 | 项目 | 说明 |
 |------|------|
 | 系统要求 | Android 8.0+（API 26），arm64-v8a / x86_64 |
-| 下载地址 | [GitHub Releases](https://github.com/jieapi/minimecode/releases/latest)：真机选 `armsolo`、模拟器选 `x86solo`、通用选 `universal` 包 |
+| 下载地址 | [GitHub Releases](https://github.com/Lisir2002/MiniMe-AIBot/releases/latest)：真机选 `armsolo`、模拟器选 `x86solo`、通用选 `universal` 包 |
 | 快速上手 | 「设置 → AI 供应商」配模型 →「容器与镜像」选本地或 SSH → 新建会话开始对话 |
-| 更新记录 | [Releases](https://github.com/jieapi/minimecode/releases)（历史版本与更新说明） |
-| 使用指南 | [在线文档](https://minimecode.murk.top)：快速上手、使用手册与进阶教程（与 App 内置文档同源） |
+| 更新记录 | [Releases](https://github.com/Lisir2002/MiniMe-AIBot/releases)（历史版本与更新说明） |
+| 使用指南 | [在线文档](https://github.com/Lisir2002/MiniMe-AIBot)：快速上手、使用手册与进阶教程（与 App 内置文档同源） |
 
 ### 反馈与贡献
 
-- **Bug 反馈**：到 [Issues](https://github.com/jieapi/minimecode/issues) 提交，附上复现步骤、设备型号与系统版本，便于定位
-- **功能建议**：想加新功能或改进，欢迎先在 [Issues](https://github.com/jieapi/minimecode/issues) 讨论
-- **贡献代码**：欢迎提交 [Pull Request](https://github.com/jieapi/minimecode/pulls)
+- **Bug 反馈**：到 [Issues](https://github.com/Lisir2002/MiniMe-AIBot/issues) 提交，附上复现步骤、设备型号与系统版本，便于定位
+- **功能建议**：想加新功能或改进，欢迎先在 [Issues](https://github.com/Lisir2002/MiniMe-AIBot/issues) 讨论
+- **贡献代码**：欢迎提交 [Pull Request](https://github.com/Lisir2002/MiniMe-AIBot/pulls)
 - **交流社区**：加入 [MiniMe-Code QQ 交流群](https://qm.qq.com/q/ByvqODJdIs)（群号：1107110698），交流使用心得、反馈问题
 
 ---

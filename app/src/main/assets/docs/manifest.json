@@ -1,0 +1,251 @@
+{
+  "groups": [
+    {
+      "title": "开始使用",
+      "items": [
+        {
+          "title": "MiniMe-Code 介绍",
+          "id": "index"
+        },
+        {
+          "title": "功能总览",
+          "id": "guide/overview"
+        },
+        {
+          "title": "快速上手",
+          "id": "guide/quick-start"
+        },
+        {
+          "title": "视频教程",
+          "id": "guide/video-tutorials"
+        }
+      ]
+    },
+    {
+      "title": "聊天与编辑",
+      "items": [
+        {
+          "title": "聊天界面导览",
+          "id": "guide/chat"
+        },
+        {
+          "title": "会话目标（Goal）",
+          "id": "guide/goal"
+        },
+        {
+          "title": "三种模式：Build / Plan / Auto",
+          "id": "guide/modes"
+        },
+        {
+          "title": "检查点与撤销",
+          "id": "guide/checkpoint"
+        },
+        {
+          "title": "记忆与项目规则",
+          "id": "guide/memory"
+        },
+        {
+          "title": "技能",
+          "id": "guide/skills"
+        },
+        {
+          "title": "子代理",
+          "id": "guide/subagent"
+        },
+        {
+          "title": "自定义提示词",
+          "id": "guide/custom-prompts"
+        },
+        {
+          "title": "文件浏览与代码编辑",
+          "id": "guide/files"
+        },
+        {
+          "title": "Git 版本管理",
+          "id": "guide/git"
+        }
+      ]
+    },
+    {
+      "title": "AI 模型配置",
+      "items": [
+        {
+          "title": "AI 供应商与模型",
+          "id": "guide/providers"
+        },
+        {
+          "title": "免费供应商",
+          "id": "guide/free-providers"
+        },
+        {
+          "title": "默认模型",
+          "id": "guide/default-models"
+        },
+        {
+          "title": "MCP 服务器",
+          "id": "guide/mcp"
+        },
+        {
+          "title": "Token 统计与费用",
+          "id": "guide/token-stats"
+        }
+      ]
+    },
+    {
+      "title": "设置与界面",
+      "items": [
+        {
+          "title": "偏好设置",
+          "id": "guide/general"
+        },
+        {
+          "title": "外观与语言",
+          "id": "guide/appearance"
+        },
+        {
+          "title": "工具授权",
+          "id": "guide/permissions"
+        },
+        {
+          "title": "软件权限",
+          "id": "guide/app-permissions"
+        },
+        {
+          "title": "后台运行",
+          "id": "guide/background-run"
+        },
+        {
+          "title": "平板与大屏",
+          "id": "guide/tablet"
+        },
+        {
+          "title": "存储空间",
+          "id": "guide/storage"
+        },
+        {
+          "title": "网络代理",
+          "id": "guide/proxy"
+        },
+        {
+          "title": "工作区同步",
+          "id": "guide/sync"
+        },
+        {
+          "title": "备份与还原",
+          "id": "guide/backup"
+        },
+        {
+          "title": "终端",
+          "id": "guide/terminal"
+        },
+        {
+          "title": "容器与镜像",
+          "id": "guide/container"
+        },
+        {
+          "title": "远程 SSH 模式",
+          "id": "guide/remote-ssh"
+        },
+        {
+          "title": "Shizuku 工具",
+          "id": "guide/shizuku"
+        },
+        {
+          "title": "内置浏览器",
+          "id": "guide/browser"
+        },
+        {
+          "title": "日志与故障排查",
+          "id": "guide/logs"
+        },
+        {
+          "title": "常见错误提示",
+          "id": "guide/error-codes"
+        }
+      ]
+    },
+    {
+      "title": "进阶教程",
+      "items": [
+        {
+          "title": "用 adb 无线调试其他设备",
+          "id": "advanced/adb-wireless-debug"
+        },
+        {
+          "title": "在容器中编译 Android 应用",
+          "id": "advanced/build-android-app"
+        },
+        {
+          "title": "在容器中编译 Flutter 应用",
+          "id": "advanced/build-flutter-app"
+        },
+        {
+          "title": "构建 Flutter release APK",
+          "id": "advanced/build-flutter-release"
+        },
+        {
+          "title": "自定义面板与 Adaptive Cards",
+          "id": "advanced/dashboard-cards"
+        },
+        {
+          "title": "安装 Playwright 浏览器自动化",
+          "id": "advanced/playwright-mcp"
+        },
+        {
+          "title": "模型思考模式参考",
+          "id": "advanced/reasoning-modes"
+        }
+      ]
+    },
+    {
+      "title": "关于与协议",
+      "items": [
+        {
+          "title": "关于与更新",
+          "id": "guide/about"
+        },
+        {
+          "title": "MiniMe-Code 用户协议",
+          "id": "terms"
+        },
+        {
+          "title": "MiniMe-Code 隐私政策",
+          "id": "privacy"
+        }
+      ]
+    },
+    {
+      "title": "English",
+      "items": [
+        {
+          "title": "MiniMe-Code (English)",
+          "id": "en/index"
+        },
+        {
+          "title": "Overview",
+          "id": "en/guide/overview"
+        },
+        {
+          "title": "Quick Start",
+          "id": "en/guide/quick-start"
+        },
+        {
+          "title": "AI Providers & Models",
+          "id": "en/guide/providers"
+        },
+        {
+          "title": "Free Providers",
+          "id": "en/guide/free-providers"
+        },
+        {
+          "title": "Terms of Service",
+          "id": "en/terms"
+        },
+        {
+          "title": "Privacy Policy",
+          "id": "en/privacy"
+        }
+      ]
+    }
+  ]
+}

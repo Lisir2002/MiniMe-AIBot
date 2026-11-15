@@ -1,0 +1,37 @@
+name: Docs Sync
+
+# 内置使用手册（app/src/main/assets/docs）由 scripts/sync-app-docs.py 从 docs-site/docs 生成。
+# 本工作流只做一致性校验（checkout + python，几秒），不参与编译：
+# 文档源改了但忘记重新生成产物时，在这里拦下，避免 App 里的手册与官网文档站内容不一致。
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'docs-site/docs/**'
+      - 'docs-site/docs-manifest.json'
+      - 'docs-site/app-home.md'
+      - 'app/src/main/assets/docs/**'
+      - 'scripts/sync-app-docs.py'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docs-site/docs/**'
+      - 'docs-site/docs-manifest.json'
+      - 'docs-site/app-home.md'
+      - 'app/src/main/assets/docs/**'
+      - 'scripts/sync-app-docs.py'
+
+concurrency:
+  group: docs-sync-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Verify built-in docs match sources
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check built-in docs are in sync
+        run: python3 scripts/sync-app-docs.py --check

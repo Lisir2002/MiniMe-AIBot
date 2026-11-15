@@ -5,25 +5,19 @@
 ## 系统要求
 
 - Android 8.0（API 26）及以上
-- arm64-v8a 或 x86_64 设备
+- arm64-v8a 真机（模拟器或其它架构暂不支持）
 
 ## 下载安装
 
 官网中文首页为 `/`，英文页面为 `/en/`，可以直接访问或分享对应地址。电脑上可在顶部导航点击「EN」前往英文页面；手机上先打开右上角菜单，再选择「English」。选择「中文」可返回中文页面。页面语言由访问地址决定，与 App 内的语言设置相互独立。
 
-从 [GitHub Releases](https://github.com/jieapi/minimecode/releases/latest) 下载，三个包按设备选择：
-
-| 包名 | 适用场景 |
-| --- | --- |
-| `armsolo` | 真机（arm64 设备），体积最小 |
-| `x86solo` | 模拟器、Chromebook（x86_64） |
-| `universal` | 通用包，同时含两种架构，体积较大 |
+从 [GitHub Releases](https://github.com/Lisir2002/MiniMe-AIBot/releases/latest) 下载 MiniMe-Code 安装包。当前仅提供 **arm64 真机包**（`minimecode-arm64-<版本>.apk`），适用于 arm64-v8a 架构的安卓真机，已启用 R8 混淆并使用正式签名。
 
 ::: warning 架构要选对
-架构不匹配会导致内置容器无法运行。不确定时使用 `universal`。
+MiniMe-Code 仅适配 arm64-v8a 真机，模拟器或其它架构无法运行内置容器。
 :::
 
-推荐直接点击[文档站首页](/)的「下载 APK」，将通过加速镜像直接下载最新正式版的 `universal` 通用包（镜像不可用时自动回退至 GitHub 原链）。
+在「设置 → 关于 → 检查更新」中可在 App 内直接下载并安装匹配的安装包；也可到 Release 页面手动下载。
 
 ## 1. 配置 AI 供应商
 

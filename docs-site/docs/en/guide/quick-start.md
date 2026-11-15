@@ -5,23 +5,17 @@ From installation to your first AI conversation.
 ## System Requirements
 
 - Android 8.0 (API 26) or higher
-- arm64-v8a or x86_64 device
+- arm64-v8a real device (emulators and other architectures are not supported)
 
 ## Download & Install
 
-Download from [GitHub Releases](https://github.com/jieapi/minimecode/releases/latest). Pick the package that fits your device:
-
-| Package | Best for |
-| --- | --- |
-| `armsolo` | Real devices (arm64), smallest size |
-| `x86solo` | Emulators and Chromebooks (x86_64) |
-| `universal` | Both architectures in one package, larger size |
+Download from [GitHub Releases](https://github.com/Lisir2002/MiniMe-AIBot/releases/latest). MiniMe-Code currently ships **one arm64 package for real devices** (`minimecode-arm64-<version>.apk`) for arm64-v8a Android devices, R8-obfuscated and officially signed.
 
 ::: warning Pick the right architecture
-A mismatched architecture will break the built-in container. If you are not sure, use `universal`.
+MiniMe-Code only supports arm64-v8a real devices. Emulators and other architectures cannot run the built-in container.
 :::
 
-Tip: you can also tap "Download APK" on the [homepage](/en/), which fetches the latest stable `universal` package through an accelerated mirror (falls back to the GitHub link automatically if the mirror is unavailable).
+Use "Settings → About → Check for updates" to download and install the matching package in-app, or grab it manually from the Release page.
 
 ## 1. First Launch & Onboarding Guide
 

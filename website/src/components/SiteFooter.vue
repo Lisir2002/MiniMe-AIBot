@@ -45,18 +45,18 @@ const columns = computed(() => [
     id: "quickLinks",
     title: copy.value.site.footer.columns.quickLinks.title,
     links: [
-      { label: copy.value.site.footer.columns.quickLinks.links.releases, href: "https://github.com/jieapi/minimecode/releases/latest" },
-      { label: copy.value.site.footer.columns.quickLinks.links.download, href: "https://minimecode.murk.top/download" },
-      { label: copy.value.site.footer.columns.quickLinks.links.guide, href: "https://minimecode.murk.top" },
-      { label: copy.value.site.footer.columns.quickLinks.links.quickStart, href: "https://minimecode.murk.top/guide/quick-start" }
+      { label: copy.value.site.footer.columns.quickLinks.links.releases, href: "https://github.com/Lisir2002/MiniMe-AIBot/releases/latest" },
+      { label: copy.value.site.footer.columns.quickLinks.links.download, href: "https://github.com/Lisir2002/MiniMe-AIBot/releases/latest" },
+      { label: copy.value.site.footer.columns.quickLinks.links.guide, href: "https://github.com/Lisir2002/MiniMe-AIBot" },
+      { label: copy.value.site.footer.columns.quickLinks.links.quickStart, href: "https://github.com/Lisir2002/MiniMe-AIBot/blob/main/docs-site/docs/guide/quick-start.md" }
     ]
   },
   {
     id: "contribute",
     title: copy.value.site.footer.columns.contribute.title,
     links: [
-      { label: copy.value.site.footer.columns.contribute.links.issues, href: "https://github.com/jieapi/minimecode/issues" },
-      { label: copy.value.site.footer.columns.contribute.links.pulls, href: "https://github.com/jieapi/minimecode/pulls" }
+      { label: copy.value.site.footer.columns.contribute.links.issues, href: "https://github.com/Lisir2002/MiniMe-AIBot/issues" },
+      { label: copy.value.site.footer.columns.contribute.links.pulls, href: "https://github.com/Lisir2002/MiniMe-AIBot/pulls" }
     ]
   },
   {

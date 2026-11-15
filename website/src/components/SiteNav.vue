@@ -60,7 +60,7 @@
           <i :class="theme === 'dark' ? 'ri-sun-line' : 'ri-moon-line'" aria-hidden="true"></i>
         </button>
         <a
-          href="https://github.com/jieapi/minimecode"
+          href="https://github.com/Lisir2002/MiniMe-AIBot"
           target="_blank"
           rel="noopener noreferrer"
           class="nav-icon-btn"
@@ -102,8 +102,8 @@ const links = computed(() => [
   { label: copy.value.site.nav.links.features, href: "#features" },
   { label: copy.value.site.nav.links.download, href: "#download" },
   { label: copy.value.site.nav.links.sponsors, href: "#sponsors" },
-  { label: copy.value.site.nav.links.docs, href: "https://minimecode.murk.top", external: true },
-  { label: copy.value.site.nav.links.changelog, href: "https://github.com/jieapi/minimecode/releases", external: true }
+  { label: copy.value.site.nav.links.docs, href: "https://github.com/Lisir2002/MiniMe-AIBot", external: true },
+  { label: copy.value.site.nav.links.changelog, href: "https://github.com/Lisir2002/MiniMe-AIBot/releases", external: true }
 ]);
 
 function navigateLocale(event) {

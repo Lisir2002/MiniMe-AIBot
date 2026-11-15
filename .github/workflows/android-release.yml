@@ -73,6 +73,10 @@ jobs:
       - name: Check migration versions
         run: python3 scripts/check_migrations.py
 
+      # 内置使用手册产物与文档源一致性：防止 App 里的手册与官网文档站内容漂移。
+      - name: Check built-in docs are in sync
+        run: python3 scripts/sync-app-docs.py --check
+
       # 发版质量门禁：跑单元测试，失败即中止，避免发出回归包。
       # 只跑 armsolo debug 变体：单测逻辑与 flavor 无关。
       - name: Run unit tests
