@@ -44,10 +44,7 @@ import com.minime.code.core.ui.SelectionActionIconButton
 import com.minime.code.core.ui.SwipeToDeleteRow
 import com.minime.code.feature.agent.domain.subagent.AgentDefinitionScope
 import com.minime.code.feature.settings.presentation.SubAgentUiEntry
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.Trash2
-import compose.icons.feathericons.Users
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 子代理二级页：与「技能」一致的折叠分组列表——「当前项目 / 全局」两组各自可折叠，
@@ -104,7 +101,7 @@ internal fun SubAgentsSection(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        FeatherIcons.Users,
+                        MiniMeIcons.Users,
                         contentDescription = null,
                         modifier = Modifier.size(28.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -153,7 +150,7 @@ internal fun SubAgentsSection(
                     onClick = { onBatchSetEnabled(selectedEntries, false) }
                 )
                 SelectionActionIconButton(
-                    icon = FeatherIcons.Trash2,
+                    icon = MiniMeIcons.Trash2,
                     contentDescription = stringResource(R.string.common_batch_delete),
                     enabled = enabled,
                     onClick = { showBatchDeleteConfirm = true },
@@ -300,7 +297,7 @@ private fun SubAgentRow(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = FeatherIcons.Users,
+                    imageVector = MiniMeIcons.Users,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
@@ -350,7 +347,7 @@ private fun SubAgentRow(
             Spacer(modifier = Modifier.width(Spacing.sm))
 
             Icon(
-                imageVector = FeatherIcons.ChevronRight,
+                imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)

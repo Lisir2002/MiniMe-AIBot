@@ -44,10 +44,7 @@ import com.minime.code.core.ui.SelectionActionIconButton
 import com.minime.code.core.ui.SwipeToDeleteRow
 import com.minime.code.feature.agent.domain.skill.SkillScope
 import com.minime.code.feature.settings.presentation.SkillUiEntry
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Book
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.Trash2
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 技能二级页：与「工具授权」一致的折叠分组列表——「当前项目 / 全局」两组各自可折叠，
@@ -103,7 +100,7 @@ internal fun SkillsSection(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        FeatherIcons.Book,
+                        MiniMeIcons.Book,
                         contentDescription = null,
                         modifier = Modifier.size(28.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -152,7 +149,7 @@ internal fun SkillsSection(
                     onClick = { onBatchSetEnabled(selectedEntries, false) }
                 )
                 SelectionActionIconButton(
-                    icon = FeatherIcons.Trash2,
+                    icon = MiniMeIcons.Trash2,
                     contentDescription = stringResource(R.string.common_batch_delete),
                     enabled = enabled,
                     onClick = { showBatchDeleteConfirm = true },
@@ -299,7 +296,7 @@ private fun SkillRow(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = FeatherIcons.Book,
+                    imageVector = MiniMeIcons.Book,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
@@ -339,7 +336,7 @@ private fun SkillRow(
             Spacer(modifier = Modifier.width(Spacing.sm))
 
             Icon(
-                imageVector = FeatherIcons.ChevronRight,
+                imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)

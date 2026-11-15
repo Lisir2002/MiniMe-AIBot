@@ -90,23 +90,7 @@ import com.minime.code.feature.agent.domain.tool.browser.BrowserUserAgentPreset
 import com.minime.code.feature.settings.presentation.component.SettingsDivider
 import com.minime.code.feature.settings.presentation.component.SettingsGroup
 import com.minime.code.feature.settings.presentation.component.SettingsRow
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ArrowLeft
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.ChevronLeft
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.Code
-import compose.icons.feathericons.Globe
-import compose.icons.feathericons.Menu
-import compose.icons.feathericons.Monitor
-import compose.icons.feathericons.Moon
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.RefreshCw
-import compose.icons.feathericons.Sliders
-import compose.icons.feathericons.Smartphone
-import compose.icons.feathericons.Sun
-import compose.icons.feathericons.Tablet
-import compose.icons.feathericons.X
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -260,7 +244,7 @@ fun BrowserScreen(
                         Spacer(Modifier.height(Spacing.sm))
                         IconButton(onClick = { scope.launchBrowserOp { browserManager.reload() } }) {
                             Icon(
-                                FeatherIcons.RefreshCw,
+                                MiniMeIcons.RefreshCw,
                                 contentDescription = stringResource(R.string.browser_reload),
                                 tint = MaterialTheme.colorScheme.onErrorContainer
                             )
@@ -282,7 +266,7 @@ fun BrowserScreen(
                         modifier = Modifier.padding(Spacing.xl)
                     ) {
                         Icon(
-                            FeatherIcons.Globe,
+                            MiniMeIcons.Globe,
                             contentDescription = null,
                             modifier = Modifier.size(56.dp),
                             tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
@@ -335,7 +319,7 @@ fun BrowserScreen(
                         }
                     ) {
                         Icon(
-                            FeatherIcons.Plus,
+                            MiniMeIcons.Plus,
                             contentDescription = stringResource(R.string.browser_new_tab),
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -494,7 +478,7 @@ private fun BrowserTopBar(
                     }
                 }) {
                     Icon(
-                        if (isEditing || embedded) FeatherIcons.X else FeatherIcons.ArrowLeft,
+                        if (isEditing || embedded) MiniMeIcons.X else MiniMeIcons.ArrowLeft,
                         contentDescription = stringResource(
                             if (isEditing || embedded) R.string.common_close else R.string.common_back
                         )
@@ -524,7 +508,7 @@ private fun BrowserTopBar(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(
-                                FeatherIcons.Globe,
+                                MiniMeIcons.Globe,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(15.dp)
@@ -549,7 +533,7 @@ private fun BrowserTopBar(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(
-                                FeatherIcons.Globe,
+                                MiniMeIcons.Globe,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(15.dp)
@@ -591,7 +575,7 @@ private fun BrowserTopBar(
                                     modifier = Modifier.size(24.dp)
                                 ) {
                                     Icon(
-                                        FeatherIcons.X,
+                                        MiniMeIcons.X,
                                         contentDescription = stringResource(R.string.common_clear),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(14.dp)
@@ -616,7 +600,7 @@ private fun BrowserTopBar(
                         )
                     } else {
                         Icon(
-                            FeatherIcons.RefreshCw,
+                            MiniMeIcons.RefreshCw,
                             contentDescription = stringResource(R.string.browser_reload),
                             modifier = Modifier.size(18.dp)
                         )
@@ -684,7 +668,7 @@ private fun BrowserBottomBar(
                     enabled = canGoBack
                 ) {
                     Icon(
-                        FeatherIcons.ChevronLeft,
+                        MiniMeIcons.ChevronLeft,
                         contentDescription = stringResource(R.string.browser_back),
                         modifier = Modifier.size(24.dp)
                     )
@@ -696,7 +680,7 @@ private fun BrowserBottomBar(
                     enabled = canGoForward
                 ) {
                     Icon(
-                        FeatherIcons.ChevronRight,
+                        MiniMeIcons.ChevronRight,
                         contentDescription = stringResource(R.string.browser_forward),
                         modifier = Modifier.size(24.dp)
                     )
@@ -705,7 +689,7 @@ private fun BrowserBottomBar(
                 // 3. 新建标签页
                 IconButton(onClick = onNewTab) {
                     Icon(
-                        FeatherIcons.Plus,
+                        MiniMeIcons.Plus,
                         contentDescription = stringResource(R.string.browser_new_tab),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
@@ -739,7 +723,7 @@ private fun BrowserBottomBar(
                 IconButton(onClick = onOpenMenu) {
                     Box {
                         Icon(
-                            FeatherIcons.Menu,
+                            MiniMeIcons.Menu,
                             contentDescription = stringResource(R.string.browser_menu),
                             tint = if (hasActiveSettings) {
                                 MaterialTheme.colorScheme.primary
@@ -799,7 +783,7 @@ private fun BrowserMenuSheet(
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
-                            FeatherIcons.ArrowLeft,
+                            MiniMeIcons.ArrowLeft,
                             contentDescription = stringResource(R.string.common_back),
                             tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(18.dp)
@@ -820,19 +804,19 @@ private fun BrowserMenuSheet(
             if (menuLevel == 0) {
                 // 一级菜单：单行按钮列表（夜间模式、开发者工具、浏览器标识）
                 val uaIcon: ImageVector = when (userAgentPreset) {
-                    BrowserUserAgentPreset.DEFAULT -> FeatherIcons.Globe
-                    BrowserUserAgentPreset.ANDROID_PHONE -> FeatherIcons.Smartphone
-                    BrowserUserAgentPreset.ANDROID_TABLET -> FeatherIcons.Tablet
-                    BrowserUserAgentPreset.DESKTOP_PC -> FeatherIcons.Monitor
-                    BrowserUserAgentPreset.IPHONE -> FeatherIcons.Smartphone
-                    BrowserUserAgentPreset.IPAD -> FeatherIcons.Tablet
-                    BrowserUserAgentPreset.CUSTOM -> FeatherIcons.Sliders
+                    BrowserUserAgentPreset.DEFAULT -> MiniMeIcons.Globe
+                    BrowserUserAgentPreset.ANDROID_PHONE -> MiniMeIcons.Smartphone
+                    BrowserUserAgentPreset.ANDROID_TABLET -> MiniMeIcons.Tablet
+                    BrowserUserAgentPreset.DESKTOP_PC -> MiniMeIcons.Monitor
+                    BrowserUserAgentPreset.IPHONE -> MiniMeIcons.Smartphone
+                    BrowserUserAgentPreset.IPAD -> MiniMeIcons.Tablet
+                    BrowserUserAgentPreset.CUSTOM -> MiniMeIcons.Sliders
                 }
 
                 SettingsGroup {
                     // 1. 夜间模式
                     SettingsRow(
-                        icon = if (nightMode) FeatherIcons.Moon else FeatherIcons.Sun,
+                        icon = if (nightMode) MiniMeIcons.Moon else MiniMeIcons.Sun,
                         title = stringResource(R.string.browser_night_mode_title),
                         trailing = {
                             AppSwitch(
@@ -846,7 +830,7 @@ private fun BrowserMenuSheet(
 
                     // 2. 开发者工具
                     SettingsRow(
-                        icon = FeatherIcons.Code,
+                        icon = MiniMeIcons.Code,
                         title = stringResource(R.string.browser_devtools_title),
                         trailing = {
                             AppSwitch(
@@ -880,13 +864,13 @@ private fun BrowserMenuSheet(
                         if (index > 0) SettingsDivider()
                         val selected = preset == userAgentPreset
                         val icon: ImageVector = when (preset) {
-                            BrowserUserAgentPreset.DEFAULT -> FeatherIcons.Globe
-                            BrowserUserAgentPreset.ANDROID_PHONE -> FeatherIcons.Smartphone
-                            BrowserUserAgentPreset.ANDROID_TABLET -> FeatherIcons.Tablet
-                            BrowserUserAgentPreset.DESKTOP_PC -> FeatherIcons.Monitor
-                            BrowserUserAgentPreset.IPHONE -> FeatherIcons.Smartphone
-                            BrowserUserAgentPreset.IPAD -> FeatherIcons.Tablet
-                            BrowserUserAgentPreset.CUSTOM -> FeatherIcons.Sliders
+                            BrowserUserAgentPreset.DEFAULT -> MiniMeIcons.Globe
+                            BrowserUserAgentPreset.ANDROID_PHONE -> MiniMeIcons.Smartphone
+                            BrowserUserAgentPreset.ANDROID_TABLET -> MiniMeIcons.Tablet
+                            BrowserUserAgentPreset.DESKTOP_PC -> MiniMeIcons.Monitor
+                            BrowserUserAgentPreset.IPHONE -> MiniMeIcons.Smartphone
+                            BrowserUserAgentPreset.IPAD -> MiniMeIcons.Tablet
+                            BrowserUserAgentPreset.CUSTOM -> MiniMeIcons.Sliders
                         }
                         val subtitle = if (preset == BrowserUserAgentPreset.CUSTOM && customUserAgent.isNotBlank()) {
                             customUserAgent
@@ -929,7 +913,7 @@ private fun BrowserMenuSheet(
                             if (selected) {
                                 Spacer(Modifier.width(Spacing.sm))
                                 Icon(
-                                    imageVector = FeatherIcons.Check,
+                                    imageVector = MiniMeIcons.Check,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp)
@@ -1016,7 +1000,7 @@ private fun BrowserTabItemRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = FeatherIcons.Globe,
+                imageVector = MiniMeIcons.Globe,
                 contentDescription = null,
                 tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp)
@@ -1059,7 +1043,7 @@ private fun BrowserTabItemRow(
                 modifier = Modifier.size(28.dp)
             ) {
                 Icon(
-                    FeatherIcons.X,
+                    MiniMeIcons.X,
                     contentDescription = stringResource(R.string.browser_close_tab),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)

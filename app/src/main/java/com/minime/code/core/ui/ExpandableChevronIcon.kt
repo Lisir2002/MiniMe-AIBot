@@ -14,9 +14,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.minime.code.core.theme.Brand
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ChevronDown
-import compose.icons.feathericons.ChevronRight
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 折叠箭头的旋转语义风格：
@@ -52,8 +50,8 @@ fun ExpandableChevronIcon(
         label = "chevron_rotation"
     )
     val baseIcon: ImageVector = when (style) {
-        ChevronRotationStyle.UP_DOWN -> FeatherIcons.ChevronDown
-        ChevronRotationStyle.RIGHT_DOWN -> FeatherIcons.ChevronRight
+        ChevronRotationStyle.UP_DOWN -> MiniMeIcons.ChevronDown
+        ChevronRotationStyle.RIGHT_DOWN -> MiniMeIcons.ChevronRight
     }
     Icon(
         imageVector = baseIcon,

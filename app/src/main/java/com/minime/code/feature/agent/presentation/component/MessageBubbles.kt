@@ -64,16 +64,7 @@ import com.minime.code.core.ui.ExpandableChevronIcon
 import com.minime.code.feature.agent.presentation.AgentUIMessage
 import com.minime.code.feature.agent.presentation.hasVisibleContent
 import com.minime.code.feature.agent.presentation.MessageRole
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.ChevronDown
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.ChevronUp
-import compose.icons.feathericons.Clock
-import compose.icons.feathericons.Copy
-import compose.icons.feathericons.Database
-import compose.icons.feathericons.MoreHorizontal
-import compose.icons.feathericons.RotateCcw
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -423,7 +414,7 @@ internal fun AgentMessageItem(
                         }
                         val copyButton: @Composable () -> Unit = {
                             MessageActionIconButton(
-                                icon = if (copied) FeatherIcons.Check else FeatherIcons.Copy,
+                                icon = if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
                                 contentDescription = if (copied) stringResource(R.string.chat_copied) else stringResource(R.string.chat_copy),
                                 tint = iconTint,
                                 onClick = {
@@ -442,7 +433,7 @@ internal fun AgentMessageItem(
                             if (hasContent) copyButton()
                             if (onRewindClick != null) {
                                 MessageActionIconButton(
-                                    icon = FeatherIcons.RotateCcw,
+                                    icon = MiniMeIcons.RotateCcw,
                                     contentDescription = stringResource(R.string.checkpoint_rewind_title),
                                     tint = iconTint,
                                     onClick = { onRewindClick(message.id) }
@@ -458,7 +449,7 @@ internal fun AgentMessageItem(
                         if (cacheHitRate != null) {
                             if (emitted) Spacer(Modifier.width(Spacing.sm))
                             Icon(
-                                FeatherIcons.Database,
+                                MiniMeIcons.Database,
                                 contentDescription = stringResource(R.string.chat_cache_hit_rate, cacheHitRate),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(12.dp)
@@ -470,7 +461,7 @@ internal fun AgentMessageItem(
                         if (durationText != null) {
                             if (emitted) Spacer(Modifier.width(Spacing.sm))
                             Icon(
-                                FeatherIcons.Clock,
+                                MiniMeIcons.Clock,
                                 contentDescription = stringResource(R.string.chat_task_duration, durationText),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(13.dp)
@@ -490,7 +481,7 @@ internal fun AgentMessageItem(
                         if (actionsVisible && onMoreClick != null) {
                             if (emitted) Spacer(Modifier.width(Spacing.xs))
                             MessageActionIconButton(
-                                icon = FeatherIcons.MoreHorizontal,
+                                icon = MiniMeIcons.MoreHorizontal,
                                 contentDescription = stringResource(R.string.chat_more_options),
                                 tint = iconTint,
                                 onClick = { onMoreClick(message) }

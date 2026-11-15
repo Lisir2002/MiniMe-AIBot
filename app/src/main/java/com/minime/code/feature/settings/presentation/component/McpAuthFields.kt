@@ -47,15 +47,7 @@ import com.minime.code.core.ui.AppTextField
 import com.minime.code.core.ui.ChevronRotationStyle
 import com.minime.code.core.ui.ExpandableChevronIcon
 import com.minime.code.feature.settings.presentation.McpAuthUiState
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.AlertCircle
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.ExternalLink
-import compose.icons.feathericons.Info
-import compose.icons.feathericons.RefreshCw
-import compose.icons.feathericons.Shield
-import compose.icons.feathericons.Sliders
-import compose.icons.feathericons.X
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * HTTP 形态的 OAuth 认证区块：
@@ -113,7 +105,7 @@ internal fun McpAuthFields(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = FeatherIcons.Shield,
+                    imageVector = MiniMeIcons.Shield,
                     contentDescription = null,
                     tint = if (enabled) {
                         MaterialTheme.colorScheme.primary
@@ -166,7 +158,7 @@ internal fun McpAuthFields(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Icon(
-                            imageVector = FeatherIcons.Info,
+                            imageVector = MiniMeIcons.Info,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
@@ -239,7 +231,7 @@ internal fun McpAuthFields(
                                     }
                                     isAuthorized -> {
                                         Icon(
-                                            imageVector = FeatherIcons.Check,
+                                            imageVector = MiniMeIcons.Check,
                                             contentDescription = null,
                                             tint = statusFg,
                                             modifier = Modifier.size(12.dp)
@@ -271,7 +263,7 @@ internal fun McpAuthFields(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Icon(
-                                    imageVector = FeatherIcons.AlertCircle,
+                                    imageVector = MiniMeIcons.AlertCircle,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.error,
                                     modifier = Modifier
@@ -339,7 +331,7 @@ internal fun McpAuthFields(
                                     )
                                 ) {
                                     Icon(
-                                        imageVector = FeatherIcons.X,
+                                        imageVector = MiniMeIcons.X,
                                         contentDescription = null,
                                         modifier = Modifier.size(16.dp)
                                     )
@@ -366,7 +358,7 @@ internal fun McpAuthFields(
                                     shape = RoundedCornerShape(Radius.mdLarge)
                                 ) {
                                     Icon(
-                                        imageVector = if (isAuthorized) FeatherIcons.RefreshCw else FeatherIcons.ExternalLink,
+                                        imageVector = if (isAuthorized) MiniMeIcons.RefreshCw else MiniMeIcons.ExternalLink,
                                         contentDescription = null,
                                         modifier = Modifier.size(15.dp)
                                     )
@@ -425,7 +417,7 @@ internal fun McpAuthFields(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Icon(
-                            imageVector = FeatherIcons.Sliders,
+                            imageVector = MiniMeIcons.Sliders,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)

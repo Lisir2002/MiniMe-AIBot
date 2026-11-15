@@ -54,9 +54,7 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import com.minime.code.R
 import com.minime.code.core.theme.Spacing
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Image
-import compose.icons.feathericons.X
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -208,7 +206,7 @@ fun ImageViewerHost(
                     .padding(Spacing.sm)
             ) {
                 Icon(
-                    imageVector = FeatherIcons.X,
+                    imageVector = MiniMeIcons.X,
                     contentDescription = stringResource(R.string.common_close),
                     tint = Color.White
                 )
@@ -225,7 +223,7 @@ private fun LoadFailedPlaceholder(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
         Icon(
-            imageVector = FeatherIcons.Image,
+            imageVector = MiniMeIcons.Image,
             contentDescription = null,
             tint = Color.White.copy(alpha = 0.6f),
             modifier = Modifier.size(40.dp)

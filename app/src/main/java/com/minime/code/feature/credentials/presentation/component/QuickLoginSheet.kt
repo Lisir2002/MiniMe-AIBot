@@ -18,8 +18,7 @@ import com.minime.code.core.ui.AdaptiveModalBottomSheet
 import com.minime.code.feature.settings.presentation.component.SettingsGroup
 import com.minime.code.feature.settings.presentation.component.SettingsRow
 import com.minime.code.feature.settings.presentation.component.settingsPageBackground
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Github
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 「快速登录」底部弹层：列出支持设备码流授权登录的应用，选中后进入对应登录流程。
@@ -53,7 +52,7 @@ internal fun QuickLoginSheet(
 
             SettingsGroup {
                 SettingsRow(
-                    icon = FeatherIcons.Github,
+                    icon = MiniMeIcons.Github,
                     title = "GitHub",
                     subtitle = stringResource(R.string.credential_quick_login_github_desc),
                     onClick = onSelectGitHub

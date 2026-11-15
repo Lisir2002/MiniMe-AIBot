@@ -45,10 +45,7 @@ import com.minime.code.feature.settings.presentation.component.SettingsGroup
 import com.minime.code.feature.settings.presentation.component.SettingsGroupHeader
 import com.minime.code.feature.settings.presentation.component.settingsLightMode
 import com.minime.code.R
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Copy
-import compose.icons.feathericons.Info
-import compose.icons.feathericons.Share2
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.coroutines.launch
 
 @Composable
@@ -92,7 +89,7 @@ fun WiFiFtpServerSection(
                 verticalAlignment = Alignment.Top
             ) {
                 Icon(
-                    FeatherIcons.Info,
+                    MiniMeIcons.Info,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp).padding(top = 2.dp)
@@ -131,7 +128,7 @@ fun WiFiFtpServerSection(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                     Icon(
-                        FeatherIcons.Share2,
+                        MiniMeIcons.Share2,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
@@ -165,7 +162,7 @@ fun WiFiFtpServerSection(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Icon(
-                                    FeatherIcons.Copy,
+                                    MiniMeIcons.Copy,
                                     contentDescription = stringResource(R.string.ftp_copy_address),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(12.dp)

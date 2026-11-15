@@ -139,31 +139,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.minime.code.core.ui.ExpandableChevronIcon
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.AlertCircle
-import compose.icons.feathericons.ArrowLeft
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.CheckSquare
-import compose.icons.feathericons.ChevronDown
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.ChevronUp
+import com.minime.code.core.ui.MiniMeIcons
 import android.widget.Toast
-import compose.icons.feathericons.Copy
-import compose.icons.feathericons.Terminal
-import compose.icons.feathericons.Cpu
-import compose.icons.feathericons.DownloadCloud
-import compose.icons.feathericons.Eye
-import compose.icons.feathericons.EyeOff
-import compose.icons.feathericons.FileText
-import compose.icons.feathericons.Folder
-import compose.icons.feathericons.Minus
-import compose.icons.feathericons.Play
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.RefreshCw
-import compose.icons.feathericons.Slash
-import compose.icons.feathericons.Sliders
-import compose.icons.feathericons.Trash2
-import compose.icons.feathericons.X
 import com.minime.code.feature.agent.domain.model.ReasoningEffort
 import com.minime.code.feature.agent.presentation.component.AdaptiveCardView
 import com.minime.code.feature.settings.domain.model.ProviderDashboardResult
@@ -436,7 +413,7 @@ fun ProviderEditorScreen(
                             saveAndNavigateBack()
                         }
                     }) {
-                        Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
@@ -446,7 +423,7 @@ fun ProviderEditorScreen(
                             if (!isSelectionMode) selectedModels.clear()
                         }) {
                             Icon(
-                                FeatherIcons.CheckSquare,
+                                MiniMeIcons.CheckSquare,
                                 contentDescription = stringResource(R.string.provider_models_select),
                                 tint = if (isSelectionMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -456,7 +433,7 @@ fun ProviderEditorScreen(
                         scope.launch { pagerState.animateScrollToPage(1) }
                         showAddModelSheet = true
                     }) {
-                        Icon(FeatherIcons.Plus, contentDescription = stringResource(R.string.provider_add_model))
+                        Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.provider_add_model))
                     }
                 }
             )
@@ -502,7 +479,7 @@ fun ProviderEditorScreen(
                                 },
                                 trailing = {
                                     Icon(
-                                        imageVector = if (apiKeyVisible) FeatherIcons.EyeOff else FeatherIcons.Eye,
+                                        imageVector = if (apiKeyVisible) MiniMeIcons.EyeOff else MiniMeIcons.Eye,
                                         contentDescription = stringResource(
                                             if (apiKeyVisible) R.string.provider_hide_api_key else R.string.provider_show_api_key
                                         ),
@@ -668,7 +645,7 @@ fun ProviderEditorScreen(
                                             modifier = Modifier.size(32.dp)
                                         ) {
                                             Icon(
-                                                imageVector = FeatherIcons.X,
+                                                imageVector = MiniMeIcons.X,
                                                 contentDescription = stringResource(R.string.provider_dashboard_clear_script),
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.size(16.dp)
@@ -683,7 +660,7 @@ fun ProviderEditorScreen(
                                         modifier = Modifier.size(36.dp)
                                     ) {
                                         Icon(
-                                            imageVector = FeatherIcons.Folder,
+                                            imageVector = MiniMeIcons.Folder,
                                             contentDescription = stringResource(R.string.provider_dashboard_select_script),
                                             tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(20.dp)
@@ -729,7 +706,7 @@ fun ProviderEditorScreen(
                                     )
                                 } else {
                                     Icon(
-                                        imageVector = FeatherIcons.Play,
+                                        imageVector = MiniMeIcons.Play,
                                         contentDescription = stringResource(R.string.provider_dashboard_run_test),
                                         tint = if (dashboardScriptPath.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                                         modifier = Modifier.size(20.dp)
@@ -812,7 +789,7 @@ fun ProviderEditorScreen(
                                     contentColor = MaterialTheme.colorScheme.primary
                                 )
                             ) {
-                                Icon(FeatherIcons.Play, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(MiniMeIcons.Play, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(Spacing.xs))
                                 Text(stringResource(R.string.provider_models_batch_test))
                             }
@@ -823,7 +800,7 @@ fun ProviderEditorScreen(
                                     contentColor = MaterialTheme.colorScheme.error
                                 )
                             ) {
-                                Icon(FeatherIcons.Trash2, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(MiniMeIcons.Trash2, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(Spacing.xs))
                                 Text(stringResource(R.string.provider_models_batch_delete))
                             }
@@ -855,7 +832,7 @@ fun ProviderEditorScreen(
                                 ),
                                 modifier = Modifier.onboardingTarget(OnboardingStep.PROVIDER_FETCH_MODELS)
                             ) {
-                                Icon(FeatherIcons.DownloadCloud, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Icon(MiniMeIcons.DownloadCloud, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(Spacing.xs))
                                 Text(stringResource(R.string.provider_fetch_models))
                             }
@@ -987,8 +964,8 @@ fun ProviderEditorScreen(
             FloatingTabBar(
                 pagerState = pagerState,
                 items = listOf(
-                    FloatingTabItem(FeatherIcons.Sliders, stringResource(R.string.provider_config)),
-                    FloatingTabItem(FeatherIcons.Cpu, stringResource(R.string.common_model))
+                    FloatingTabItem(MiniMeIcons.Sliders, stringResource(R.string.provider_config)),
+                    FloatingTabItem(MiniMeIcons.Cpu, stringResource(R.string.common_model))
                 ),
                 maskColor = settingsPageBackground(),
                 isScrolling = tabsScrolling,
@@ -1445,7 +1422,7 @@ private fun AddModelSheet(
                         .height(44.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(FeatherIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(confirmLabel, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 }
@@ -1497,7 +1474,7 @@ private fun ReasoningLevelRow(title: String, checked: Boolean, onToggle: () -> U
         )
         if (checked) {
             Icon(
-                FeatherIcons.Check,
+                MiniMeIcons.Check,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(18.dp)
@@ -1645,7 +1622,7 @@ private fun FetchModelsDialog(
                         contentPadding = PaddingValues(horizontal = Spacing.sm, vertical = 0.dp)
                     ) {
                         Icon(
-                            imageVector = FeatherIcons.Plus,
+                            imageVector = MiniMeIcons.Plus,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )
@@ -1735,7 +1712,7 @@ private fun FetchModelsDialog(
                                         .padding(horizontal = Spacing.md, vertical = Spacing.sm)
                                 ) {
                                     Icon(
-                                        imageVector = FeatherIcons.AlertCircle,
+                                        imageVector = MiniMeIcons.AlertCircle,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.size(16.dp)
@@ -1749,7 +1726,7 @@ private fun FetchModelsDialog(
                                     if (debugInfo != null) {
                                         Spacer(Modifier.width(4.dp))
                                         Icon(
-                                            imageVector = FeatherIcons.ChevronRight,
+                                            imageVector = MiniMeIcons.ChevronRight,
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                             modifier = Modifier.size(14.dp)
@@ -2029,7 +2006,7 @@ private fun ProviderProxyPage(
                 ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 }
             )
@@ -2102,7 +2079,7 @@ private fun ProviderTypeSelectionSheet(
                         )
                         if (isSelected) {
                             Icon(
-                                imageVector = FeatherIcons.Check,
+                                imageVector = MiniMeIcons.Check,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary
@@ -2182,12 +2159,12 @@ private fun ProviderKeysPage(
                 ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { addKey() }) {
-                        Icon(FeatherIcons.Plus, contentDescription = stringResource(R.string.provider_multi_key_add))
+                        Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.provider_multi_key_add))
                     }
                 }
             )
@@ -2290,7 +2267,7 @@ private fun ProviderKeysPage(
                             trailing = {
                                 if (item == strategy) {
                                     Icon(
-                                        imageVector = FeatherIcons.Check,
+                                        imageVector = MiniMeIcons.Check,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(20.dp)
@@ -2393,7 +2370,7 @@ private fun ProviderKeyCard(
                     },
                     trailing = {
                         Icon(
-                            imageVector = if (valueVisible) FeatherIcons.EyeOff else FeatherIcons.Eye,
+                            imageVector = if (valueVisible) MiniMeIcons.EyeOff else MiniMeIcons.Eye,
                             contentDescription = stringResource(
                                 if (valueVisible) R.string.provider_hide_api_key else R.string.provider_show_api_key
                             ),
@@ -2461,7 +2438,7 @@ private fun StepperRow(
         }
         IconButton(onClick = onDecrease, modifier = Modifier.size(32.dp)) {
             Icon(
-                imageVector = FeatherIcons.Minus,
+                imageVector = MiniMeIcons.Minus,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(16.dp)
@@ -2475,7 +2452,7 @@ private fun StepperRow(
         )
         IconButton(onClick = onIncrease, modifier = Modifier.size(32.dp)) {
             Icon(
-                imageVector = FeatherIcons.Plus,
+                imageVector = MiniMeIcons.Plus,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(16.dp)
@@ -2545,7 +2522,7 @@ private fun ScriptPickerBottomSheet(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = FeatherIcons.FileText,
+                                imageVector = MiniMeIcons.FileText,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary
@@ -2612,7 +2589,7 @@ private fun RawOutputBottomSheet(
                     modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
-                        imageVector = if (copied) FeatherIcons.Check else FeatherIcons.Copy,
+                        imageVector = if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
                         contentDescription = stringResource(R.string.common_copy),
                         tint = if (copied) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
@@ -2732,7 +2709,7 @@ private fun DashboardTestResultBox(
                                 modifier = Modifier.size(32.dp)
                             ) {
                                 Icon(
-                                    imageVector = FeatherIcons.Terminal,
+                                    imageVector = MiniMeIcons.Terminal,
                                     contentDescription = stringResource(R.string.provider_dashboard_raw_output),
                                     modifier = Modifier.size(16.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2744,7 +2721,7 @@ private fun DashboardTestResultBox(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                imageVector = FeatherIcons.ChevronDown,
+                                imageVector = MiniMeIcons.ChevronDown,
                                 contentDescription = stringResource(R.string.common_expand),
                                 modifier = Modifier.size(18.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2777,7 +2754,7 @@ private fun DashboardTestResultBox(
                                         modifier = Modifier.size(32.dp)
                                     ) {
                                         Icon(
-                                            imageVector = FeatherIcons.Terminal,
+                                            imageVector = MiniMeIcons.Terminal,
                                             contentDescription = stringResource(R.string.provider_dashboard_raw_output),
                                             modifier = Modifier.size(16.dp),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2789,7 +2766,7 @@ private fun DashboardTestResultBox(
                                     modifier = Modifier.size(32.dp)
                                 ) {
                                     Icon(
-                                        imageVector = FeatherIcons.ChevronUp,
+                                        imageVector = MiniMeIcons.ChevronUp,
                                         contentDescription = stringResource(R.string.common_collapse),
                                         modifier = Modifier.size(18.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2823,7 +2800,7 @@ private fun DashboardTestResultBox(
                             horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
                         ) {
                             Icon(
-                                imageVector = FeatherIcons.AlertCircle,
+                                imageVector = MiniMeIcons.AlertCircle,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(18.dp)
@@ -2850,7 +2827,7 @@ private fun DashboardTestResultBox(
                                 modifier = Modifier.size(32.dp)
                             ) {
                                 Icon(
-                                    imageVector = FeatherIcons.Terminal,
+                                    imageVector = MiniMeIcons.Terminal,
                                     contentDescription = stringResource(R.string.provider_dashboard_raw_output),
                                     modifier = Modifier.size(16.dp),
                                     tint = MaterialTheme.colorScheme.error
@@ -2928,7 +2905,7 @@ private fun ProviderHeadersSheet(
                 )
                 IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
                     Icon(
-                        FeatherIcons.X,
+                        MiniMeIcons.X,
                         contentDescription = stringResource(R.string.common_close),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -3003,7 +2980,7 @@ private fun ProviderHeadersSheet(
                                         modifier = Modifier.size(32.dp)
                                     ) {
                                         Icon(
-                                            FeatherIcons.Trash2,
+                                            MiniMeIcons.Trash2,
                                             contentDescription = stringResource(R.string.provider_headers_remove),
                                             tint = MaterialTheme.colorScheme.error,
                                             modifier = Modifier.size(16.dp)
@@ -3038,7 +3015,7 @@ private fun ProviderHeadersSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            FeatherIcons.Plus,
+                            MiniMeIcons.Plus,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
@@ -3107,7 +3084,7 @@ private fun ProviderScriptParamsSheet(
                 )
                 IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
                     Icon(
-                        FeatherIcons.X,
+                        MiniMeIcons.X,
                         contentDescription = stringResource(R.string.common_close),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -3182,7 +3159,7 @@ private fun ProviderScriptParamsSheet(
                                         modifier = Modifier.size(32.dp)
                                     ) {
                                         Icon(
-                                            FeatherIcons.Trash2,
+                                            MiniMeIcons.Trash2,
                                             contentDescription = stringResource(R.string.provider_script_param_remove),
                                             tint = MaterialTheme.colorScheme.error,
                                             modifier = Modifier.size(16.dp)
@@ -3217,7 +3194,7 @@ private fun ProviderScriptParamsSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            FeatherIcons.Plus,
+                            MiniMeIcons.Plus,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)

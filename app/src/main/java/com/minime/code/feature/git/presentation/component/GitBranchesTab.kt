@@ -66,16 +66,7 @@ import com.minime.code.feature.git.domain.model.GitBranch
 import com.minime.code.feature.git.domain.model.GitTag
 import com.minime.code.core.ui.ChevronRotationStyle
 import com.minime.code.core.ui.ExpandableChevronIcon
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.Cloud
-import compose.icons.feathericons.Edit2
-import compose.icons.feathericons.GitBranch
-import compose.icons.feathericons.GitCommit
-import compose.icons.feathericons.GitMerge
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.Tag
-import compose.icons.feathericons.Trash2
+import com.minime.code.core.ui.MiniMeIcons
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -437,7 +428,7 @@ internal fun BranchesTab(
                     RefRow(
                         name = currentBranch,
                         subtitle = stringResource(R.string.git_checked_out),
-                        icon = FeatherIcons.GitCommit,
+                        icon = MiniMeIcons.GitCommit,
                         isCurrent = true
                     )
                 }
@@ -515,7 +506,7 @@ internal fun BranchesTab(
                             RefRow(
                                 name = t.name,
                                 subtitle = t.shortHash,
-                                icon = FeatherIcons.Tag,
+                                icon = MiniMeIcons.Tag,
                                 isCurrent = false,
                                 isLoading = checkoutLoading == t.name,
                                 actions = listOf(
@@ -547,7 +538,7 @@ private fun BranchesOverview(
         Column(modifier = Modifier.padding(Spacing.lg)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    FeatherIcons.GitBranch,
+                    MiniMeIcons.GitBranch,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(18.dp)
@@ -622,7 +613,7 @@ private fun RefSectionHeader(
         if (onAdd != null) {
             IconButton(onClick = onAdd, modifier = Modifier.size(28.dp)) {
                 Icon(
-                    FeatherIcons.Plus,
+                    MiniMeIcons.Plus,
                     contentDescription = stringResource(R.string.git_new),
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -673,10 +664,10 @@ private sealed class RefAction(
     val isDestructive: Boolean,
     val onClick: () -> Unit
 ) {
-    class Switch(onClick: () -> Unit) : RefAction(R.string.common_switch, FeatherIcons.GitCommit, false, onClick)
-    class Merge(onClick: () -> Unit) : RefAction(R.string.git_action_merge, FeatherIcons.GitMerge, false, onClick)
-    class Rename(onClick: () -> Unit) : RefAction(R.string.common_rename, FeatherIcons.Edit2, false, onClick)
-    class Delete(onClick: () -> Unit) : RefAction(R.string.common_delete, FeatherIcons.Trash2, true, onClick)
+    class Switch(onClick: () -> Unit) : RefAction(R.string.common_switch, MiniMeIcons.GitCommit, false, onClick)
+    class Merge(onClick: () -> Unit) : RefAction(R.string.git_action_merge, MiniMeIcons.GitMerge, false, onClick)
+    class Rename(onClick: () -> Unit) : RefAction(R.string.common_rename, MiniMeIcons.Edit2, false, onClick)
+    class Delete(onClick: () -> Unit) : RefAction(R.string.common_delete, MiniMeIcons.Trash2, true, onClick)
 }
 
 @Composable
@@ -906,7 +897,7 @@ private fun ColumnScope.renderBranchTree(
                 RefRow(
                     name = node.segment,
                     subtitle = if (isRemote) null else branchSubtitle(b, stringResource(R.string.git_checked_out), stringResource(R.string.git_no_upstream)),
-                    icon = if (isRemote) FeatherIcons.Cloud else FeatherIcons.GitBranch,
+                    icon = if (isRemote) MiniMeIcons.Cloud else MiniMeIcons.GitBranch,
                     isCurrent = b.current,
                     isLoading = checkoutLoading == b.name,
                     indent = depth,

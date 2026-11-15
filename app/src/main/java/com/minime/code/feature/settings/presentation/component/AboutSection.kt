@@ -52,14 +52,7 @@ import com.minime.code.feature.settings.data.repository.ALT_DOWNLOAD_MIRROR
 import com.minime.code.feature.settings.data.repository.DEFAULT_DOWNLOAD_MIRROR
 import com.minime.code.feature.settings.data.repository.UpdateChannel
 import com.minime.code.feature.settings.data.repository.isValidDownloadMirror
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Book
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.Download
-import compose.icons.feathericons.Github
-import compose.icons.feathericons.Globe
-import compose.icons.feathericons.RefreshCw
-import compose.icons.feathericons.Tag
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 关于页：顶部应用信息、版本号（点击手动检查更新）、自动检查更新开关、更新通道、
@@ -113,7 +106,7 @@ internal fun AboutSection(
         SettingsGroup {
             // 版本：点击手动检查更新
             SettingsRow(
-                icon = FeatherIcons.Tag,
+                icon = MiniMeIcons.Tag,
                 title = stringResource(R.string.about_version),
                 onClick = onCheckUpdate,
                 trailing = {
@@ -127,7 +120,7 @@ internal fun AboutSection(
             SettingsDivider()
             // 自动检查更新：开关
             SettingsRow(
-                icon = FeatherIcons.RefreshCw,
+                icon = MiniMeIcons.RefreshCw,
                 title = stringResource(R.string.about_auto_check_update),
                 subtitle = stringResource(R.string.about_auto_check_update_desc),
                 trailing = {
@@ -140,7 +133,7 @@ internal fun AboutSection(
             SettingsDivider()
             // 更新通道
             SettingsRow(
-                icon = FeatherIcons.Globe,
+                icon = MiniMeIcons.Globe,
                 title = stringResource(R.string.about_update_channel),
                 onClick = { showChannelSheet = true },
                 trailing = {
@@ -160,7 +153,7 @@ internal fun AboutSection(
             SettingsDivider()
             // 下载镜像源：更新包下载走它加速，留空表示直连 GitHub
             SettingsRow(
-                icon = FeatherIcons.Download,
+                icon = MiniMeIcons.Download,
                 title = stringResource(R.string.about_update_mirror),
                 onClick = { showMirrorDialog = true },
                 trailing = {
@@ -187,13 +180,13 @@ internal fun AboutSection(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Github,
+                icon = MiniMeIcons.Github,
                 title = stringResource(R.string.about_github_repo),
                 onClick = { openUrl(context, GITHUB_REPO_URL) }
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Book,
+                icon = MiniMeIcons.Book,
                 title = stringResource(R.string.about_license),
                 onClick = { openUrl(context, LICENSE_URL) }
             )
@@ -336,7 +329,7 @@ private fun UpdateChannelSheet(
                         }
                         if (selected) {
                             Icon(
-                                imageVector = FeatherIcons.Check,
+                                imageVector = MiniMeIcons.Check,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary
@@ -408,7 +401,7 @@ private fun MirrorSourceDialog(
                             )
                             if (selected) {
                                 Icon(
-                                    imageVector = FeatherIcons.Check,
+                                    imageVector = MiniMeIcons.Check,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp),
                                     tint = MaterialTheme.colorScheme.primary

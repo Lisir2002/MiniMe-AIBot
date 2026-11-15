@@ -23,9 +23,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import com.minime.code.core.theme.Spacing
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Eye
-import compose.icons.feathericons.EyeOff
+import com.minime.code.core.ui.MiniMeIcons
 import androidx.compose.ui.res.stringResource
 import com.minime.code.R
 
@@ -84,7 +82,7 @@ fun CredentialPromptDialog(
                     trailingIcon = {
                         IconButton(onClick = { tokenVisible = !tokenVisible }) {
                             Icon(
-                                if (tokenVisible) FeatherIcons.EyeOff else FeatherIcons.Eye,
+                                if (tokenVisible) MiniMeIcons.EyeOff else MiniMeIcons.Eye,
                                 contentDescription = if (tokenVisible) stringResource(R.string.common_hide) else stringResource(R.string.common_show)
                             )
                         }

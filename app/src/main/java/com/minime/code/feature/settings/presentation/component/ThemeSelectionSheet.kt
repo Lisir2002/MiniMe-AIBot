@@ -42,8 +42,7 @@ import com.minime.code.core.theme.Spacing
 import com.minime.code.core.theme.isDynamicColorSupported
 import com.minime.code.core.ui.AppSwitch
 import com.minime.code.feature.settings.data.repository.AppThemeMode
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Check
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 外观主题面板：明暗模式、配色方案与莫奈取色。
@@ -101,7 +100,7 @@ internal fun ThemeSelectionSheet(
                         )
                         if (isSelected) {
                             Icon(
-                                imageVector = FeatherIcons.Check,
+                                imageVector = MiniMeIcons.Check,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary

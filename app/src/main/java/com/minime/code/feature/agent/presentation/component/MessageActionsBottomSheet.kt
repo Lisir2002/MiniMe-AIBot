@@ -28,11 +28,7 @@ import com.minime.code.core.theme.Radius
 import com.minime.code.core.theme.Spacing
 import com.minime.code.feature.agent.presentation.AgentUIMessage
 import com.minime.code.feature.agent.presentation.hasVisibleContent
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Copy
-import compose.icons.feathericons.Edit2
-import compose.icons.feathericons.GitBranch
-import compose.icons.feathericons.Trash2
+import com.minime.code.core.ui.MiniMeIcons
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,7 +64,7 @@ internal fun MessageActionsBottomSheet(
 
             // 编辑消息
             MessageActionItem(
-                icon = FeatherIcons.Edit2,
+                icon = MiniMeIcons.Edit2,
                 title = stringResource(R.string.chat_action_edit),
                 onClick = {
                     onDismiss()
@@ -79,7 +75,7 @@ internal fun MessageActionsBottomSheet(
             // 复制文本：纯图片消息没有文字可复制，隐藏该项
             if (message.content.hasVisibleContent()) {
                 MessageActionItem(
-                    icon = FeatherIcons.Copy,
+                    icon = MiniMeIcons.Copy,
                     title = stringResource(R.string.chat_action_copy),
                     onClick = {
                         onDismiss()
@@ -90,7 +86,7 @@ internal fun MessageActionsBottomSheet(
 
             // 从此消息分叉新会话：保留到此为止的完整历史，原会话不动
             MessageActionItem(
-                icon = FeatherIcons.GitBranch,
+                icon = MiniMeIcons.GitBranch,
                 title = stringResource(R.string.chat_action_fork),
                 onClick = {
                     onDismiss()
@@ -100,7 +96,7 @@ internal fun MessageActionsBottomSheet(
 
             // 删除消息
             MessageActionItem(
-                icon = FeatherIcons.Trash2,
+                icon = MiniMeIcons.Trash2,
                 title = stringResource(R.string.chat_action_delete),
                 isDestructive = true,
                 onClick = {

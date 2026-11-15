@@ -35,9 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.minime.code.R
 import com.minime.code.core.theme.Spacing
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.CheckSquare
-import compose.icons.feathericons.X
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 列表多选状态。key 由各页面自定义（提供商 id / `作用域:名称` / 提示词编号 / 镜像 id），
@@ -100,7 +98,7 @@ class ListSelectionState {
 fun rememberListSelectionState(): ListSelectionState = remember { ListSelectionState() }
 
 /**
- * 顶部栏右上角的多选开关：与模型页同一套图标与配色（`FeatherIcons.CheckSquare`）。
+ * 顶部栏右上角的多选开关：与模型页同一套图标与配色（`MiniMeIcons.CheckSquare`）。
  * 列表为空时调用方不显示它；[enabled] = false 时置灰不可点（如提示词全部为只读来源，
  * 进多选也无项可勾）。
  */
@@ -111,7 +109,7 @@ fun SelectionToggleAction(selection: ListSelectionState, enabled: Boolean = true
         enabled = enabled
     ) {
         Icon(
-            FeatherIcons.CheckSquare,
+            MiniMeIcons.CheckSquare,
             contentDescription = stringResource(R.string.common_select_mode),
             tint = if (selection.isActive) MaterialTheme.colorScheme.primary
             else MaterialTheme.colorScheme.onBackground.copy(alpha = if (enabled) 1f else 0.38f),
@@ -168,7 +166,7 @@ fun SelectionActionBar(
         actions()
         IconButton(onClick = onExit, modifier = Modifier.size(36.dp)) {
             Icon(
-                FeatherIcons.X,
+                MiniMeIcons.X,
                 contentDescription = stringResource(R.string.common_cancel),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp)

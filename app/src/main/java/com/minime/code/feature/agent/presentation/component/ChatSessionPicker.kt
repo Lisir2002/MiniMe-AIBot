@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.theme.semanticColors
 import com.minime.code.feature.agent.domain.model.ChatSession
-import compose.icons.FeatherIcons
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 单条会话行：短按选中，长按弹出功能菜单（置顶/重命名/导出/删除）。供侧边栏历史记录列表复用。

@@ -71,15 +71,7 @@ import com.minime.code.feature.git.domain.model.GitGraph
 import com.minime.code.feature.git.domain.model.GitGraphRef
 import com.minime.code.feature.git.domain.model.GraphCommit
 import com.minime.code.feature.git.domain.model.GraphEdge
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.Cloud
-import compose.icons.feathericons.Copy
-import compose.icons.feathericons.GitBranch
-import compose.icons.feathericons.Tag
-import compose.icons.feathericons.RotateCcw
-import compose.icons.feathericons.Search
-import compose.icons.feathericons.X
+import com.minime.code.core.ui.MiniMeIcons
 
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.ui.graphics.RectangleShape
@@ -157,12 +149,12 @@ internal fun LogTab(
                 onValueChange = { searchQuery = it },
                 label = stringResource(R.string.git_search_commits_hint),
                 leadingIcon = {
-                    Icon(FeatherIcons.Search, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(MiniMeIcons.Search, contentDescription = null, modifier = Modifier.size(16.dp))
                 },
                 trailingIcon = if (searchQuery.isNotEmpty()) {
                     {
                         IconButton(onClick = { searchQuery = "" }) {
-                            Icon(FeatherIcons.X, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(MiniMeIcons.X, contentDescription = null, modifier = Modifier.size(16.dp))
                         }
                     }
                 } else null,
@@ -325,7 +317,7 @@ private fun GraphCommitRow(
                 }
                 Row(verticalAlignment = Alignment.Top) {
                     Icon(
-                        imageVector = FeatherIcons.ChevronRight,
+                        imageVector = MiniMeIcons.ChevronRight,
                         contentDescription = stringResource(R.string.common_expand),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -550,7 +542,7 @@ private fun RefPills(refs: List<GitGraphRef>) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = if (ref.isRemote) FeatherIcons.Cloud else if (ref.isBranch) FeatherIcons.GitBranch else FeatherIcons.Tag,
+                        imageVector = if (ref.isRemote) MiniMeIcons.Cloud else if (ref.isBranch) MiniMeIcons.GitBranch else MiniMeIcons.Tag,
                         contentDescription = null,
                         tint = fg,
                         modifier = Modifier.size(11.dp)
@@ -901,7 +893,7 @@ private fun CommitDetailSheet(
                     shape = RoundedCornerShape(Radius.sm),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                 ) {
-                    Icon(FeatherIcons.GitBranch, contentDescription = null, modifier = Modifier.size(13.dp))
+                    Icon(MiniMeIcons.GitBranch, contentDescription = null, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(Spacing.xs))
                     Text(stringResource(R.string.git_tab_branches), style = MaterialTheme.typography.labelSmall)
                 }
@@ -911,7 +903,7 @@ private fun CommitDetailSheet(
                     shape = RoundedCornerShape(Radius.sm),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                 ) {
-                    Icon(FeatherIcons.Tag, contentDescription = null, modifier = Modifier.size(13.dp))
+                    Icon(MiniMeIcons.Tag, contentDescription = null, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(Spacing.xs))
                     Text(stringResource(R.string.git_tags), style = MaterialTheme.typography.labelSmall)
                 }
@@ -921,7 +913,7 @@ private fun CommitDetailSheet(
                     shape = RoundedCornerShape(Radius.sm),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                 ) {
-                    Icon(FeatherIcons.RotateCcw, contentDescription = null, modifier = Modifier.size(13.dp))
+                    Icon(MiniMeIcons.RotateCcw, contentDescription = null, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(Spacing.xs))
                     Text("Reset", style = MaterialTheme.typography.labelSmall)
                 }

@@ -26,9 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.Trash2
+import com.minime.code.core.ui.MiniMeIcons
 import androidx.compose.ui.res.stringResource
 import com.minime.code.R
 
@@ -103,7 +101,7 @@ internal fun McpHttpFields(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                FeatherIcons.Trash2,
+                                MiniMeIcons.Trash2,
                                 contentDescription = stringResource(R.string.common_delete),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(16.dp)
@@ -127,7 +125,7 @@ internal fun McpHttpFields(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
-                    FeatherIcons.Plus,
+                    MiniMeIcons.Plus,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant

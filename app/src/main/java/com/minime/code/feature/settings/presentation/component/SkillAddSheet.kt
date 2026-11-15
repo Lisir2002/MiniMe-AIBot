@@ -17,10 +17,7 @@ import com.minime.code.core.theme.Spacing
 import com.minime.code.core.ui.AdaptiveModalBottomSheet
 import com.minime.code.core.ui.SegmentedTabs
 import com.minime.code.feature.agent.domain.skill.SkillScope
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Archive
-import compose.icons.feathericons.Edit3
-import compose.icons.feathericons.FileText
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 「添加技能」底部弹层：顶部选作用域（全局 / 当前项目），下方三种添加方式——
@@ -77,21 +74,21 @@ internal fun SkillAddSheet(
 
             SettingsGroup {
                 SettingsRow(
-                    icon = FeatherIcons.Edit3,
+                    icon = MiniMeIcons.Edit3,
                     title = stringResource(R.string.skills_add_manual),
                     subtitle = stringResource(R.string.skills_add_manual_desc),
                     onClick = onManual
                 )
                 SettingsDivider()
                 SettingsRow(
-                    icon = FeatherIcons.FileText,
+                    icon = MiniMeIcons.FileText,
                     title = stringResource(R.string.skills_add_from_file),
                     subtitle = stringResource(R.string.skills_add_from_file_desc),
                     onClick = onPickFile
                 )
                 SettingsDivider()
                 SettingsRow(
-                    icon = FeatherIcons.Archive,
+                    icon = MiniMeIcons.Archive,
                     title = stringResource(R.string.skills_add_from_zip),
                     subtitle = stringResource(R.string.skills_add_from_zip_desc),
                     onClick = onPickZip

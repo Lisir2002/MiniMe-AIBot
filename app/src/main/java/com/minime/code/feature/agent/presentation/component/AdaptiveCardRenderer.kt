@@ -82,10 +82,7 @@ import com.minime.code.feature.settings.domain.model.TabSetElement
 import com.minime.code.feature.settings.domain.model.TextBlockElement
 import com.minime.code.feature.settings.domain.model.TextSize
 import com.minime.code.feature.settings.domain.model.TextWeight
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Copy
-import compose.icons.feathericons.ExternalLink
-import compose.icons.feathericons.HelpCircle
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * Adaptive Card 原生 Compose 渲染主入口。
@@ -1066,9 +1063,9 @@ private fun RenderActionButton(
 
 private fun resolveIcon(name: String): androidx.compose.ui.graphics.vector.ImageVector? {
     return when (name.trim().lowercase()) {
-        "external-link", "externallink", "link" -> FeatherIcons.ExternalLink
-        "copy" -> FeatherIcons.Copy
-        "help", "help-circle", "question" -> FeatherIcons.HelpCircle
+        "external-link", "externallink", "link" -> MiniMeIcons.ExternalLink
+        "copy" -> MiniMeIcons.Copy
+        "help", "help-circle", "question" -> MiniMeIcons.HelpCircle
         else -> null
     }
 }

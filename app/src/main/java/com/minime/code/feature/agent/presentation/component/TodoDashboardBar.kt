@@ -45,10 +45,7 @@ import com.minime.code.core.theme.Spacing
 import com.minime.code.feature.agent.domain.model.TodoItem
 import com.minime.code.feature.agent.domain.model.TodoStatus
 import com.minime.code.core.ui.ExpandableChevronIcon
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.CheckSquare
-import compose.icons.feathericons.ChevronDown
-import compose.icons.feathericons.ChevronUp
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 位于输入框上方的待办任务常驻面板：
@@ -105,7 +102,7 @@ fun TodoDashboardBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = FeatherIcons.CheckSquare,
+                    imageVector = MiniMeIcons.CheckSquare,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(15.dp)

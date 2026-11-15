@@ -73,15 +73,7 @@ import com.minime.code.feature.settings.presentation.component.SettingsGroup
 import com.minime.code.feature.settings.presentation.component.SettingsGroupHeader
 import com.minime.code.feature.settings.presentation.component.SettingsRow
 import com.minime.code.feature.settings.presentation.component.settingsPageBackground
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.AlertCircle
-import compose.icons.feathericons.ArrowLeft
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.Download
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.Server
-import compose.icons.feathericons.Upload
-import compose.icons.feathericons.UploadCloud
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -170,7 +162,7 @@ internal fun BackupScreen(
                 title = { Text(stringResource(R.string.settings_backup)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
@@ -179,7 +171,7 @@ internal fun BackupScreen(
                             editingTarget = null
                             showTargetSheet = true
                         }) {
-                            Icon(FeatherIcons.Plus, contentDescription = stringResource(R.string.backup_net_add_target))
+                            Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.backup_net_add_target))
                         }
                     }
                 }
@@ -228,8 +220,8 @@ internal fun BackupScreen(
             FloatingTabBar(
                 pagerState = pagerState,
                 items = listOf(
-                    FloatingTabItem(FeatherIcons.Download, stringResource(R.string.backup_tab_local)),
-                    FloatingTabItem(FeatherIcons.UploadCloud, stringResource(R.string.backup_net_section))
+                    FloatingTabItem(MiniMeIcons.Download, stringResource(R.string.backup_tab_local)),
+                    FloatingTabItem(MiniMeIcons.UploadCloud, stringResource(R.string.backup_net_section))
                 ),
                 maskColor = settingsPageBackground(),
                 isScrolling = tabsScrolling,
@@ -538,7 +530,7 @@ private fun LocalBackupTab(
         SettingsGroupHeader(text = stringResource(R.string.backup_actions))
         SettingsGroup {
             SettingsRow(
-                icon = FeatherIcons.Download,
+                icon = MiniMeIcons.Download,
                 title = stringResource(R.string.backup_export_title),
                 subtitle = stringResource(R.string.backup_export_subtitle),
                 enabled = !working,
@@ -546,7 +538,7 @@ private fun LocalBackupTab(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Upload,
+                icon = MiniMeIcons.Upload,
                 title = stringResource(R.string.backup_import_title),
                 subtitle = stringResource(R.string.backup_import_subtitle),
                 enabled = !working,
@@ -577,7 +569,7 @@ private fun NetworkBackupTab(
         if (targets.isEmpty()) {
             // 空态与 MCP / 凭据页统一：图标 + 标题 + 提示，新增入口收在右上角「+」。
             SettingsEmptyState(
-                icon = FeatherIcons.UploadCloud,
+                icon = MiniMeIcons.UploadCloud,
                 title = stringResource(R.string.backup_net_no_target),
                 hint = stringResource(R.string.backup_net_no_target_hint),
                 modifier = Modifier
@@ -644,7 +636,7 @@ private fun BackupTargetCard(
                 }
                 IconButton(onClick = onEdit) {
                     Icon(
-                        imageVector = FeatherIcons.ChevronRight,
+                        imageVector = MiniMeIcons.ChevronRight,
                         contentDescription = stringResource(R.string.common_edit),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
@@ -694,8 +686,8 @@ private fun BackupTargetCard(
 @Composable
 private fun TargetIconBox(type: BackupTargetType) {
     val icon = when (type) {
-        BackupTargetType.WEBDAV -> FeatherIcons.Server
-        BackupTargetType.S3 -> FeatherIcons.UploadCloud
+        BackupTargetType.WEBDAV -> MiniMeIcons.Server
+        BackupTargetType.S3 -> MiniMeIcons.UploadCloud
     }
     Box(
         modifier = Modifier
@@ -733,7 +725,7 @@ private fun WorkspaceBackupHint() {
         modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm)
     ) {
         Icon(
-            imageVector = FeatherIcons.AlertCircle,
+            imageVector = MiniMeIcons.AlertCircle,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(14.dp)

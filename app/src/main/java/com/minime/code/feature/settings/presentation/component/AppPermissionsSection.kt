@@ -37,17 +37,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.minime.code.R
 import com.minime.code.core.theme.Spacing
 import com.minime.code.feature.agent.domain.shizuku.ShizukuState
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Activity
-import compose.icons.feathericons.Bell
-import compose.icons.feathericons.Download
-import compose.icons.feathericons.Folder
-import compose.icons.feathericons.Power
-import compose.icons.feathericons.RefreshCw
-import compose.icons.feathericons.Shield
-import compose.icons.feathericons.Sun
-import compose.icons.feathericons.Terminal
-import compose.icons.feathericons.Zap
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 「软件权限」二级页：集中展示并管理系统级权限。
@@ -103,7 +93,7 @@ internal fun AppPermissionsSection(
         SettingsGroupHeader(text = stringResource(R.string.settings_category_system_permissions))
         SettingsGroup {
             SettingsRow(
-                icon = FeatherIcons.Download,
+                icon = MiniMeIcons.Download,
                 title = stringResource(R.string.settings_permission_apk_install),
                 subtitle = stringResource(R.string.settings_permission_apk_install_desc),
                 onClick = {
@@ -122,7 +112,7 @@ internal fun AppPermissionsSection(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Folder,
+                icon = MiniMeIcons.Folder,
                 title = stringResource(R.string.settings_permission_storage),
                 subtitle = stringResource(R.string.settings_permission_storage_desc),
                 onClick = {
@@ -139,7 +129,7 @@ internal fun AppPermissionsSection(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Zap,
+                icon = MiniMeIcons.Zap,
                 title = stringResource(R.string.settings_permission_battery),
                 subtitle = stringResource(R.string.settings_permission_battery_desc),
                 onClick = {
@@ -158,7 +148,7 @@ internal fun AppPermissionsSection(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Power,
+                icon = MiniMeIcons.Power,
                 title = stringResource(R.string.settings_autostart_title),
                 subtitle = stringResource(R.string.settings_autostart_subtitle),
                 onClick = { OemAutoStartGuide.openAutoStartSettings(context) }
@@ -170,7 +160,7 @@ internal fun AppPermissionsSection(
                 ShizukuState.READY -> null
             }
             SettingsRow(
-                icon = FeatherIcons.Terminal,
+                icon = MiniMeIcons.Terminal,
                 title = stringResource(R.string.settings_shizuku),
                 subtitle = stringResource(shizukuState.hintRes()),
                 onClick = shizukuAction,
@@ -252,7 +242,7 @@ internal fun BackgroundRunSection(
     ) {
         SettingsGroup {
             SettingsRow(
-                icon = FeatherIcons.RefreshCw,
+                icon = MiniMeIcons.RefreshCw,
                 title = stringResource(R.string.settings_keepalive_title),
                 subtitle = stringResource(R.string.settings_keepalive_subtitle),
                 trailing = {
@@ -266,7 +256,7 @@ internal fun BackgroundRunSection(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Sun,
+                icon = MiniMeIcons.Sun,
                 title = stringResource(R.string.settings_screen_on_title),
                 subtitle = stringResource(R.string.settings_screen_on_subtitle),
                 trailing = {
@@ -278,7 +268,7 @@ internal fun BackgroundRunSection(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Bell,
+                icon = MiniMeIcons.Bell,
                 title = stringResource(R.string.settings_agent_sound_title),
                 subtitle = stringResource(R.string.settings_agent_sound_subtitle),
                 trailing = {
@@ -292,7 +282,7 @@ internal fun BackgroundRunSection(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Activity,
+                icon = MiniMeIcons.Activity,
                 title = stringResource(R.string.settings_live_notification_title),
                 subtitle = stringResource(R.string.settings_live_notification_subtitle),
                 trailing = {
@@ -306,7 +296,7 @@ internal fun BackgroundRunSection(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Shield,
+                icon = MiniMeIcons.Shield,
                 title = stringResource(R.string.settings_approval_notification_title),
                 subtitle = stringResource(R.string.settings_approval_notification_subtitle),
                 trailing = {
@@ -320,7 +310,7 @@ internal fun BackgroundRunSection(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Zap,
+                icon = MiniMeIcons.Zap,
                 title = stringResource(R.string.settings_network_guide_title),
                 subtitle = stringResource(R.string.settings_network_guide_subtitle),
                 onClick = { showNetworkGuide = true }

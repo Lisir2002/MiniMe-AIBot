@@ -69,16 +69,7 @@ import com.minime.code.core.ui.THUMBNAIL_MAX_EDGE
 import com.minime.code.core.ui.decodeSampledBitmap
 import com.minime.code.feature.agent.presentation.QueuedRequest
 import com.minime.code.core.ui.ExpandableChevronIcon
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Camera
-import compose.icons.feathericons.ChevronDown
-import compose.icons.feathericons.ChevronUp
-import compose.icons.feathericons.Edit2
-import compose.icons.feathericons.FileText
-import compose.icons.feathericons.Image
-import compose.icons.feathericons.Menu
-import compose.icons.feathericons.X
-import compose.icons.feathericons.Zap
+import com.minime.code.core.ui.MiniMeIcons
 import java.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -173,7 +164,7 @@ internal fun QueuedRequestPanel(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                FeatherIcons.Menu,
+                                MiniMeIcons.Menu,
                                 contentDescription = stringResource(R.string.chat_queue_drag),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier
@@ -230,7 +221,7 @@ internal fun QueuedRequestPanel(
                                 modifier = Modifier.size(28.dp)
                             ) {
                                 Icon(
-                                    FeatherIcons.Zap,
+                                    MiniMeIcons.Zap,
                                     contentDescription = stringResource(R.string.chat_queue_interject),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(14.dp)
@@ -241,7 +232,7 @@ internal fun QueuedRequestPanel(
                                 modifier = Modifier.size(28.dp)
                             ) {
                                 Icon(
-                                    FeatherIcons.Edit2,
+                                    MiniMeIcons.Edit2,
                                     contentDescription = stringResource(R.string.chat_queue_edit),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(14.dp)
@@ -252,7 +243,7 @@ internal fun QueuedRequestPanel(
                                 modifier = Modifier.size(28.dp)
                             ) {
                                 Icon(
-                                    FeatherIcons.X,
+                                    MiniMeIcons.X,
                                     contentDescription = stringResource(R.string.chat_queue_remove),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(14.dp)
@@ -330,7 +321,7 @@ private fun PendingAttachmentPreviewItem(
                     modifier = Modifier.size(24.dp)
                 ) {
                     Icon(
-                        FeatherIcons.X,
+                        MiniMeIcons.X,
                         contentDescription = stringResource(R.string.chat_remove_attachment),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(14.dp)
@@ -377,7 +368,7 @@ private fun ImageThumbnail(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    FeatherIcons.Image,
+                    MiniMeIcons.Image,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
@@ -397,7 +388,7 @@ private fun FileAttachmentPreview(attachment: PendingUploadAttachment) {
         verticalArrangement = Arrangement.Center
     ) {
         Icon(
-            FeatherIcons.FileText,
+            MiniMeIcons.FileText,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(22.dp)
@@ -482,19 +473,19 @@ internal fun AttachmentSheet(
                 modifier = Modifier.padding(bottom = Spacing.sm)
             )
             AttachmentSheetItem(
-                icon = FeatherIcons.FileText,
+                icon = MiniMeIcons.FileText,
                 title = stringResource(com.minime.code.R.string.chat_upload_file),
                 enabled = canUploadFiles,
                 onClick = onUploadFile
             )
             AttachmentSheetItem(
-                icon = FeatherIcons.Image,
+                icon = MiniMeIcons.Image,
                 title = stringResource(com.minime.code.R.string.chat_upload_image),
                 enabled = canUploadImages,
                 onClick = onUploadImage
             )
             AttachmentSheetItem(
-                icon = FeatherIcons.Camera,
+                icon = MiniMeIcons.Camera,
                 title = stringResource(com.minime.code.R.string.chat_take_photo),
                 enabled = canUploadImages,
                 onClick = onTakePhoto

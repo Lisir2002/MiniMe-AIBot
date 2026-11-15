@@ -114,30 +114,18 @@ import com.minime.code.feature.settings.domain.model.ProviderDashboardState
 import com.minime.code.feature.workspace.presentation.WorkspaceViewModel
 import com.minime.code.feature.workspace.presentation.component.WorkspaceIconButton
 import com.minime.code.core.ui.ExpandableChevronIcon
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.AlertCircle
-import compose.icons.feathericons.ArrowUp
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.ChevronDown
-import compose.icons.feathericons.ChevronUp
-import compose.icons.feathericons.Copy
-import compose.icons.feathericons.Pause
-import compose.icons.feathericons.Play
-import compose.icons.feathericons.Target
-import compose.icons.feathericons.X
-import compose.icons.feathericons.Maximize
-import compose.icons.feathericons.Minimize
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.Square
-import compose.icons.feathericons.Shield
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.coroutines.launch
 
-/** 输入框区域蒙版高度：盖住圆角容器，滚动内容滑入时被渐变遮罩；随键盘（IME）上移。 */
-private val INPUT_BAR_MASK_HEIGHT = 110.dp
+/**
+ * 输入框区域蒙版高度：盖住圆角容器，滚动内容滑入时被渐变遮罩；随键盘（IME）上移。
+ * 收紧高度以给正文留更多空间：由 110dp 降到 92dp。
+ */
+private val INPUT_BAR_MASK_HEIGHT = 92.dp
 
-/** 输入框高度上下限：超过上限后文本在框内滚动，右上角露出「展开」按钮。与 TextField 的 heightIn 一致。 */
-private val INPUT_FIELD_MIN_HEIGHT = 44.dp
-private val INPUT_FIELD_MAX_HEIGHT = 140.dp
+/** 输入框高度上下限：超过上限后文本在框内滚动，右上角露出「展开」按钮。与 TextField 的 heightIn 一致。收紧：44~140 → 40~112。 */
+private val INPUT_FIELD_MIN_HEIGHT = 40.dp
+private val INPUT_FIELD_MAX_HEIGHT = 112.dp
 
 /**
  * M3 无标签 TextField 的默认 contentPadding（上下左右各 16dp）。
@@ -307,7 +295,7 @@ internal fun ChatInputBar(
                     .fillMaxWidth()
                     .graphicsLayer { alpha = contentAlpha }
                     .padding(horizontal = Spacing.lg)
-                    .padding(bottom = Spacing.md)
+                    .padding(bottom = Spacing.xs)
                     .padding(bottom = imeInset)
             ) {
             if (filteredCommands.isNotEmpty()) {
@@ -539,7 +527,7 @@ internal fun ChatInputBar(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                FeatherIcons.Maximize,
+                                MiniMeIcons.Maximize,
                                 contentDescription = stringResource(R.string.chat_input_expand),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)
@@ -638,7 +626,7 @@ internal fun ChatInputBar(
                     }
                     UploadIconButton(
                         enabled = !isBusy,
-                        icon = FeatherIcons.Plus,
+                        icon = MiniMeIcons.Plus,
                         contentDescription = stringResource(R.string.chat_add_attachment),
                         onClick = { showAttachmentSheet = true }
                     )
@@ -740,7 +728,7 @@ private fun FullScreenInputDialog(
                     )
                     IconButton(onClick = onDismiss) {
                         Icon(
-                            FeatherIcons.Minimize,
+                            MiniMeIcons.Minimize,
                             contentDescription = stringResource(R.string.common_collapse_action),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -863,14 +851,14 @@ internal fun SendButton(
         ) {
             if (showStop) {
                 Icon(
-                    FeatherIcons.Square,
+                    MiniMeIcons.Square,
                     contentDescription = stringResource(R.string.chat_stop),
                     tint = iconTint,
                     modifier = Modifier.size(18.dp)
                 )
             } else {
                 Icon(
-                    FeatherIcons.ArrowUp,
+                    MiniMeIcons.ArrowUp,
                     contentDescription = stringResource(R.string.chat_send),
                     tint = iconTint,
                     modifier = Modifier.size(18.dp)
@@ -928,7 +916,7 @@ internal fun ToolPermissionPanel(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = FeatherIcons.Shield,
+                        imageVector = MiniMeIcons.Shield,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(15.dp)
@@ -1110,7 +1098,7 @@ private fun ErrorBubble(message: String) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    FeatherIcons.AlertCircle,
+                    MiniMeIcons.AlertCircle,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(16.dp)
@@ -1130,7 +1118,7 @@ private fun ErrorBubble(message: String) {
                     }
                 }) {
                     Icon(
-                        if (copied) FeatherIcons.Check else FeatherIcons.Copy,
+                        if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
                         contentDescription = if (copied) stringResource(R.string.chat_copied) else stringResource(R.string.chat_copy),
                         tint = if (copied) MaterialTheme.colorScheme.primary else Brand.IconGray,
                         modifier = Modifier.size(16.dp)
@@ -1322,7 +1310,7 @@ private fun GoalBannerRow(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = FeatherIcons.Target,
+                    imageVector = MiniMeIcons.Target,
                     contentDescription = null,
                     tint = accent,
                     modifier = Modifier.size(15.dp)
@@ -1349,7 +1337,7 @@ private fun GoalBannerRow(
                     modifier = Modifier.size(30.dp)
                 ) {
                     Icon(
-                        imageVector = if (goal.status == GoalStatus.ACTIVE) FeatherIcons.Pause else FeatherIcons.Play,
+                        imageVector = if (goal.status == GoalStatus.ACTIVE) MiniMeIcons.Pause else MiniMeIcons.Play,
                         contentDescription = stringResource(
                             if (goal.status == GoalStatus.ACTIVE) R.string.chat_goal_pause else R.string.chat_goal_resume
                         ),
@@ -1360,7 +1348,7 @@ private fun GoalBannerRow(
             }
             IconButton(onClick = onClear, modifier = Modifier.size(30.dp)) {
                 Icon(
-                    imageVector = FeatherIcons.X,
+                    imageVector = MiniMeIcons.X,
                     contentDescription = stringResource(R.string.chat_goal_clear),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)

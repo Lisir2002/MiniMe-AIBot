@@ -23,10 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.minime.code.R
 import com.minime.code.core.theme.Spacing
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.FileText
-import compose.icons.feathericons.MessageSquare
-import compose.icons.feathericons.RotateCcw
+import com.minime.code.core.ui.MiniMeIcons
 
 enum class RewindOption {
     RESTORE_CODE_AND_CONVERSATION,
@@ -72,7 +69,7 @@ fun RewindOptionsBottomSheet(
             Spacer(modifier = Modifier.height(Spacing.md))
 
             OptionRow(
-                icon = FeatherIcons.RotateCcw,
+                icon = MiniMeIcons.RotateCcw,
                 title = stringResource(R.string.checkpoint_restore_code_and_conversation),
                 description = stringResource(R.string.checkpoint_restore_code_and_conversation_desc),
                 onClick = {
@@ -82,7 +79,7 @@ fun RewindOptionsBottomSheet(
             )
 
             OptionRow(
-                icon = FeatherIcons.MessageSquare,
+                icon = MiniMeIcons.MessageSquare,
                 title = stringResource(R.string.checkpoint_restore_conversation),
                 description = stringResource(R.string.checkpoint_restore_conversation_desc),
                 onClick = {
@@ -92,7 +89,7 @@ fun RewindOptionsBottomSheet(
             )
 
             OptionRow(
-                icon = FeatherIcons.FileText,
+                icon = MiniMeIcons.FileText,
                 title = stringResource(R.string.checkpoint_restore_code),
                 description = stringResource(R.string.checkpoint_restore_code_desc),
                 onClick = {

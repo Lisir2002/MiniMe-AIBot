@@ -60,17 +60,7 @@ import com.minime.code.feature.settings.data.remote.ModelTestResult
 import com.minime.code.feature.settings.domain.model.AIProviderConfig
 import com.minime.code.feature.settings.domain.model.ModelMetadata
 import com.minime.code.feature.settings.domain.model.modelMetadataKey
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ArrowDown
-import compose.icons.feathericons.ArrowUp
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.Camera
-import compose.icons.feathericons.Cpu
-import compose.icons.feathericons.Image
-import compose.icons.feathericons.Minimize2
-import compose.icons.feathericons.Sliders
-import compose.icons.feathericons.Type
-import compose.icons.feathericons.Zap
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 默认模型二级页：集中管理应用中的默认/特定用途模型设置（如识图模型、压缩模型）。
@@ -143,7 +133,7 @@ internal fun DefaultModelsSection(
     ) {
         SettingsGroup {
             SettingsRow(
-                icon = FeatherIcons.Image,
+                icon = MiniMeIcons.Image,
                 title = stringResource(R.string.settings_vision_model),
                 onClick = { showVisionSheet = true },
                 trailing = {
@@ -160,7 +150,7 @@ internal fun DefaultModelsSection(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Minimize2,
+                icon = MiniMeIcons.Minimize2,
                 title = stringResource(R.string.settings_compaction_model),
                 onClick = { showCompactionSheet = true },
                 trailing = {
@@ -177,7 +167,7 @@ internal fun DefaultModelsSection(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Type,
+                icon = MiniMeIcons.Type,
                 title = stringResource(R.string.settings_title_model),
                 onClick = { showTitleSheet = true },
                 trailing = {
@@ -194,7 +184,7 @@ internal fun DefaultModelsSection(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Camera,
+                icon = MiniMeIcons.Camera,
                 title = stringResource(R.string.settings_image_gen_model),
                 onClick = { showImageGenSheet = true },
                 trailing = {
@@ -353,9 +343,9 @@ private fun tierTitleRes(tier: SubagentModelTier): Int = when (tier) {
 
 /** 档位图标：由弱到强用不同图示，方便一屏扫读。 */
 private fun tierIcon(tier: SubagentModelTier): ImageVector = when (tier) {
-    SubagentModelTier.LIGHT -> FeatherIcons.Zap
-    SubagentModelTier.STANDARD -> FeatherIcons.Sliders
-    SubagentModelTier.STRONG -> FeatherIcons.Cpu
+    SubagentModelTier.LIGHT -> MiniMeIcons.Zap
+    SubagentModelTier.STANDARD -> MiniMeIcons.Sliders
+    SubagentModelTier.STRONG -> MiniMeIcons.Cpu
 }
 
 /**
@@ -567,7 +557,7 @@ private fun ModelSelectionRow(
         } else if (selected) {
             Spacer(Modifier.width(Spacing.sm))
             Icon(
-                imageVector = FeatherIcons.Check,
+                imageVector = MiniMeIcons.Check,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp)
@@ -592,10 +582,10 @@ private fun ModelMetadataTags(metadata: ModelMetadata?) {
             }
             val input = metadata.inputTokens?.takeIf { it > 0 } ?: metadata.contextTokens.takeIf { it > 0 }
             if (input != null) {
-                ModelTag(text = formatTokenLimit(input), icon = FeatherIcons.ArrowUp)
+                ModelTag(text = formatTokenLimit(input), icon = MiniMeIcons.ArrowUp)
             }
             metadata.outputTokens?.takeIf { it > 0 }?.let { output ->
-                ModelTag(text = formatTokenLimit(output), icon = FeatherIcons.ArrowDown)
+                ModelTag(text = formatTokenLimit(output), icon = MiniMeIcons.ArrowDown)
             }
         }
     }

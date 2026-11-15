@@ -59,13 +59,7 @@ import com.minime.code.feature.agent.domain.mcp.McpScope
 import com.minime.code.feature.agent.domain.mcp.McpServerConfig
 import com.minime.code.feature.agent.domain.mcp.McpToolDescriptor
 import com.minime.code.feature.settings.presentation.McpAuthUiState
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.FileText
-import compose.icons.feathericons.RefreshCw
-import compose.icons.feathericons.Search
-import compose.icons.feathericons.Shield
-import compose.icons.feathericons.Tool
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.serialization.json.JsonObject
 import androidx.compose.ui.res.stringResource
 import com.minime.code.R
@@ -210,7 +204,7 @@ fun McpServerEditDialog(
                                 modifier = Modifier.size(36.dp)
                             ) {
                                 Icon(
-                                    FeatherIcons.FileText,
+                                    MiniMeIcons.FileText,
                                     contentDescription = stringResource(R.string.mcp_view_logs),
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
@@ -221,7 +215,7 @@ fun McpServerEditDialog(
                             modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
-                                FeatherIcons.RefreshCw,
+                                MiniMeIcons.RefreshCw,
                                 contentDescription = stringResource(R.string.mcp_refresh_tools),
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
@@ -387,7 +381,7 @@ fun McpServerEditDialog(
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Icon(
-                                    FeatherIcons.Tool,
+                                    MiniMeIcons.Tool,
                                     contentDescription = null,
                                     modifier = Modifier.size(32.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
@@ -477,7 +471,7 @@ fun McpServerEditDialog(
                                         verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         Icon(
-                                            FeatherIcons.Search,
+                                            MiniMeIcons.Search,
                                             contentDescription = null,
                                             modifier = Modifier.size(24.dp),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
@@ -596,7 +590,7 @@ fun McpServerEditDialog(
                             .height(44.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(FeatherIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(stringResource(R.string.common_save), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                     }

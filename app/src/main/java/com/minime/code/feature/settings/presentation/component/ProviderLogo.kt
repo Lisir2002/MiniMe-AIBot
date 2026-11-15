@@ -15,9 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.minime.code.R
 import com.minime.code.core.theme.Brand
 import com.minime.code.feature.settings.domain.model.AIProviderConfig
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Cloud
-import compose.icons.feathericons.Cpu
+import com.minime.code.core.ui.MiniMeIcons
 import android.content.Context
 import androidx.compose.ui.res.stringResource
 
@@ -155,7 +153,7 @@ fun ProviderLogoIcon(
         )
     } else {
         Icon(
-            imageVector = FeatherIcons.Cloud,
+            imageVector = MiniMeIcons.Cloud,
             contentDescription = stringResource(R.string.common_ai_providers),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = modifier.size(size)
@@ -183,7 +181,7 @@ fun ModelLogoIcon(
         )
     } else {
         Icon(
-            imageVector = FeatherIcons.Cpu,
+            imageVector = MiniMeIcons.Cpu,
             contentDescription = stringResource(R.string.provider_model_icon),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = modifier.size(size)

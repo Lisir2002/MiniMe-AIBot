@@ -55,18 +55,13 @@ import com.minime.code.core.theme.Spacing
 import com.minime.code.core.theme.semanticColors
 import com.minime.code.feature.settings.data.remote.ModelTestResult
 import com.minime.code.feature.settings.domain.model.ModelMetadata
-import compose.icons.FeatherIcons
+import com.minime.code.core.ui.MiniMeIcons
 import android.widget.Toast
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.ui.platform.LocalContext
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.AlertCircle
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.Copy
-import compose.icons.feathericons.Plus
 import kotlinx.coroutines.launch
 
 private val ModelLogoSize = 40.dp
@@ -284,7 +279,7 @@ internal fun ModelTestResultLine(
             .padding(horizontal = 4.dp, vertical = 2.dp)
     ) {
         Icon(
-            imageVector = if (result.success) FeatherIcons.Check else FeatherIcons.AlertCircle,
+            imageVector = if (result.success) MiniMeIcons.Check else MiniMeIcons.AlertCircle,
             contentDescription = null,
             tint = if (result.success) MaterialTheme.semanticColors.success else MaterialTheme.colorScheme.error,
             modifier = Modifier.size(14.dp)
@@ -306,7 +301,7 @@ internal fun ModelTestResultLine(
         )
         Spacer(Modifier.width(4.dp))
         Icon(
-            imageVector = FeatherIcons.ChevronRight,
+            imageVector = MiniMeIcons.ChevronRight,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
             modifier = Modifier.size(12.dp)
@@ -433,7 +428,7 @@ internal fun ModelTestDetailBottomSheet(
                     modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
-                        imageVector = if (copied) FeatherIcons.Check else FeatherIcons.Copy,
+                        imageVector = if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
                         contentDescription = stringResource(R.string.common_copy),
                         tint = if (copied) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
@@ -654,7 +649,7 @@ internal fun FetchModelRow(
             }
         }
         IconButton(onClick = onAdd, modifier = Modifier.size(32.dp)) {
-            Icon(FeatherIcons.Plus, contentDescription = stringResource(R.string.common_add), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.common_add), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

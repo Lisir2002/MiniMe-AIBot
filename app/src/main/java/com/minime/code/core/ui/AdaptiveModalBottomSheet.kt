@@ -20,7 +20,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -35,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.minime.code.core.theme.Spacing
+import kotlinx.coroutines.launch
 
 /**
  * 修复 Material3 ModalBottomSheet 已知 bug（issuetracker 486562294）：
@@ -96,10 +101,29 @@ fun AdaptiveModalBottomSheet(
     dialogMaxWidth: Dp = 560.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+    var dismissing by remember { mutableStateOf(false) }
+
+    /*
+     * 安全收起：调用方普遍用 `if (show) { Sheet() }` 控制显隐，若在 onDismissRequest 里
+     * 立即把 show 置 false，组合会被瞬间移除，M3 的 hide 动画来不及播放，表现为"收起很突然/卡住"。
+     * 这里内部先把 sheet 动画收起到 Hidden，播完再回调外部 onDismissRequest 卸载组合，
+     * 保证退场动画完整。dismissing 标志避免下拉手势连续触发时重复启动协程。
+     */
+    val safeDismiss: () -> Unit = {
+        if (!dismissing) {
+            dismissing = true
+            scope.launch {
+                runCatching { sheetState.hide() }
+                onDismissRequest()
+            }
+        }
+    }
+
     if (isCompactWidth()) {
         val flingFix = rememberSheetFlingFix(sheetState)
         ModalBottomSheet(
-            onDismissRequest = onDismissRequest,
+            onDismissRequest = safeDismiss,
             modifier = modifier,
             sheetState = sheetState,
             shape = shape,

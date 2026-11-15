@@ -63,13 +63,7 @@ import com.minime.code.feature.settings.presentation.component.SettingsEmptyStat
 import com.minime.code.feature.settings.presentation.component.SettingsGroup
 import com.minime.code.feature.settings.presentation.component.SettingsRow
 import com.minime.code.feature.settings.presentation.component.settingsPageBackground
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ArrowLeft
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.Github
-import compose.icons.feathericons.Key
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.User
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 凭据与署名独立页：底部悬浮 tab 切换「署名」与「凭据」两个标签页。
@@ -124,12 +118,12 @@ fun CredentialScreen(
                 ),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { showAddSheet = true }) {
-                        Icon(FeatherIcons.Plus, contentDescription = stringResource(R.string.credential_add))
+                        Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.credential_add))
                     }
                 }
             )
@@ -162,7 +156,7 @@ fun CredentialScreen(
                             Spacer(Modifier.height(Spacing.md))
                             SettingsGroup {
                                 SettingsRow(
-                                    icon = FeatherIcons.Key,
+                                    icon = MiniMeIcons.Key,
                                     title = stringResource(R.string.credential_auto_inject_title),
                                     subtitle = stringResource(R.string.credential_auto_inject_hint),
                                     trailing = {
@@ -177,7 +171,7 @@ fun CredentialScreen(
                     }
                     1 -> if (state.credentials.isEmpty()) {
                         SettingsEmptyState(
-                            icon = FeatherIcons.Key,
+                            icon = MiniMeIcons.Key,
                             title = stringResource(R.string.credential_empty_title),
                             hint = stringResource(R.string.credential_empty_desc),
                             modifier = Modifier
@@ -215,8 +209,8 @@ fun CredentialScreen(
             FloatingTabBar(
                 pagerState = pagerState,
                 items = listOf(
-                    FloatingTabItem(FeatherIcons.User, stringResource(R.string.git_tab_identity)),
-                    FloatingTabItem(FeatherIcons.Key, stringResource(R.string.git_tab_credentials))
+                    FloatingTabItem(MiniMeIcons.User, stringResource(R.string.git_tab_identity)),
+                    FloatingTabItem(MiniMeIcons.Key, stringResource(R.string.git_tab_credentials))
                 ),
                 maskColor = settingsPageBackground(),
                 isScrolling = tabsScrolling,
@@ -350,7 +344,7 @@ private fun CredentialItem(
             }
             // 右侧大于号：与远程连接/MCP 行一致，整行点击编辑。
             Icon(
-                imageVector = FeatherIcons.ChevronRight,
+                imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = stringResource(R.string.common_edit),
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)
@@ -368,11 +362,11 @@ private fun PlatformIcon(host: String, modifier: Modifier = Modifier) {
     val tint = MaterialTheme.colorScheme.onSurfaceVariant
     when {
         host.contains("github", ignoreCase = true) ->
-            Icon(FeatherIcons.Github, contentDescription = null, tint = tint, modifier = modifier)
+            Icon(MiniMeIcons.Github, contentDescription = null, tint = tint, modifier = modifier)
         host.contains("gitee", ignoreCase = true) ->
             Icon(painterResource(R.drawable.logo_gitee), contentDescription = null, tint = tint, modifier = modifier)
         else ->
-            Icon(FeatherIcons.Key, contentDescription = null, tint = tint, modifier = modifier)
+            Icon(MiniMeIcons.Key, contentDescription = null, tint = tint, modifier = modifier)
     }
 }
 

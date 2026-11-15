@@ -45,8 +45,7 @@ import androidx.compose.ui.unit.sp
 import com.minime.code.R
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.theme.semanticColors
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Trash2
+import com.minime.code.core.ui.MiniMeIcons
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
@@ -155,7 +154,7 @@ fun SwipeToDeleteRow(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Icon(
-                        imageVector = FeatherIcons.Trash2,
+                        imageVector = MiniMeIcons.Trash2,
                         contentDescription = stringResource(R.string.common_delete),
                         tint = Color.White,
                         modifier = Modifier.size(20.dp)

@@ -68,11 +68,7 @@ import com.minime.code.feature.workspace.domain.model.RemoteMount
 import com.minime.code.feature.workspace.domain.model.RemoteProtocol
 import com.minime.code.feature.workspace.domain.remote.RemoteAuth
 import com.minime.code.R
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.Eye
-import compose.icons.feathericons.EyeOff
-import compose.icons.feathericons.Folder
+import com.minime.code.core.ui.MiniMeIcons
 
 /** 弹窗内统一输入框：使用全局 AppTextField 组件。 */
 @Composable
@@ -190,7 +186,7 @@ private fun SheetSaveButton(
                 .height(44.dp),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Icon(FeatherIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+            Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Text(text, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         }
@@ -365,7 +361,7 @@ fun AddRemoteConnectionDialog(
                             modifier = Modifier.fillMaxWidth(),
                             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             trailingIcon = {
-                                val image = if (passwordVisible) FeatherIcons.Eye else FeatherIcons.EyeOff
+                                val image = if (passwordVisible) MiniMeIcons.Eye else MiniMeIcons.EyeOff
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                     Icon(image, stringResource(R.string.remote_toggle_password), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
@@ -549,7 +545,7 @@ fun AddRemoteMountDialog(
                             onClick = { showBrowser = true },
                             enabled = selectedConnectionId.isNotEmpty()
                         ) {
-                            Icon(FeatherIcons.Folder, contentDescription = stringResource(R.string.remote_browse_dir), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(MiniMeIcons.Folder, contentDescription = stringResource(R.string.remote_browse_dir), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
 
@@ -687,7 +683,7 @@ fun RemoteDirectoryBrowserDialog(
                                     val parent = currentPath.trimEnd('/').substringBeforeLast('/')
                                     currentPath = if (parent.isEmpty()) "/" else "$parent/"
                                 }) {
-                                    Icon(FeatherIcons.Folder, contentDescription = null)
+                                    Icon(MiniMeIcons.Folder, contentDescription = null)
                                     Spacer(Modifier.width(8.dp))
                                     Text(stringResource(R.string.remote_parent_dir))
                                 }
@@ -697,7 +693,7 @@ fun RemoteDirectoryBrowserDialog(
                             TextButton(onClick = {
                                 currentPath = if (currentPath == "/") "/$dir/" else "$currentPath$dir/"
                             }) {
-                                Icon(FeatherIcons.Folder, contentDescription = null)
+                                Icon(MiniMeIcons.Folder, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
                                 Text(dir)
                             }

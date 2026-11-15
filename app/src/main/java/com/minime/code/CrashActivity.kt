@@ -53,11 +53,7 @@ import androidx.compose.ui.unit.sp
 import com.minime.code.core.theme.AIEditorTheme
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.theme.semanticColors
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.AlertCircle
-import compose.icons.feathericons.Copy
-import compose.icons.feathericons.RefreshCw
-import compose.icons.feathericons.X
+import com.minime.code.core.ui.MiniMeIcons
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -237,7 +233,7 @@ private fun CrashScreen(
                 navigationIcon = {
                     IconButton(onClick = onExit) {
                         Icon(
-                            imageVector = FeatherIcons.X,
+                            imageVector = MiniMeIcons.X,
                             contentDescription = stringResource(R.string.crash_exit),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -246,7 +242,7 @@ private fun CrashScreen(
                 actions = {
                     IconButton(onClick = onCopy) {
                         Icon(
-                            imageVector = FeatherIcons.Copy,
+                            imageVector = MiniMeIcons.Copy,
                             contentDescription = stringResource(R.string.crash_copy),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -277,7 +273,7 @@ private fun CrashScreen(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(FeatherIcons.Copy, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(MiniMeIcons.Copy, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(Spacing.xs))
                         Text(stringResource(R.string.crash_copy), maxLines = 1)
                     }
@@ -286,7 +282,7 @@ private fun CrashScreen(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(FeatherIcons.RefreshCw, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(MiniMeIcons.RefreshCw, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(Spacing.xs))
                         Text(stringResource(R.string.crash_restart), maxLines = 1)
                     }
@@ -314,7 +310,7 @@ private fun CrashScreen(
                     verticalAlignment = Alignment.Top
                 ) {
                     Icon(
-                        imageVector = FeatherIcons.AlertCircle,
+                        imageVector = MiniMeIcons.AlertCircle,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier

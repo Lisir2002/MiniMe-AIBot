@@ -76,18 +76,7 @@ import com.minime.code.feature.settings.presentation.component.settingsPageBackg
 import com.minime.code.feature.git.domain.model.GitStatus
 import com.minime.code.feature.git.domain.model.GitTab
 import com.minime.code.feature.git.presentation.GitViewModel
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Activity
-import compose.icons.feathericons.ArrowLeft
-import compose.icons.feathericons.ChevronDown
-import compose.icons.feathericons.Download
-import compose.icons.feathericons.Folder
-import compose.icons.feathericons.GitBranch
-import compose.icons.feathericons.GitCommit
-import compose.icons.feathericons.Key
-import compose.icons.feathericons.RefreshCw
-import compose.icons.feathericons.X
-import compose.icons.feathericons.Zap
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -164,7 +153,7 @@ fun GitScreen(
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Icon(
-                                    FeatherIcons.ChevronDown,
+                                    MiniMeIcons.ChevronDown,
                                     contentDescription = stringResource(R.string.git_switch_repo),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(16.dp)
@@ -180,7 +169,7 @@ fun GitScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            if (embedded) FeatherIcons.X else FeatherIcons.ArrowLeft,
+                            if (embedded) MiniMeIcons.X else MiniMeIcons.ArrowLeft,
                             contentDescription = stringResource(
                                 if (embedded) R.string.common_close else R.string.common_back
                             )
@@ -189,10 +178,10 @@ fun GitScreen(
                 },
                 actions = {
                     IconButton(onClick = onNavigateToCredentials) {
-                        Icon(FeatherIcons.Key, contentDescription = stringResource(R.string.git_credentials_and_identity))
+                        Icon(MiniMeIcons.Key, contentDescription = stringResource(R.string.git_credentials_and_identity))
                     }
                     IconButton(onClick = { viewModel.refresh() }, enabled = !state.busy) {
-                        Icon(FeatherIcons.RefreshCw, contentDescription = stringResource(R.string.git_refresh))
+                        Icon(MiniMeIcons.RefreshCw, contentDescription = stringResource(R.string.git_refresh))
                     }
                 }
             )
@@ -300,9 +289,9 @@ fun GitScreen(
             FloatingTabBar(
                 pagerState = pagerState,
                 items = listOf(
-                    FloatingTabItem(FeatherIcons.Activity, stringResource(R.string.git_tab_status)),
-                    FloatingTabItem(FeatherIcons.GitBranch, stringResource(R.string.git_tab_branches)),
-                    FloatingTabItem(FeatherIcons.GitCommit, stringResource(R.string.git_tab_commits))
+                    FloatingTabItem(MiniMeIcons.Activity, stringResource(R.string.git_tab_status)),
+                    FloatingTabItem(MiniMeIcons.GitBranch, stringResource(R.string.git_tab_branches)),
+                    FloatingTabItem(MiniMeIcons.GitCommit, stringResource(R.string.git_tab_commits))
                 ),
                 maskColor = settingsPageBackground(),
                 isScrolling = tabsScrolling,
@@ -514,18 +503,18 @@ private fun NotARepoState(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     FilledTonalButton(onClick = onInit) {
-                        Icon(FeatherIcons.GitBranch, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(MiniMeIcons.GitBranch, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(Spacing.xs))
                         Text(stringResource(R.string.git_init_repo))
                     }
                     FilledTonalButton(onClick = { showCloneDialog = true }) {
-                        Icon(FeatherIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(MiniMeIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(Spacing.xs))
                         Text(stringResource(R.string.git_clone_repo))
                     }
                 }
                 OutlinedButton(onClick = onPickExisting) {
-                    Icon(FeatherIcons.Folder, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(MiniMeIcons.Folder, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(Spacing.xs))
                     Text(stringResource(R.string.git_pick_existing_repo))
                 }
@@ -632,7 +621,7 @@ private fun RepoPickerRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            FeatherIcons.Folder,
+            MiniMeIcons.Folder,
             contentDescription = null,
             tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(20.dp)
@@ -767,7 +756,7 @@ private fun CommitDialog(
                             )
                         } else {
                             Icon(
-                                FeatherIcons.Zap,
+                                MiniMeIcons.Zap,
                                 contentDescription = null,
                                 modifier = Modifier.size(13.dp),
                                 tint = MaterialTheme.colorScheme.primary

@@ -32,11 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.minime.code.core.theme.Radius
 import com.minime.code.core.theme.Spacing
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ChevronDown
-import compose.icons.feathericons.ChevronUp
-import compose.icons.feathericons.ExternalLink
-import compose.icons.feathericons.Search
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -161,7 +157,7 @@ private fun WebSearchSummary(result: ParsedWebSearchResult) {
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                FeatherIcons.Search,
+                MiniMeIcons.Search,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(17.dp)
@@ -227,7 +223,7 @@ private fun WebSearchResultItem(index: Int, item: ParsedWebSearchItem) {
                         )
                         Spacer(Modifier.width(Spacing.xs))
                         Icon(
-                            FeatherIcons.ExternalLink,
+                            MiniMeIcons.ExternalLink,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                             modifier = Modifier.size(14.dp)

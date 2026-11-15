@@ -20,8 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.minime.code.R
 import com.minime.code.core.theme.Spacing
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Check
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 下载源选择底部弹窗：列出目录 JSON 里定义的所有源（官方/华为云/阿里云/腾讯云等），
@@ -83,7 +82,7 @@ internal fun SourceSelectionSheet(
                         )
                         if (isSelected) {
                             Icon(
-                                imageVector = FeatherIcons.Check,
+                                imageVector = MiniMeIcons.Check,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )

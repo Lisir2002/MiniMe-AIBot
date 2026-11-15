@@ -61,12 +61,7 @@ import com.minime.code.core.ui.AdaptiveModalBottomSheet
 import com.minime.code.feature.credentials.data.remote.GITHUB_APP_INSTALL_URL
 import com.minime.code.feature.credentials.presentation.QuickLoginUiState
 import com.minime.code.feature.settings.presentation.component.settingsPageBackground
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.AlertCircle
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.Copy
-import compose.icons.feathericons.ExternalLink
-import compose.icons.feathericons.Github
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -192,7 +187,7 @@ private fun DeviceFlowHeader() {
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = FeatherIcons.Github,
+                imageVector = MiniMeIcons.Github,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(22.dp)
@@ -319,7 +314,7 @@ private fun AwaitingContent(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Icon(
-                                imageVector = if (justCopied) FeatherIcons.Check else FeatherIcons.Copy,
+                                imageVector = if (justCopied) MiniMeIcons.Check else MiniMeIcons.Copy,
                                 contentDescription = null,
                                 tint = if (justCopied) {
                                     MaterialTheme.semanticColors.onSuccessContainer
@@ -401,7 +396,7 @@ private fun AwaitingContent(
             shape = RoundedCornerShape(Radius.mdLarge)
         ) {
             Icon(
-                imageVector = FeatherIcons.ExternalLink,
+                imageVector = MiniMeIcons.ExternalLink,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp)
             )
@@ -422,7 +417,7 @@ private fun AwaitingContent(
             shape = RoundedCornerShape(Radius.mdLarge)
         ) {
             Icon(
-                imageVector = FeatherIcons.Copy,
+                imageVector = MiniMeIcons.Copy,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp)
             )
@@ -490,7 +485,7 @@ private fun SuccessContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = FeatherIcons.Check,
+                        imageVector = MiniMeIcons.Check,
                         contentDescription = null,
                         tint = MaterialTheme.semanticColors.onSuccessContainer,
                         modifier = Modifier.size(24.dp)
@@ -595,7 +590,7 @@ private fun FailedContent(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = FeatherIcons.AlertCircle,
+                    imageVector = MiniMeIcons.AlertCircle,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(24.dp)

@@ -109,24 +109,7 @@ import com.minime.code.feature.workspace.domain.isValidFileEntryName
 import com.minime.code.core.ui.ChevronRotationStyle
 import com.minime.code.core.ui.ExpandableChevronIcon
 import com.minime.code.core.ui.containerOsLogo
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ChevronDown
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.CheckSquare
-import compose.icons.feathericons.Clipboard
-import compose.icons.feathericons.Copy
-import compose.icons.feathericons.Download
-import compose.icons.feathericons.Edit2
-import compose.icons.feathericons.FilePlus
-import compose.icons.feathericons.Folder
-import compose.icons.feathericons.FolderPlus
-import compose.icons.feathericons.Globe
-import compose.icons.feathericons.HardDrive
-import compose.icons.feathericons.RefreshCw
-import compose.icons.feathericons.Server
-import compose.icons.feathericons.Settings
-import compose.icons.feathericons.Trash2
-import compose.icons.feathericons.X
+import com.minime.code.core.ui.MiniMeIcons
 import androidx.compose.ui.res.stringResource
 import com.minime.code.R
 import java.text.SimpleDateFormat
@@ -260,7 +243,7 @@ fun ChatDrawerContent(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                imageVector = FeatherIcons.X,
+                                imageVector = MiniMeIcons.X,
                                 contentDescription = stringResource(R.string.common_cancel),
                                 modifier = Modifier.size(18.dp),
                                 tint = MaterialTheme.colorScheme.onSurface
@@ -306,7 +289,7 @@ fun ChatDrawerContent(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                imageVector = FeatherIcons.Trash2,
+                                imageVector = MiniMeIcons.Trash2,
                                 contentDescription = stringResource(R.string.chat_batch_delete_title),
                                 modifier = Modifier.size(18.dp),
                                 tint = if (selectedSessionIds.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
@@ -371,14 +354,14 @@ fun ChatDrawerContent(
         SettingsGroup {
             if (onNavigateToBrowser != null) {
                 SettingsRow(
-                    icon = FeatherIcons.Globe,
+                    icon = MiniMeIcons.Globe,
                     title = stringResource(R.string.browser_title),
                     onClick = onNavigateToBrowser
                 )
                 SettingsDivider()
             }
             SettingsRow(
-                icon = FeatherIcons.Settings,
+                icon = MiniMeIcons.Settings,
                 title = stringResource(R.string.chat_settings),
                 onClick = onNavigateToSettings,
                 modifier = Modifier.onboardingTarget(OnboardingStep.ENTER_SETTINGS)
@@ -723,7 +706,7 @@ private fun ChatSearchField(
             {
                 IconButton(onClick = onClear, modifier = Modifier.size(24.dp)) {
                     Icon(
-                        imageVector = FeatherIcons.X,
+                        imageVector = MiniMeIcons.X,
                         contentDescription = stringResource(R.string.chat_search_clear),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -987,7 +970,7 @@ private fun FileBrowserTab(
                 modifier = Modifier.size(32.dp)
             ) {
                 Icon(
-                    imageVector = FeatherIcons.RefreshCw,
+                    imageVector = MiniMeIcons.RefreshCw,
                     contentDescription = stringResource(R.string.file_browser_refresh),
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1147,7 +1130,7 @@ private fun ClipboardIndicator(
         modifier = modifier.size(32.dp)
     ) {
         Icon(
-            imageVector = if (clipboard.isCut) Icons.Filled.ContentCut else FeatherIcons.Copy,
+            imageVector = if (clipboard.isCut) Icons.Filled.ContentCut else MiniMeIcons.Copy,
             contentDescription = stringResource(
                 if (clipboard.isCut) R.string.file_browser_clipboard_cut
                 else R.string.file_browser_clipboard_copy
@@ -1197,7 +1180,7 @@ private fun FileTreeActionSheet(
             // 剪切板非空且当前节点是目录 / 根：优先提供「粘贴到此处」。
             if (clipboard != null && node.entry.isDirectory) {
                 SheetActionRow(
-                    icon = FeatherIcons.Clipboard,
+                    icon = MiniMeIcons.Clipboard,
                     label = stringResource(R.string.file_browser_paste_here),
                     tint = MaterialTheme.colorScheme.primary,
                     onClick = onPasteHere
@@ -1205,13 +1188,13 @@ private fun FileTreeActionSheet(
             }
             if (node.entry.isDirectory) {
                 SheetActionRow(
-                    icon = FeatherIcons.FilePlus,
+                    icon = MiniMeIcons.FilePlus,
                     label = stringResource(R.string.file_browser_new_file),
                     tint = MaterialTheme.colorScheme.onSurface,
                     onClick = onNewFile
                 )
                 SheetActionRow(
-                    icon = FeatherIcons.FolderPlus,
+                    icon = MiniMeIcons.FolderPlus,
                     label = stringResource(R.string.file_browser_new_folder),
                     tint = MaterialTheme.colorScheme.onSurface,
                     onClick = onNewFolder
@@ -1219,7 +1202,7 @@ private fun FileTreeActionSheet(
             }
             if (node.root == null) {
                 SheetActionRow(
-                    icon = FeatherIcons.Copy,
+                    icon = MiniMeIcons.Copy,
                     label = stringResource(R.string.common_copy),
                     tint = MaterialTheme.colorScheme.onSurface,
                     onClick = onCopy
@@ -1231,13 +1214,13 @@ private fun FileTreeActionSheet(
                     onClick = onCut
                 )
                 SheetActionRow(
-                    icon = FeatherIcons.Edit2,
+                    icon = MiniMeIcons.Edit2,
                     label = stringResource(R.string.common_rename),
                     tint = MaterialTheme.colorScheme.onSurface,
                     onClick = onRename
                 )
                 SheetActionRow(
-                    icon = FeatherIcons.Trash2,
+                    icon = MiniMeIcons.Trash2,
                     label = stringResource(R.string.common_delete),
                     tint = MaterialTheme.colorScheme.error,
                     onClick = onDelete
@@ -1347,7 +1330,7 @@ private fun FileTreeIcon(node: FileTreeNode, decorationColor: Color?) {
             )
         } else {
             Icon(
-                imageVector = if (containerRoot.remote) FeatherIcons.Server else FeatherIcons.HardDrive,
+                imageVector = if (containerRoot.remote) MiniMeIcons.Server else MiniMeIcons.HardDrive,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
                 tint = tint
@@ -1356,7 +1339,7 @@ private fun FileTreeIcon(node: FileTreeNode, decorationColor: Color?) {
         return
     }
     val vector = if (node.entry.isDirectory) {
-        FeatherIcons.Folder
+        MiniMeIcons.Folder
     } else {
         fileTypeIconFor(node.entry.name)
     }
@@ -1425,7 +1408,7 @@ private fun SessionActionSheet(
                 }
             )
             SheetActionRow(
-                icon = FeatherIcons.Edit2,
+                icon = MiniMeIcons.Edit2,
                 label = stringResource(R.string.common_rename),
                 tint = MaterialTheme.colorScheme.onSurface,
                 onClick = {
@@ -1434,7 +1417,7 @@ private fun SessionActionSheet(
                 }
             )
             SheetActionRow(
-                icon = FeatherIcons.Download,
+                icon = MiniMeIcons.Download,
                 label = stringResource(R.string.chat_export_session),
                 tint = MaterialTheme.colorScheme.onSurface,
                 onClick = {
@@ -1443,7 +1426,7 @@ private fun SessionActionSheet(
                 }
             )
             SheetActionRow(
-                icon = FeatherIcons.CheckSquare,
+                icon = MiniMeIcons.CheckSquare,
                 label = stringResource(R.string.chat_batch_select),
                 tint = MaterialTheme.colorScheme.onSurface,
                 onClick = {
@@ -1452,7 +1435,7 @@ private fun SessionActionSheet(
                 }
             )
             SheetActionRow(
-                icon = FeatherIcons.Trash2,
+                icon = MiniMeIcons.Trash2,
                 label = stringResource(R.string.common_delete),
                 tint = MaterialTheme.colorScheme.error,
                 onClick = {

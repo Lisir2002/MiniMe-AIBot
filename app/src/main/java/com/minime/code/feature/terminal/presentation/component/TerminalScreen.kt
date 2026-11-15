@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -33,8 +34,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -78,11 +77,7 @@ import com.minime.code.feature.terminal.presentation.TerminalViewModel
 import com.termux.terminal.TerminalColors
 import com.termux.terminal.TextStyle
 import com.termux.view.TerminalView
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ArrowLeft
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.Settings
-import compose.icons.feathericons.X
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -122,28 +117,44 @@ fun TerminalScreen(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.terminal_title)) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
-                ),
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+            // 紧凑顶栏：替代 M3 默认 64dp 的 TopAppBar，压到 48dp，为终端内容区让出高度。
+            Surface(color = MaterialTheme.colorScheme.surface) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .height(48.dp)
+                        .padding(horizontal = Spacing.xs),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier.size(40.dp)
+                    ) {
                         Icon(
-                            if (embedded) FeatherIcons.X else FeatherIcons.ArrowLeft,
+                            if (embedded) MiniMeIcons.X else MiniMeIcons.ArrowLeft,
                             contentDescription = stringResource(
                                 if (embedded) R.string.common_close else R.string.common_back
                             )
                         )
                     }
-                },
-                actions = {
-                    IconButton(onClick = { showToolsSheet = true }) {
-                        Icon(FeatherIcons.Settings, contentDescription = stringResource(R.string.terminal_settings_title))
+                    Text(
+                        text = stringResource(R.string.terminal_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(
+                        onClick = { showToolsSheet = true },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            MiniMeIcons.Settings,
+                            contentDescription = stringResource(R.string.terminal_settings_title)
+                        )
                     }
                 }
-            )
+            }
         }
     ) { padding ->
         Column(
@@ -281,7 +292,7 @@ private fun TabBar(
                     )
                 } else {
                     Icon(
-                        FeatherIcons.Plus,
+                        MiniMeIcons.Plus,
                         contentDescription = stringResource(R.string.common_new_tab),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp)
@@ -364,7 +375,7 @@ private fun TabChip(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                FeatherIcons.X,
+                MiniMeIcons.X,
                 contentDescription = stringResource(R.string.terminal_close_tab),
                 tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 modifier = Modifier.size(13.dp)
@@ -399,7 +410,10 @@ private fun applyTerminalColors(
     (tab.client as? AppTerminalSessionClient)?.cursorStyle = settings.cursorStyle
     tab.session.emulator?.setCursorStyle()
 
-    view.onScreenUpdated()
+    // 只做一次轻量重绘。原先这里同时调用 onScreenUpdated() 与 invalidate()：
+    // onScreenUpdated() 内部会把 mTopRow 强制归零，导致用户正在向上翻看历史时，
+    // 任意一次重组（切标签/改设置）都会把视图拽回底部，是"迟钝感"的重要来源。
+    // 颜色/光标变化只需 invalidate 重绘当前画面，不应改变滚动位置。
     view.invalidate()
 }
 
@@ -416,6 +430,12 @@ private fun TerminalSurface(
     // 字号单一事实源：捏合缩放只改这里（预览），手势结束才落盘；设置面板的改动反向同步进来。
     var liveFontSizeSp by remember { mutableIntStateOf(settings.fontSizeSp) }
     LaunchedEffect(settings.fontSizeSp) { liveFontSizeSp = settings.fontSizeSp }
+
+    // 颜色/光标样式只在真正变化时重写。此前 update 每次重组都写全局静态色表并双重 invalidate，
+    // 是切标签/改设置时"顿一下"以及上翻历史被拽回底部的根因。
+    var appliedColorsKey by remember {
+        mutableStateOf<Pair<TerminalThemePreset, Int>?>(null)
+    }
 
     AndroidView(
         modifier = Modifier
@@ -446,6 +466,7 @@ private fun TerminalSurface(
             view.attachSession(tab.session)
 
             applyTerminalColors(view, tab, settings, effectiveTheme)
+            appliedColorsKey = effectiveTheme to settings.cursorStyle
             view.requestFocus()
             view
         },
@@ -460,7 +481,13 @@ private fun TerminalSurface(
                 view.tag = targetFontKey
             }
 
-            applyTerminalColors(view, tab, settings, effectiveTheme)
+            // 仅在主题或光标样式变化时重写颜色表并重绘；普通重组（消息输出不驱动本层重组，
+            // 但切标签/系统配置变化会）不再重复写全局静态色表、不再打断用户的上翻浏览。
+            val colorKey = effectiveTheme to settings.cursorStyle
+            if (appliedColorsKey != colorKey) {
+                applyTerminalColors(view, tab, settings, effectiveTheme)
+                appliedColorsKey = colorKey
+            }
         },
         onRelease = { view ->
             if (tab.view === view) tab.view = null
@@ -526,8 +553,8 @@ private fun ExtraKeysRow(viewModel: TerminalViewModel) {
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
-                .padding(horizontal = Spacing.sm, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 控制键
@@ -605,7 +632,7 @@ private fun KeyChip(
 
     Box(
         modifier = Modifier
-            .height(34.dp)
+            .height(30.dp)
             .widthChip(label)
             .clip(RoundedCornerShape(6.dp))
             .background(bg)
@@ -640,4 +667,4 @@ private fun KeyChip(
 
 /** 单字符按键给固定宽度，多字符按键自适应。 */
 private fun Modifier.widthChip(label: String): Modifier =
-    if (label.length <= 1) this.width(36.dp) else this
+    if (label.length <= 1) this.width(34.dp) else this

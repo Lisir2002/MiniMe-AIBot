@@ -61,12 +61,7 @@ import com.minime.code.feature.workspace.domain.model.RemoteMount
 import com.minime.code.feature.workspace.domain.model.RemoteProtocol
 import com.minime.code.feature.workspace.domain.model.SyncConnectionState
 import com.minime.code.R
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.Folder
-import compose.icons.feathericons.MoreHorizontal
-import compose.icons.feathericons.Play
-import compose.icons.feathericons.Server
+import com.minime.code.core.ui.MiniMeIcons
 
 /** 同步设置底部弹窗（右上角齿轮打开）。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -172,7 +167,7 @@ fun SyncSettingsSheet(
 private fun EditRowButton(onEdit: () -> Unit) {
     IconButton(onClick = onEdit) {
         Icon(
-            imageVector = FeatherIcons.ChevronRight,
+            imageVector = MiniMeIcons.ChevronRight,
             contentDescription = stringResource(R.string.common_edit),
             tint = MaterialTheme.semanticColors.subtleText,
             modifier = Modifier.size(18.dp)
@@ -251,7 +246,7 @@ fun RemoteConnectionCard(
                     .semantics { contentDescription = sortDescription },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                RowIconBox(FeatherIcons.Server)
+                RowIconBox(MiniMeIcons.Server)
                 Spacer(modifier = Modifier.width(Spacing.md))
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -302,7 +297,7 @@ fun RemoteMountCard(
                 .padding(horizontal = Spacing.lg, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            RowIconBox(FeatherIcons.Folder)
+            RowIconBox(MiniMeIcons.Folder)
             Spacer(modifier = Modifier.width(Spacing.md))
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -397,7 +392,7 @@ fun RemoteMountCard(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                imageVector = FeatherIcons.MoreHorizontal,
+                                imageVector = MiniMeIcons.MoreHorizontal,
                                 contentDescription = stringResource(R.string.common_more),
                                 tint = MaterialTheme.semanticColors.subtleText,
                                 modifier = Modifier.size(18.dp)
@@ -431,7 +426,7 @@ fun RemoteMountCard(
                             .height(40.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(FeatherIcons.Play, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(MiniMeIcons.Play, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(stringResource(R.string.sync_connect_and_sync))
                     }

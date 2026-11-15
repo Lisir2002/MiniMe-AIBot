@@ -49,12 +49,7 @@ import com.minime.code.feature.agent.domain.container.SshLoginKey
 import com.minime.code.feature.settings.presentation.component.SettingsGroup
 import com.minime.code.feature.settings.presentation.component.SettingsRow
 import com.minime.code.feature.settings.presentation.component.settingsPageBackground
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ArrowLeft
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.Eye
-import compose.icons.feathericons.EyeOff
-import compose.icons.feathericons.Shield
+import com.minime.code.core.ui.MiniMeIcons
 
 /** 私钥内容隐藏时的掩码占位。 */
 private const val MASKED_KEY = "••••••••••••••••••••••••••••••••"
@@ -105,7 +100,7 @@ fun LoginKeyEditorScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 }
             )
@@ -124,7 +119,7 @@ fun LoginKeyEditorScreen(
             if (key != null) {
                 SettingsGroup {
                     SettingsRow(
-                        icon = FeatherIcons.Shield,
+                        icon = MiniMeIcons.Shield,
                         title = stringResource(R.string.ssh_login_key_fingerprint_label),
                         subtitle = key.fingerprint ?: stringResource(R.string.ssh_login_key_encrypted)
                     )
@@ -143,7 +138,7 @@ fun LoginKeyEditorScreen(
                 placeholder = stringResource(R.string.ssh_login_key_passphrase_placeholder),
                 visualTransformation = if (passphraseVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    val image = if (passphraseVisible) FeatherIcons.Eye else FeatherIcons.EyeOff
+                    val image = if (passphraseVisible) MiniMeIcons.Eye else MiniMeIcons.EyeOff
                     IconButton(onClick = { passphraseVisible = !passphraseVisible }) {
                         Icon(image, stringResource(R.string.remote_toggle_password), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -177,7 +172,7 @@ fun LoginKeyEditorScreen(
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(onClick = { pemVisible = !pemVisible }) {
-                            val image = if (pemVisible) FeatherIcons.Eye else FeatherIcons.EyeOff
+                            val image = if (pemVisible) MiniMeIcons.Eye else MiniMeIcons.EyeOff
                             Icon(image, stringResource(R.string.ssh_login_key_toggle_content), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -209,7 +204,7 @@ fun LoginKeyEditorScreen(
                     .height(44.dp),
                 shape = RoundedCornerShape(Radius.mdLarge)
             ) {
-                Icon(FeatherIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(Spacing.sm))
                 Text(
                     stringResource(R.string.common_save),

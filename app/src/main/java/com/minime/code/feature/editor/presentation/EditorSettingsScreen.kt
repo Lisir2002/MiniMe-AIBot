@@ -30,8 +30,7 @@ import com.minime.code.core.theme.Spacing
 import com.minime.code.core.ui.AppSwitch
 import com.minime.code.feature.editor.data.MAX_EDITOR_FONT_SIZE_SP
 import com.minime.code.feature.editor.data.MIN_EDITOR_FONT_SIZE_SP
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ArrowLeft
+import com.minime.code.core.ui.MiniMeIcons
 import kotlin.math.roundToInt
 
 /**
@@ -58,7 +57,7 @@ fun EditorSettingsScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            FeatherIcons.ArrowLeft,
+                            MiniMeIcons.ArrowLeft,
                             contentDescription = stringResource(R.string.common_back)
                         )
                     }

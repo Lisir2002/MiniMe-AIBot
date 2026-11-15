@@ -65,11 +65,8 @@ import com.minime.code.core.theme.Brand
 import com.minime.code.core.theme.Spacing
 import com.minime.code.feature.agent.domain.provider.RetryErrorInfo
 import com.minime.code.feature.agent.domain.provider.RetryErrorKind
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.AlertCircle
+import com.minime.code.core.ui.MiniMeIcons
 import com.minime.code.core.ui.ExpandableChevronIcon
-import compose.icons.feathericons.Clock
-import compose.icons.feathericons.Key
 import kotlinx.coroutines.delay
 
 /** 涟漪高光一个来回的周期（ms）。 */
@@ -237,7 +234,7 @@ internal fun RetryingBubble(attempt: Int, maxRetries: Int, error: RetryErrorInfo
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
             ) {
                 Icon(
-                    FeatherIcons.AlertCircle,
+                    MiniMeIcons.AlertCircle,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(14.dp)
@@ -279,7 +276,7 @@ internal fun KeySwitchedBubble(newIndex: Int, total: Int) {
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
         Icon(
-            FeatherIcons.Key,
+            MiniMeIcons.Key,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(14.dp)

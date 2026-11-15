@@ -96,14 +96,7 @@ import com.minime.code.feature.settings.data.repository.DEFAULT_REMOTE_WORKSPACE
 import com.minime.code.feature.settings.presentation.ContainerResetUiState
 import com.minime.code.feature.workspace.domain.model.RemoteConnection
 import com.minime.code.feature.workspace.domain.model.RemoteProtocol
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.Edit3
-import compose.icons.feathericons.HardDrive
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.RefreshCw
-import compose.icons.feathericons.Server
-import compose.icons.feathericons.Trash2
+import com.minime.code.core.ui.MiniMeIcons
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -420,7 +413,7 @@ private fun ContainerRow(
                         )
                     } else {
                         Icon(
-                            imageVector = if (profile.mode == ExecutionMode.REMOTE_SSH) FeatherIcons.Server else FeatherIcons.HardDrive,
+                            imageVector = if (profile.mode == ExecutionMode.REMOTE_SSH) MiniMeIcons.Server else MiniMeIcons.HardDrive,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
@@ -484,7 +477,7 @@ private fun ContainerRow(
             // 编辑入口（所有容器）：行尾铅笔，点击进入编辑弹窗（行主体点击是切换）
             IconButton(onClick = onEdit) {
                 Icon(
-                    imageVector = FeatherIcons.Edit3,
+                    imageVector = MiniMeIcons.Edit3,
                     contentDescription = stringResource(R.string.common_edit),
                     tint = MaterialTheme.semanticColors.subtleText,
                     modifier = Modifier.size(18.dp)
@@ -630,7 +623,7 @@ private fun ProfileEditSheet(
                         modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
-                            FeatherIcons.RefreshCw,
+                            MiniMeIcons.RefreshCw,
                             contentDescription = stringResource(R.string.container_reset),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -719,7 +712,7 @@ private fun ProfileEditSheet(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Icon(
-                                        FeatherIcons.HardDrive,
+                                        MiniMeIcons.HardDrive,
                                         contentDescription = null,
                                         modifier = Modifier.size(14.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -868,7 +861,7 @@ private fun ProfileEditSheet(
                     .height(44.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(FeatherIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     stringResource(
@@ -934,7 +927,7 @@ private fun StringListEditor(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                FeatherIcons.Trash2,
+                                MiniMeIcons.Trash2,
                                 contentDescription = stringResource(R.string.common_delete),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(16.dp)
@@ -957,7 +950,7 @@ private fun StringListEditor(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
-                    FeatherIcons.Plus,
+                    MiniMeIcons.Plus,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1025,7 +1018,7 @@ private fun MountListEditor(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                FeatherIcons.Trash2,
+                                MiniMeIcons.Trash2,
                                 contentDescription = stringResource(R.string.common_delete),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(16.dp)
@@ -1048,7 +1041,7 @@ private fun MountListEditor(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
-                    FeatherIcons.Plus,
+                    MiniMeIcons.Plus,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1120,7 +1113,7 @@ private fun PairListEditor(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                FeatherIcons.Trash2,
+                                MiniMeIcons.Trash2,
                                 contentDescription = stringResource(R.string.common_delete),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(16.dp)
@@ -1143,7 +1136,7 @@ private fun PairListEditor(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
-                    FeatherIcons.Plus,
+                    MiniMeIcons.Plus,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant

@@ -66,12 +66,7 @@ import com.minime.code.core.theme.LogLevelColors
 import com.minime.code.core.theme.semanticColors
 import com.minime.code.core.util.LogLevel
 import com.minime.code.feature.settings.presentation.LogViewerUiState
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.Copy
-import compose.icons.feathericons.FileText
-import compose.icons.feathericons.MessageSquare
-import compose.icons.feathericons.X
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -108,7 +103,7 @@ internal fun LogSection(
         // ── 日志等级 + 日志文件：同一卡片两行 ──
         SettingsGroup {
             SettingsRow(
-                icon = FeatherIcons.FileText,
+                icon = MiniMeIcons.FileText,
                 title = stringResource(R.string.log_level),
                 onClick = { showLevelSheet = true },
                 trailing = {
@@ -186,7 +181,7 @@ internal fun LogSection(
                         modifier = Modifier.size(24.dp)
                     ) {
                         Icon(
-                            FeatherIcons.X,
+                            MiniMeIcons.X,
                             contentDescription = stringResource(R.string.log_clear_filter),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(14.dp)
@@ -438,7 +433,7 @@ private fun LogLine(
         )
         if (copied) {
             Icon(
-                FeatherIcons.Check,
+                MiniMeIcons.Check,
                 contentDescription = stringResource(R.string.log_copied),
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
@@ -502,7 +497,7 @@ private fun CopyLogButton(text: String, enabled: Boolean) {
         }
     ) {
         Icon(
-            imageVector = if (copied) FeatherIcons.Check else FeatherIcons.Copy,
+            imageVector = if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
             contentDescription = stringResource(if (copied) R.string.log_copied else R.string.log_copy),
             tint = if (copied) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
@@ -565,7 +560,7 @@ private fun LogLevelSheet(
                     )
                     if (level == current) {
                         Icon(
-                            FeatherIcons.Check,
+                            MiniMeIcons.Check,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
@@ -632,7 +627,7 @@ private fun LogFileSheet(
                     )
                     if (selected) {
                         Icon(
-                            FeatherIcons.Check,
+                            MiniMeIcons.Check,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
@@ -673,19 +668,19 @@ private fun LogLineActionsSheet(
             )
             Spacer(Modifier.height(Spacing.sm))
             LogActionRow(
-                icon = FeatherIcons.Copy,
+                icon = MiniMeIcons.Copy,
                 title = stringResource(R.string.log_copy_line),
                 onClick = onCopyLine
             )
             if (hasStack) {
                 LogActionRow(
-                    icon = FeatherIcons.FileText,
+                    icon = MiniMeIcons.FileText,
                     title = stringResource(R.string.log_copy_with_stack),
                     onClick = onCopyWithStack
                 )
             }
             LogActionRow(
-                icon = FeatherIcons.MessageSquare,
+                icon = MiniMeIcons.MessageSquare,
                 title = stringResource(R.string.log_copy_message),
                 onClick = onCopyMessage
             )

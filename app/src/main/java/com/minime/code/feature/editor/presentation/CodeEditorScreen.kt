@@ -73,15 +73,7 @@ import com.minime.code.core.util.LineDiff
 import com.minime.code.feature.editor.data.EditorSettings
 import com.minime.code.feature.editor.domain.TextMateSetup
 import com.minime.code.feature.editor.presentation.component.MarkdownPreviewWebView
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ArrowLeft
-import compose.icons.feathericons.ChevronLeft
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.Code
-import compose.icons.feathericons.Eye
-import compose.icons.feathericons.Save
-import compose.icons.feathericons.Settings
-import compose.icons.feathericons.X
+import com.minime.code.core.ui.MiniMeIcons
 import io.github.rosemoe.sora.event.ContentChangeEvent
 import io.github.rosemoe.sora.event.ScrollEvent
 import io.github.rosemoe.sora.event.SelectionChangeEvent
@@ -242,7 +234,7 @@ fun CodeEditorScreen(
                     navigationIcon = {
                         IconButton(onClick = { handleBack() }) {
                             Icon(
-                                if (embedded) FeatherIcons.X else FeatherIcons.ArrowLeft,
+                                if (embedded) MiniMeIcons.X else MiniMeIcons.ArrowLeft,
                                 contentDescription = stringResource(
                                     if (embedded) R.string.common_close else R.string.common_back
                                 )
@@ -254,7 +246,7 @@ fun CodeEditorScreen(
                         if (isMarkdown && editable) {
                             IconButton(onClick = { previewMode = !previewMode }) {
                                 Icon(
-                                    if (previewMode) FeatherIcons.Code else FeatherIcons.Eye,
+                                    if (previewMode) MiniMeIcons.Code else MiniMeIcons.Eye,
                                     contentDescription = stringResource(
                                         if (previewMode) R.string.editor_md_show_source
                                         else R.string.editor_md_preview
@@ -288,7 +280,7 @@ fun CodeEditorScreen(
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             } else {
                                 Icon(
-                                    FeatherIcons.Save,
+                                    MiniMeIcons.Save,
                                     contentDescription = stringResource(R.string.common_save)
                                 )
                             }
@@ -298,7 +290,7 @@ fun CodeEditorScreen(
                             enabled = editable
                         ) {
                             Icon(
-                                FeatherIcons.Settings,
+                                MiniMeIcons.Settings,
                                 contentDescription = stringResource(R.string.editor_settings)
                             )
                         }
@@ -711,13 +703,13 @@ private fun EditorSymbolBar(
         ) {
             SymbolKey(onClick = onMoveLeft) {
                 Icon(
-                    FeatherIcons.ChevronLeft,
+                    MiniMeIcons.ChevronLeft,
                     contentDescription = stringResource(R.string.editor_cursor_left)
                 )
             }
             SymbolKey(onClick = onMoveRight) {
                 Icon(
-                    FeatherIcons.ChevronRight,
+                    MiniMeIcons.ChevronRight,
                     contentDescription = stringResource(R.string.editor_cursor_right)
                 )
             }

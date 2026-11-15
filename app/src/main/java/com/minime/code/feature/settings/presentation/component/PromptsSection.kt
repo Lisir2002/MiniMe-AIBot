@@ -54,10 +54,7 @@ import com.minime.code.core.ui.SwipeToDeleteRow
 import com.minime.code.feature.agent.domain.prompt.PromptFragment
 import com.minime.code.feature.agent.domain.prompt.PromptFragmentSource
 import com.minime.code.feature.settings.presentation.PromptsUiState
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.FileText
-import compose.icons.feathericons.Trash2
+import com.minime.code.core.ui.MiniMeIcons
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
@@ -129,7 +126,7 @@ internal fun PromptsSection(
             ) {
                 val enabled = selection.selectedCount > 0
                 SelectionActionIconButton(
-                    icon = FeatherIcons.Trash2,
+                    icon = MiniMeIcons.Trash2,
                     contentDescription = stringResource(R.string.common_batch_delete),
                     enabled = enabled,
                     onClick = { showBatchDeleteConfirm = true },
@@ -301,7 +298,7 @@ private fun PromptRow(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = FeatherIcons.FileText,
+                        imageVector = MiniMeIcons.FileText,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
@@ -332,7 +329,7 @@ private fun PromptRow(
             SourceBadge(fragment.source)
             Spacer(modifier = Modifier.width(Spacing.xs))
             Icon(
-                imageVector = FeatherIcons.ChevronRight,
+                imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)

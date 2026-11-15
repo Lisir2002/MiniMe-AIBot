@@ -98,8 +98,7 @@ import com.minime.code.feature.settings.domain.model.ProviderDashboardState
 import com.minime.code.feature.settings.domain.model.modelMetadataKey
 import com.minime.code.feature.workspace.domain.WorkspacePathMapper
 import com.minime.code.feature.workspace.presentation.WorkspaceViewModel
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ArrowDown
+import com.minime.code.core.ui.MiniMeIcons
 import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -1551,6 +1550,13 @@ fun AIChatPanel(
         }
     }
 
+    // 顶栏透明化：与底部输入框同一理念——列表滚动中淡出，停止后平滑恢复，为正文腾出视觉空间。
+    val headerAlpha by animateFloatAsState(
+        targetValue = if (listState.isScrollInProgress) 0.4f else 1f,
+        animationSpec = tween(200),
+        label = "chat-header-alpha"
+    )
+
     CompositionLocalProvider(
         LocalMarkdownImageTransformer provides markdownImageTransformer,
         LocalImageViewer provides imageViewerState,
@@ -1584,7 +1590,8 @@ fun AIChatPanel(
                 showMenuButton = showMenuButton,
                 terminalActive = terminalActive,
                 gitActive = gitActive,
-                browserActive = browserActive
+                browserActive = browserActive,
+                headerAlpha = headerAlpha
             )
         }
     ) { padding ->
@@ -2072,7 +2079,7 @@ private fun ScrollToBottomButton(
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
-                imageVector = FeatherIcons.ArrowDown,
+                imageVector = MiniMeIcons.ArrowDown,
                 contentDescription = stringResource(R.string.common_scroll_to_bottom),
                 tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(20.dp)

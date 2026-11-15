@@ -41,9 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.minime.code.R
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.theme.semanticColors
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.Search
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 设置页分组组件：浅灰背景 + 白色分组圆角卡片 + 组内缩进分隔线 + 黑色线条图标。
@@ -209,7 +207,7 @@ internal fun SettingsRow(
         if (onClick != null && enabled) {
             Spacer(Modifier.width(Spacing.xs))
             Icon(
-                imageVector = FeatherIcons.ChevronRight,
+                imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)
@@ -253,7 +251,7 @@ internal fun ModelSearchField(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                FeatherIcons.Search,
+                MiniMeIcons.Search,
                 contentDescription = null,
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)

@@ -55,9 +55,7 @@ import androidx.compose.ui.res.stringResource
 import com.minime.code.R
 import com.minime.code.core.ui.AppTextField
 import com.minime.code.core.ui.ExpandableChevronIcon
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ChevronDown
-import compose.icons.feathericons.ChevronUp
+import com.minime.code.core.ui.MiniMeIcons
 
 
 /** 「其他」选项在选中集合内的内部哨兵：用 AI 不可能传出的控制字符前缀，避免与预设选项 label 撞车。 */

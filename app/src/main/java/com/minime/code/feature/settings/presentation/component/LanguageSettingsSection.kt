@@ -23,8 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.minime.code.R
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.util.LanguageRegistry
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Check
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 语言选择 BottomSheet 弹窗：参考会话长按菜单样式。
@@ -86,7 +85,7 @@ internal fun LanguageSelectionSheet(
                     )
                     if (followSystemSelected) {
                         Icon(
-                            imageVector = FeatherIcons.Check,
+                            imageVector = MiniMeIcons.Check,
                             contentDescription = null,
                             modifier = Modifier.size(20.dp),
                             tint = MaterialTheme.colorScheme.primary
@@ -120,7 +119,7 @@ internal fun LanguageSelectionSheet(
                         )
                         if (selected) {
                             Icon(
-                                imageVector = FeatherIcons.Check,
+                                imageVector = MiniMeIcons.Check,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary

@@ -34,8 +34,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.minime.code.core.theme.Spacing
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Check
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -135,7 +134,7 @@ internal fun TodoItemRow(item: ParsedTodoItem) {
         when {
             isCompleted -> {
                 Icon(
-                    imageVector = FeatherIcons.Check,
+                    imageVector = MiniMeIcons.Check,
                     contentDescription = stringResource(R.string.todo_completed),
                     tint = DiffAddText,
                     modifier = Modifier.size(16.dp)

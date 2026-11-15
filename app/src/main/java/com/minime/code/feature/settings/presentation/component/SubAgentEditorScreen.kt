@@ -59,9 +59,7 @@ import com.minime.code.feature.settings.presentation.SubAgentSaveState
 import com.minime.code.feature.settings.presentation.SubAgentUiEntry
 import com.minime.code.feature.settings.domain.model.AIProviderConfig
 import com.minime.code.feature.settings.domain.model.ModelMetadata
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ArrowLeft
-import compose.icons.feathericons.Check
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 子代理新建/编辑页：自带顶栏（与 [ProviderEditorScreen] 一致，不能嵌进设置页的 Scaffold）。
@@ -147,7 +145,7 @@ internal fun SubAgentEditorScreen(
                 ),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
@@ -607,7 +605,7 @@ private fun PickerRow(
             modifier = Modifier.weight(1f)
         )
         Icon(
-            imageVector = FeatherIcons.Check,
+            imageVector = MiniMeIcons.Check,
             contentDescription = null,
             tint = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
             modifier = Modifier

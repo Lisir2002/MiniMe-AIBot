@@ -50,9 +50,7 @@ import com.minime.code.core.ui.SelectionActionButton
 import com.minime.code.core.ui.SelectionActionIconButton
 import com.minime.code.core.ui.SwipeToDeleteRow
 import com.minime.code.feature.settings.domain.model.AIProviderConfig
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.Trash2
+import com.minime.code.core.ui.MiniMeIcons
 import androidx.compose.ui.res.stringResource
 import com.minime.code.R
 import sh.calvin.reorderable.ReorderableItem
@@ -117,7 +115,7 @@ internal fun ProvidersSection(
                     onClick = { onBatchSetEnabled(selection.selectedKeys.toSet(), false) }
                 )
                 SelectionActionIconButton(
-                    icon = FeatherIcons.Trash2,
+                    icon = MiniMeIcons.Trash2,
                     contentDescription = stringResource(R.string.common_batch_delete),
                     enabled = enabled,
                     onClick = { showBatchDeleteConfirm = true },
@@ -325,7 +323,7 @@ fun ProviderItem(
             )
             Spacer(Modifier.width(Spacing.xs))
             Icon(
-                imageVector = FeatherIcons.ChevronRight,
+                imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)

@@ -43,9 +43,7 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import com.minime.code.R
 import com.minime.code.core.theme.Spacing
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.Copy
+import com.minime.code.core.ui.MiniMeIcons
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -306,7 +304,7 @@ internal fun ChatCopyAction(
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
     ) {
         Icon(
-            imageVector = if (copied) FeatherIcons.Check else FeatherIcons.Copy,
+            imageVector = if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(12.dp)

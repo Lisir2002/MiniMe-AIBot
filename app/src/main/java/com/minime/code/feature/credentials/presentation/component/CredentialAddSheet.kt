@@ -18,9 +18,7 @@ import com.minime.code.core.ui.AdaptiveModalBottomSheet
 import com.minime.code.feature.settings.presentation.component.SettingsDivider
 import com.minime.code.feature.settings.presentation.component.SettingsGroup
 import com.minime.code.feature.settings.presentation.component.SettingsRow
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Edit3
-import compose.icons.feathericons.Github
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 「添加凭据」底部弹层：提供推荐的 GitHub OAuth 设备码快捷登录与手动配置两种方式。
@@ -57,14 +55,14 @@ internal fun CredentialAddSheet(
 
             SettingsGroup {
                 SettingsRow(
-                    icon = FeatherIcons.Github,
+                    icon = MiniMeIcons.Github,
                     title = stringResource(R.string.credential_add_github_title),
                     subtitle = stringResource(R.string.credential_add_github_desc),
                     onClick = onQuickLogin
                 )
                 SettingsDivider()
                 SettingsRow(
-                    icon = FeatherIcons.Edit3,
+                    icon = MiniMeIcons.Edit3,
                     title = stringResource(R.string.credential_add_manual_title),
                     subtitle = stringResource(R.string.credential_add_manual_subtitle),
                     onClick = onManual

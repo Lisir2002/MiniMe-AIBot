@@ -38,10 +38,7 @@ import com.minime.code.R
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.ui.AppTextField
 import com.minime.code.feature.credentials.domain.model.GitCredential
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.Eye
-import compose.icons.feathericons.EyeOff
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 凭据编辑 BottomSheet 弹窗：从底部弹出编辑/新增 host、用户名、Token。
@@ -113,7 +110,7 @@ internal fun CredentialEditorSheet(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = {
                     IconButton(onClick = { tokenVisible = !tokenVisible }) {
-                        Icon(if (tokenVisible) FeatherIcons.EyeOff else FeatherIcons.Eye, contentDescription = if (tokenVisible) stringResource(R.string.common_hide) else stringResource(R.string.common_show))
+                        Icon(if (tokenVisible) MiniMeIcons.EyeOff else MiniMeIcons.Eye, contentDescription = if (tokenVisible) stringResource(R.string.common_hide) else stringResource(R.string.common_show))
                     }
                 }
             )
@@ -131,7 +128,7 @@ internal fun CredentialEditorSheet(
                     .height(44.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(FeatherIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     if (initial != null) stringResource(R.string.common_save) else stringResource(R.string.common_add),

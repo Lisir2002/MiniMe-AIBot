@@ -67,21 +67,7 @@ import com.minime.code.feature.git.domain.model.GitStatus
 import com.minime.code.feature.settings.presentation.component.SettingsDivider
 import com.minime.code.core.ui.ChevronRotationStyle
 import com.minime.code.core.ui.ExpandableChevronIcon
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Archive
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.ChevronDown
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.Copy
-import compose.icons.feathericons.DownloadCloud
-import compose.icons.feathericons.EyeOff
-import compose.icons.feathericons.FileText
-import compose.icons.feathericons.GitBranch
-import compose.icons.feathericons.Minus
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.RotateCcw
-import compose.icons.feathericons.Trash2
-import compose.icons.feathericons.UploadCloud
+import com.minime.code.core.ui.MiniMeIcons
 
 @Composable
 internal fun StatusTab(
@@ -221,7 +207,7 @@ internal fun StatusTab(
                         disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
                     )
                 ) {
-                    Icon(FeatherIcons.Check, contentDescription = null, modifier = Modifier.size(17.dp))
+                    Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(17.dp))
                     Spacer(Modifier.width(Spacing.xs))
                     Text(
                         text = stringResource(R.string.git_commit_changes),
@@ -252,14 +238,14 @@ internal fun StatusTab(
             ) {
                 ActionButton(
                     label = stringResource(R.string.git_stage_all),
-                    icon = FeatherIcons.Plus,
+                    icon = MiniMeIcons.Plus,
                     enabled = !busy && hasChanges,
                     onClick = onStageAll,
                     modifier = Modifier.weight(1f)
                 )
                 ActionButton(
                     label = stringResource(R.string.git_tab_stash),
-                    icon = FeatherIcons.Archive,
+                    icon = MiniMeIcons.Archive,
                     enabled = !busy,
                     onClick = {
                         onStashOpen()
@@ -269,14 +255,14 @@ internal fun StatusTab(
                 )
                 ActionButton(
                     label = stringResource(R.string.git_pull),
-                    icon = FeatherIcons.DownloadCloud,
+                    icon = MiniMeIcons.DownloadCloud,
                     enabled = !busy && hasRemote,
                     onClick = onPull,
                     modifier = Modifier.weight(1f)
                 )
                 ActionButton(
                     label = stringResource(R.string.git_push),
-                    icon = FeatherIcons.UploadCloud,
+                    icon = MiniMeIcons.UploadCloud,
                     enabled = !busy && hasRemote,
                     onClick = onPush,
                     modifier = Modifier.weight(1f)
@@ -315,7 +301,7 @@ internal fun StatusTab(
                     FileGroupRow(index = index, count = ss.conflicted.size) {
                         FileRow(
                             file = f,
-                            actionIcon = FeatherIcons.Plus,
+                            actionIcon = MiniMeIcons.Plus,
                             actionDesc = stringResource(R.string.git_stage),
                             onAction = { onStage(f.path) },
                             enabled = !busy,
@@ -371,7 +357,7 @@ internal fun StatusTab(
                     FileGroupRow(index = index, count = ss.staged.size) {
                         FileRow(
                             file = f,
-                            actionIcon = FeatherIcons.Minus,
+                            actionIcon = MiniMeIcons.Minus,
                             actionDesc = stringResource(R.string.git_unstage),
                             onAction = { onUnstage(f.path) },
                             enabled = !busy,
@@ -394,7 +380,7 @@ internal fun StatusTab(
                     FileGroupRow(index = index, count = ss.unstaged.size) {
                         FileRow(
                             file = f,
-                            actionIcon = FeatherIcons.Plus,
+                            actionIcon = MiniMeIcons.Plus,
                             actionDesc = stringResource(R.string.git_stage),
                             onAction = { onStage(f.path) },
                             enabled = !busy,
@@ -445,7 +431,7 @@ internal fun StatusTab(
                             }
                             is UntrackedItem.Child -> FileRow(
                                 file = GitFileChange(item.path, "?", staged = false),
-                                actionIcon = FeatherIcons.Plus,
+                                actionIcon = MiniMeIcons.Plus,
                                 actionDesc = stringResource(R.string.git_stage),
                                 onAction = { onStage(item.path) },
                                 enabled = !busy,
@@ -637,7 +623,7 @@ private fun StatusOverview(status: GitStatus?, clean: Boolean) {
         Column(modifier = Modifier.padding(Spacing.lg)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    FeatherIcons.GitBranch,
+                    MiniMeIcons.GitBranch,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(18.dp)
@@ -944,7 +930,7 @@ private fun UntrackedDirRow(
         }
         IconButton(onClick = onStage, enabled = enabled) {
             Icon(
-                FeatherIcons.Plus,
+                MiniMeIcons.Plus,
                 contentDescription = stringResource(R.string.git_stage),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -975,14 +961,14 @@ private sealed class FileAction(
     val isDestructive: Boolean,
     val onClick: () -> Unit
 ) {
-    class Stage(onClick: () -> Unit) : FileAction(R.string.git_stage, FeatherIcons.Plus, false, onClick)
-    class ViewDiff(onClick: () -> Unit) : FileAction(R.string.git_action_view_diff, FeatherIcons.FileText, false, onClick)
-    class Revert(onClick: () -> Unit) : FileAction(R.string.git_action_revert, FeatherIcons.RotateCcw, true, onClick)
-    class RestoreFile(onClick: () -> Unit) : FileAction(R.string.git_action_restore_file, FeatherIcons.RotateCcw, false, onClick)
-    class DeleteFile(onClick: () -> Unit) : FileAction(R.string.git_action_delete_file, FeatherIcons.Trash2, true, onClick)
-    class DeleteDir(onClick: () -> Unit) : FileAction(R.string.git_action_delete_dir, FeatherIcons.Trash2, true, onClick)
-    class CopyPath(onClick: () -> Unit) : FileAction(R.string.git_action_copy_path, FeatherIcons.Copy, false, onClick)
-    class Ignore(val customLabel: String, onClick: () -> Unit) : FileAction(R.string.git_add_to_gitignore, FeatherIcons.EyeOff, false, onClick)
+    class Stage(onClick: () -> Unit) : FileAction(R.string.git_stage, MiniMeIcons.Plus, false, onClick)
+    class ViewDiff(onClick: () -> Unit) : FileAction(R.string.git_action_view_diff, MiniMeIcons.FileText, false, onClick)
+    class Revert(onClick: () -> Unit) : FileAction(R.string.git_action_revert, MiniMeIcons.RotateCcw, true, onClick)
+    class RestoreFile(onClick: () -> Unit) : FileAction(R.string.git_action_restore_file, MiniMeIcons.RotateCcw, false, onClick)
+    class DeleteFile(onClick: () -> Unit) : FileAction(R.string.git_action_delete_file, MiniMeIcons.Trash2, true, onClick)
+    class DeleteDir(onClick: () -> Unit) : FileAction(R.string.git_action_delete_dir, MiniMeIcons.Trash2, true, onClick)
+    class CopyPath(onClick: () -> Unit) : FileAction(R.string.git_action_copy_path, MiniMeIcons.Copy, false, onClick)
+    class Ignore(val customLabel: String, onClick: () -> Unit) : FileAction(R.string.git_add_to_gitignore, MiniMeIcons.EyeOff, false, onClick)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1141,7 +1127,7 @@ private fun StashBottomSheet(
                         modifier = Modifier.fillMaxWidth().height(40.dp),
                         shape = RoundedCornerShape(Radius.md)
                     ) {
-                        Icon(FeatherIcons.Archive, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(MiniMeIcons.Archive, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(Spacing.xs))
                         Text(stringResource(R.string.git_action_stash))
                     }
@@ -1252,7 +1238,7 @@ private fun StashItemRow(
                     modifier = Modifier.size(28.dp)
                 ) {
                     Icon(
-                        FeatherIcons.Trash2,
+                        MiniMeIcons.Trash2,
                         contentDescription = stringResource(R.string.git_stash_drop),
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(15.dp)

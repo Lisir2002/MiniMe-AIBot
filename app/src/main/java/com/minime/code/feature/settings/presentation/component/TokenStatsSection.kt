@@ -75,10 +75,7 @@ import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.core.common.Fill
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.ChevronDown
-import compose.icons.feathericons.X
+import com.minime.code.core.ui.MiniMeIcons
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -364,7 +361,7 @@ private fun TokenStatsFilterBar(
                 },
                 trailingIcon = {
                     Icon(
-                        imageVector = FeatherIcons.ChevronDown,
+                        imageVector = MiniMeIcons.ChevronDown,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
@@ -393,7 +390,7 @@ private fun TokenStatsFilterBar(
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.settings_token_stats_filter_all_providers)) },
                     trailingIcon = if (selectedProviderId == null) {
-                        { Icon(FeatherIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        { Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                     } else null,
                     onClick = {
                         onSelectProvider(null)
@@ -404,7 +401,7 @@ private fun TokenStatsFilterBar(
                     DropdownMenuItem(
                         text = { Text(name) },
                         trailingIcon = if (selectedProviderId == id) {
-                            { Icon(FeatherIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                            { Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         } else null,
                         onClick = {
                             onSelectProvider(id)
@@ -434,7 +431,7 @@ private fun TokenStatsFilterBar(
                 },
                 trailingIcon = {
                     Icon(
-                        imageVector = FeatherIcons.ChevronDown,
+                        imageVector = MiniMeIcons.ChevronDown,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
@@ -463,7 +460,7 @@ private fun TokenStatsFilterBar(
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.settings_token_stats_filter_all_models)) },
                     trailingIcon = if (selectedModel == null) {
-                        { Icon(FeatherIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        { Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                     } else null,
                     onClick = {
                         onSelectModel(null)
@@ -474,7 +471,7 @@ private fun TokenStatsFilterBar(
                     DropdownMenuItem(
                         text = { Text(modelName) },
                         trailingIcon = if (selectedModel == modelName) {
-                            { Icon(FeatherIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                            { Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         } else null,
                         onClick = {
                             onSelectModel(modelName)
@@ -493,7 +490,7 @@ private fun TokenStatsFilterBar(
                 label = { Text(stringResource(R.string.settings_token_stats_filter_clear), fontSize = 13.sp) },
                 trailingIcon = {
                     Icon(
-                        imageVector = FeatherIcons.X,
+                        imageVector = MiniMeIcons.X,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )

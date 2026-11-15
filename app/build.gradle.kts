@@ -316,8 +316,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.material:material-icons-extended")
 
-    // Lucide Icons
-    implementation("br.com.devsrsouza.compose.icons:feather:1.1.1")
+    // 图标：全局使用项目内自绘的 MiniMeIcons（SVG path，随主题 tint 自适应），无第三方图标依赖。
 
     // 可拖拽排序列表（长按拖拽手势，提供商排序用）
     implementation("sh.calvin.reorderable:reorderable:3.1.0")

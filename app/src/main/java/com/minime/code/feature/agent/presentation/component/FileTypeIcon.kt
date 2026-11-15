@@ -1,16 +1,7 @@
 package com.minime.code.feature.agent.presentation.component
 
 import androidx.compose.ui.graphics.vector.ImageVector
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Code
-import compose.icons.feathericons.Database
-import compose.icons.feathericons.File
-import compose.icons.feathericons.FileText
-import compose.icons.feathericons.Image
-import compose.icons.feathericons.Music
-import compose.icons.feathericons.Package
-import compose.icons.feathericons.Terminal
-import compose.icons.feathericons.Video
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 文件浏览行的单色线性图标，按文件语义和扩展名挑选合适的 Feather 线性图标。
@@ -18,20 +9,20 @@ import compose.icons.feathericons.Video
  */
 fun fileTypeIconFor(name: String): ImageVector {
     val lower = name.lowercase()
-    if (lower in SPECIAL_TERMINAL_FILES) return FeatherIcons.Terminal
-    if (lower in SPECIAL_TEXT_FILES || lower.startsWith(".env")) return FeatherIcons.FileText
+    if (lower in SPECIAL_TERMINAL_FILES) return MiniMeIcons.Terminal
+    if (lower in SPECIAL_TEXT_FILES || lower.startsWith(".env")) return MiniMeIcons.FileText
 
     val ext = name.substringAfterLast('.', "").lowercase()
     return when (ext) {
-        in CODE_EXTS -> FeatherIcons.Code
-        in TERMINAL_EXTS -> FeatherIcons.Terminal
-        in TEXT_AND_CONFIG_EXTS -> FeatherIcons.FileText
-        in IMAGE_EXTS -> FeatherIcons.Image
-        in VIDEO_EXTS -> FeatherIcons.Video
-        in AUDIO_EXTS -> FeatherIcons.Music
-        in ARCHIVE_EXTS -> FeatherIcons.Package
-        in DATABASE_EXTS -> FeatherIcons.Database
-        else -> FeatherIcons.File
+        in CODE_EXTS -> MiniMeIcons.Code
+        in TERMINAL_EXTS -> MiniMeIcons.Terminal
+        in TEXT_AND_CONFIG_EXTS -> MiniMeIcons.FileText
+        in IMAGE_EXTS -> MiniMeIcons.Image
+        in VIDEO_EXTS -> MiniMeIcons.Video
+        in AUDIO_EXTS -> MiniMeIcons.Music
+        in ARCHIVE_EXTS -> MiniMeIcons.Package
+        in DATABASE_EXTS -> MiniMeIcons.Database
+        else -> MiniMeIcons.File
     }
 }
 

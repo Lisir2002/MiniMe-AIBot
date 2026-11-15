@@ -66,10 +66,7 @@ import com.minime.code.feature.agent.domain.container.hasNewerVersion
 import com.minime.code.feature.settings.data.repository.DownloadedImageRecord
 import com.minime.code.feature.settings.data.repository.effectiveVersion
 import com.minime.code.feature.settings.presentation.ContainerImageDownloadUiState
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.HardDrive
-import compose.icons.feathericons.Trash2
+import com.minime.code.core.ui.MiniMeIcons
 import java.io.File
 import kotlinx.coroutines.launch
 
@@ -152,7 +149,7 @@ internal fun ContainerImageDownloadSection(
                 onExit = { selection.exit() }
             ) {
                 SelectionActionIconButton(
-                    icon = FeatherIcons.Trash2,
+                    icon = MiniMeIcons.Trash2,
                     contentDescription = stringResource(R.string.common_batch_delete),
                     enabled = selection.selectedCount > 0,
                     onClick = { showBatchDeleteConfirm = true },
@@ -353,7 +350,7 @@ private fun DownloadImageRow(
                     )
                 } else {
                     Icon(
-                        imageVector = FeatherIcons.HardDrive,
+                        imageVector = MiniMeIcons.HardDrive,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(22.dp)
@@ -422,7 +419,7 @@ private fun DownloadImageRow(
 
             // 右侧箭头
             Icon(
-                imageVector = FeatherIcons.ChevronRight,
+                imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(22.dp)
@@ -486,7 +483,7 @@ private fun ImageDetailSheet(
                         )
                     } else {
                         Icon(
-                            imageVector = FeatherIcons.HardDrive,
+                            imageVector = MiniMeIcons.HardDrive,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(24.dp)

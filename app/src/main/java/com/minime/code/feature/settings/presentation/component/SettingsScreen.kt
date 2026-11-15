@@ -93,36 +93,7 @@ import com.minime.code.feature.settings.presentation.SkillUiEntry
 import com.minime.code.feature.agent.domain.skill.SkillImportError
 import com.minime.code.feature.agent.domain.skill.SkillScope
 import com.minime.code.feature.settings.presentation.SubAgentUiEntry
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ArrowLeft
-import compose.icons.feathericons.BarChart2
-import compose.icons.feathericons.Book
-import compose.icons.feathericons.BookOpen
-import compose.icons.feathericons.Box
-import compose.icons.feathericons.Cloud
-import compose.icons.feathericons.Cpu
-import compose.icons.feathericons.Download
-import compose.icons.feathericons.FileText
-import compose.icons.feathericons.Globe
-import compose.icons.feathericons.HardDrive
-import compose.icons.feathericons.Image
-import compose.icons.feathericons.Info
-import compose.icons.feathericons.Lock
-import compose.icons.feathericons.Moon
-import compose.icons.feathericons.MessageSquare
-import compose.icons.feathericons.Edit2
-import compose.icons.feathericons.PieChart
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.RefreshCw
-import compose.icons.feathericons.RotateCcw
-import compose.icons.feathericons.Save
-import compose.icons.feathericons.Server
-import compose.icons.feathericons.Shield
-import compose.icons.feathericons.Sliders
-import compose.icons.feathericons.Terminal
-import compose.icons.feathericons.Trash2
-import compose.icons.feathericons.Users
-import compose.icons.feathericons.Zap
+import com.minime.code.core.ui.MiniMeIcons
 import com.minime.code.feature.onboarding.domain.OnboardingStep
 import com.minime.code.feature.onboarding.presentation.onboardingTarget
 import com.minime.code.feature.settings.data.local.ProviderPreset
@@ -521,7 +492,7 @@ fun SettingsScreen(
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) {
                             Icon(
-                                FeatherIcons.ArrowLeft,
+                                MiniMeIcons.ArrowLeft,
                                 contentDescription = stringResource(R.string.common_back)
                             )
                         }
@@ -682,7 +653,7 @@ fun SettingsScreen(
                             val parent = parentSection
                             if (parent != null) section = parent else onNavigateBack()
                         }) {
-                            Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                            Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                         }
                     }
                 },
@@ -699,7 +670,7 @@ fun SettingsScreen(
                                 },
                                 modifier = Modifier.onboardingTarget(OnboardingStep.PROVIDER_ADD)
                             ) {
-                                Icon(FeatherIcons.Plus, contentDescription = stringResource(R.string.settings_add_provider))
+                                Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.settings_add_provider))
                             }
                         }
                         SettingsSection.Mcp -> {
@@ -711,7 +682,7 @@ fun SettingsScreen(
                                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                                 } else {
                                     Icon(
-                                        FeatherIcons.RefreshCw,
+                                        MiniMeIcons.RefreshCw,
                                         contentDescription = stringResource(R.string.settings_reconnect),
                                         tint = MaterialTheme.colorScheme.onBackground,
                                         modifier = Modifier.size(22.dp)
@@ -720,7 +691,7 @@ fun SettingsScreen(
                             }
                             IconButton(onClick = { showMcpAddSheet = true }) {
                                 Icon(
-                                    FeatherIcons.Plus,
+                                    MiniMeIcons.Plus,
                                     contentDescription = stringResource(R.string.settings_add_mcp_server),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -730,7 +701,7 @@ fun SettingsScreen(
                         SettingsSection.Container -> {
                             IconButton(onClick = { showContainerAnnouncement = true }) {
                                 Icon(
-                                    FeatherIcons.Info,
+                                    MiniMeIcons.Info,
                                     contentDescription = stringResource(R.string.container_announcement_title),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -738,14 +709,14 @@ fun SettingsScreen(
                             }
                             IconButton(onClick = { section = SettingsSection.ContainerDownloads }) {
                                 Icon(
-                                    FeatherIcons.Download,
+                                    MiniMeIcons.Download,
                                     contentDescription = stringResource(R.string.container_download_image),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
                             IconButton(onClick = { showContainerAddSheet = true }) {
-                                Icon(FeatherIcons.Plus, contentDescription = stringResource(R.string.container_add_image))
+                                Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.container_add_image))
                             }
                         }
                         SettingsSection.ContainerDownloads -> {
@@ -754,7 +725,7 @@ fun SettingsScreen(
                             }
                             IconButton(onClick = { showImageSourceSheet = true }) {
                                 Icon(
-                                    FeatherIcons.Globe,
+                                    MiniMeIcons.Globe,
                                     contentDescription = stringResource(R.string.container_download_current_source_title),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -769,7 +740,7 @@ fun SettingsScreen(
                                 showSkillAddSheet = true
                             }) {
                                 Icon(
-                                    FeatherIcons.Plus,
+                                    MiniMeIcons.Plus,
                                     contentDescription = stringResource(R.string.skills_add),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -783,7 +754,7 @@ fun SettingsScreen(
                                 section = SettingsSection.SkillEditor
                             }) {
                                 Icon(
-                                    FeatherIcons.Edit2,
+                                    MiniMeIcons.Edit2,
                                     contentDescription = stringResource(R.string.skills_edit),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(20.dp)
@@ -800,7 +771,7 @@ fun SettingsScreen(
                                 section = SettingsSection.SubAgentEditor
                             }) {
                                 Icon(
-                                    FeatherIcons.Plus,
+                                    MiniMeIcons.Plus,
                                     contentDescription = stringResource(R.string.subagent_add),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -814,7 +785,7 @@ fun SettingsScreen(
                                 section = SettingsSection.SubAgentEditor
                             }) {
                                 Icon(
-                                    FeatherIcons.Edit2,
+                                    MiniMeIcons.Edit2,
                                     contentDescription = stringResource(R.string.subagent_edit),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(20.dp)
@@ -823,13 +794,13 @@ fun SettingsScreen(
                         }
                         SettingsSection.Log -> {
                             IconButton(onClick = { viewModel.refreshLogs() }) {
-                                Icon(FeatherIcons.RefreshCw, contentDescription = stringResource(R.string.settings_refresh_logs))
+                                Icon(MiniMeIcons.RefreshCw, contentDescription = stringResource(R.string.settings_refresh_logs))
                             }
                         }
                         SettingsSection.TokenStats -> {
                             IconButton(onClick = { showResetTokenStats = true }) {
                                 Icon(
-                                    FeatherIcons.Trash2,
+                                    MiniMeIcons.Trash2,
                                     contentDescription = stringResource(R.string.settings_token_stats_reset),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -849,7 +820,7 @@ fun SettingsScreen(
                             // 帮助入口只保留这一个：原来「+」弹层里的帮助项与它重复，弹层已去掉。
                             IconButton(onClick = { showPromptsAnnouncement = true }) {
                                 Icon(
-                                    FeatherIcons.Info,
+                                    MiniMeIcons.Info,
                                     contentDescription = stringResource(R.string.prompts_help),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -858,7 +829,7 @@ fun SettingsScreen(
                             // 重置：清空自定义提示词，各编号回落到内置（排在「+」左侧）。
                             IconButton(onClick = { showResetPrompts = true }) {
                                 Icon(
-                                    FeatherIcons.RotateCcw,
+                                    MiniMeIcons.RotateCcw,
                                     contentDescription = stringResource(R.string.prompts_reset_custom),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -871,7 +842,7 @@ fun SettingsScreen(
                                 section = SettingsSection.PromptEditor
                             }) {
                                 Icon(
-                                    FeatherIcons.Plus,
+                                    MiniMeIcons.Plus,
                                     contentDescription = stringResource(R.string.prompts_add_prompt),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -885,7 +856,7 @@ fun SettingsScreen(
                                 section = SettingsSection.PromptEditor
                             }) {
                                 Icon(
-                                    FeatherIcons.Edit2,
+                                    MiniMeIcons.Edit2,
                                     contentDescription = stringResource(R.string.subagent_edit),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(20.dp)
@@ -895,7 +866,7 @@ fun SettingsScreen(
                         SettingsSection.Storage -> {
                             IconButton(onClick = { storageViewModel?.refresh() }) {
                                 Icon(
-                                    FeatherIcons.RefreshCw,
+                                    MiniMeIcons.RefreshCw,
                                     contentDescription = stringResource(R.string.storage_refresh),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -1653,13 +1624,13 @@ internal fun SettingsMenu(
         SettingsGroupHeader(text = stringResource(R.string.settings_category_general))
         SettingsGroup {
             SettingsRow(
-                icon = FeatherIcons.Sliders,
+                icon = MiniMeIcons.Sliders,
                 title = stringResource(SettingsSection.General.titleRes),
                 onClick = { onOpen(SettingsSection.General) }
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Moon,
+                icon = MiniMeIcons.Moon,
                 title = stringResource(R.string.settings_theme_title),
                 onClick = onOpenThemeSheet,
                 trailing = {
@@ -1677,7 +1648,7 @@ internal fun SettingsMenu(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Terminal,
+                icon = MiniMeIcons.Terminal,
                 title = stringResource(R.string.terminal_settings_title),
                 onClick = onOpenTerminalSettingsSheet,
                 trailing = {
@@ -1690,7 +1661,7 @@ internal fun SettingsMenu(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Image,
+                icon = MiniMeIcons.Image,
                 title = stringResource(R.string.settings_background_image),
                 onClick = onOpenBackgroundSheet,
                 trailing = {
@@ -1704,7 +1675,7 @@ internal fun SettingsMenu(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Globe,
+                icon = MiniMeIcons.Globe,
                 title = stringResource(R.string.settings_language),
                 onClick = onOpenLanguageSheet,
                 trailing = {
@@ -1721,38 +1692,38 @@ internal fun SettingsMenu(
         SettingsGroupHeader(text = stringResource(R.string.settings_category_ai))
         SettingsGroup {
             SettingsRow(
-                icon = FeatherIcons.Cloud,
+                icon = MiniMeIcons.Cloud,
                 title = stringResource(SettingsSection.Providers.titleRes),
                 onClick = { onOpen(SettingsSection.Providers) },
                 modifier = Modifier.onboardingTarget(OnboardingStep.CONFIG_PROVIDER)
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Cpu,
+                icon = MiniMeIcons.Cpu,
                 title = stringResource(SettingsSection.DefaultModels.titleRes),
                 onClick = { onOpen(SettingsSection.DefaultModels) }
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Box,
+                icon = MiniMeIcons.Box,
                 title = stringResource(SettingsSection.Mcp.titleRes),
                 onClick = { onOpen(SettingsSection.Mcp) }
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Book,
+                icon = MiniMeIcons.Book,
                 title = stringResource(SettingsSection.Skills.titleRes),
                 onClick = { onOpen(SettingsSection.Skills) }
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Users,
+                icon = MiniMeIcons.Users,
                 title = stringResource(SettingsSection.SubAgents.titleRes),
                 onClick = { onOpen(SettingsSection.SubAgents) }
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.MessageSquare,
+                icon = MiniMeIcons.MessageSquare,
                 title = stringResource(SettingsSection.Prompts.titleRes),
                 onClick = { onOpen(SettingsSection.Prompts) }
             )
@@ -1762,19 +1733,19 @@ internal fun SettingsMenu(
         SettingsGroupHeader(text = stringResource(R.string.settings_category_environment))
         SettingsGroup {
             SettingsRow(
-                icon = FeatherIcons.HardDrive,
+                icon = MiniMeIcons.HardDrive,
                 title = stringResource(SettingsSection.Container.titleRes),
                 onClick = { onOpen(SettingsSection.Container) }
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Globe,
+                icon = MiniMeIcons.Globe,
                 title = stringResource(SettingsSection.Proxy.titleRes),
                 onClick = { onOpen(SettingsSection.Proxy) }
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Server,
+                icon = MiniMeIcons.Server,
                 title = stringResource(SettingsSection.RemoteServers.titleRes),
                 onClick = { onOpen(SettingsSection.RemoteServers) }
             )
@@ -1784,19 +1755,19 @@ internal fun SettingsMenu(
         SettingsGroupHeader(text = stringResource(R.string.settings_category_permissions))
         SettingsGroup {
             SettingsRow(
-                icon = FeatherIcons.Lock,
+                icon = MiniMeIcons.Lock,
                 title = stringResource(SettingsSection.Permissions.titleRes),
                 onClick = { onOpen(SettingsSection.Permissions) }
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Shield,
+                icon = MiniMeIcons.Shield,
                 title = stringResource(SettingsSection.AppPermissions.titleRes),
                 onClick = { onOpen(SettingsSection.AppPermissions) }
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.RefreshCw,
+                icon = MiniMeIcons.RefreshCw,
                 title = stringResource(SettingsSection.BackgroundRun.titleRes),
                 onClick = { onOpen(SettingsSection.BackgroundRun) }
             )
@@ -1806,25 +1777,25 @@ internal fun SettingsMenu(
         SettingsGroupHeader(text = stringResource(R.string.settings_category_data))
         SettingsGroup {
             SettingsRow(
-                icon = FeatherIcons.BarChart2,
+                icon = MiniMeIcons.BarChart2,
                 title = stringResource(SettingsSection.TokenStats.titleRes),
                 onClick = { onOpen(SettingsSection.TokenStats) }
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.PieChart,
+                icon = MiniMeIcons.PieChart,
                 title = stringResource(SettingsSection.Storage.titleRes),
                 onClick = { onOpen(SettingsSection.Storage) }
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Save,
+                icon = MiniMeIcons.Save,
                 title = stringResource(SettingsSection.Backup.titleRes),
                 onClick = { onOpen(SettingsSection.Backup) }
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.FileText,
+                icon = MiniMeIcons.FileText,
                 title = stringResource(SettingsSection.Log.titleRes),
                 onClick = { onOpen(SettingsSection.Log) }
             )
@@ -1834,19 +1805,19 @@ internal fun SettingsMenu(
         SettingsGroupHeader(text = stringResource(R.string.settings_category_help))
         SettingsGroup {
             SettingsRow(
-                icon = FeatherIcons.BookOpen,
+                icon = MiniMeIcons.BookOpen,
                 title = stringResource(R.string.settings_user_guide),
                 onClick = onOpenManual
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Zap,
+                icon = MiniMeIcons.Zap,
                 title = stringResource(R.string.settings_rerun_onboarding),
                 onClick = onRerunOnboarding
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Info,
+                icon = MiniMeIcons.Info,
                 title = stringResource(SettingsSection.About.titleRes),
                 onClick = { onOpen(SettingsSection.About) }
             )

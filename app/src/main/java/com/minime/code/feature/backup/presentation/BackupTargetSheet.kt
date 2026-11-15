@@ -53,10 +53,7 @@ import com.minime.code.core.ui.AppTextField
 import com.minime.code.core.ui.rememberSheetFlingFix
 import com.minime.code.feature.backup.domain.remote.BackupTarget
 import com.minime.code.feature.backup.domain.remote.BackupTargetType
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.Eye
-import compose.icons.feathericons.EyeOff
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 网络备份目标的新建/编辑底部弹窗：按类型（WebDAV / S3）切换字段，支持连通性测试与保存。
@@ -185,7 +182,7 @@ fun BackupTargetSheet(
                             visualTransformation = if (passwordVisible) VisualTransformation.None
                             else PasswordVisualTransformation(),
                             trailingIcon = {
-                                val image = if (passwordVisible) FeatherIcons.Eye else FeatherIcons.EyeOff
+                                val image = if (passwordVisible) MiniMeIcons.Eye else MiniMeIcons.EyeOff
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                     Icon(image, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
@@ -218,7 +215,7 @@ fun BackupTargetSheet(
                             visualTransformation = if (secretVisible) VisualTransformation.None
                             else PasswordVisualTransformation(),
                             trailingIcon = {
-                                val image = if (secretVisible) FeatherIcons.Eye else FeatherIcons.EyeOff
+                                val image = if (secretVisible) MiniMeIcons.Eye else MiniMeIcons.EyeOff
                                 IconButton(onClick = { secretVisible = !secretVisible }) {
                                     Icon(image, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
@@ -279,7 +276,7 @@ fun BackupTargetSheet(
                     modifier = Modifier.fillMaxWidth().height(44.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(FeatherIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(if (initial != null) R.string.common_save else R.string.common_add),

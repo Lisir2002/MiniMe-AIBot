@@ -213,6 +213,10 @@ public final class TerminalSession extends TerminalOutput {
                             return;
                         }
                         if (!mProcessToTerminalIOQueue.write(buffer, 0, read)) return;
+                        // 合并刷新通知：高频输出（构建日志/大文件）时，一个 UI 帧内可能读入多块，
+                        // 若每块都发一条消息会积压多条 handleMessage，逐条做 ANSI 解析+整屏 invalidate，
+                        // 抢占主线程帧预算造成"迟钝"。字节已全部写入 IO 队列不会丢，这里去重为一条即可。
+                        mMainThreadHandler.removeMessages(MSG_NEW_INPUT);
                         mMainThreadHandler.sendEmptyMessage(MSG_NEW_INPUT);
                     }
                 } catch (Exception e) {

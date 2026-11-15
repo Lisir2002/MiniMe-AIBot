@@ -47,10 +47,7 @@ import androidx.compose.ui.unit.dp
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.theme.semanticColors
 import com.minime.code.core.util.LineDiff
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ArrowLeft
-import compose.icons.feathericons.Edit3
-import compose.icons.feathericons.File
+import com.minime.code.core.ui.MiniMeIcons
 import dev.snipme.highlights.Highlights
 import dev.snipme.highlights.model.BoldHighlight
 import dev.snipme.highlights.model.ColorHighlight
@@ -133,7 +130,7 @@ fun DiffViewerScreen(
                 ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
@@ -143,7 +140,7 @@ fun DiffViewerScreen(
                             onOpenInEditor(path)
                         }) {
                             Icon(
-                                FeatherIcons.Edit3,
+                                MiniMeIcons.Edit3,
                                 contentDescription = stringResource(R.string.git_open_in_editor),
                                 modifier = Modifier.size(18.dp)
                             )
@@ -346,7 +343,7 @@ private fun BinaryHint(padding: androidx.compose.foundation.layout.PaddingValues
     Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
-                FeatherIcons.File,
+                MiniMeIcons.File,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(32.dp)

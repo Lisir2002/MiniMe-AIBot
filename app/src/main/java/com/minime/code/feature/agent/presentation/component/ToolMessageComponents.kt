@@ -75,21 +75,7 @@ import com.minime.code.core.theme.semanticColors
 import com.minime.code.feature.agent.domain.session.SessionUseCase
 import com.minime.code.feature.agent.presentation.AgentUIMessage
 import com.minime.code.core.ui.ExpandableChevronIcon
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.ChevronDown
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.ChevronUp
-import compose.icons.feathericons.Cpu
-import compose.icons.feathericons.Database
-import compose.icons.feathericons.Edit3
-import compose.icons.feathericons.FileText
-import compose.icons.feathericons.Globe
-import compose.icons.feathericons.HelpCircle
-import compose.icons.feathericons.Image
-import compose.icons.feathericons.Search
-import compose.icons.feathericons.Terminal
-import compose.icons.feathericons.Tool
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -605,17 +591,17 @@ internal fun ToolStatusIcon(running: Boolean, isError: Boolean, toolName: String
 
 /** 工具名字形映射：键与 [com.minime.code.feature.agent.domain.tool.ToolRegistry] 注册名一致（比对时忽略大小写）。 */
 private fun toolIcon(toolName: String?): ImageVector = when (toolName?.lowercase()) {
-    "editfile", "writefile", "generateimage" -> FeatherIcons.Edit3
-    "readfile", "list", "sendfile" -> FeatherIcons.FileText
-    "viewimage" -> FeatherIcons.Image
-    "search", "websearch", "webfetch" -> FeatherIcons.Search
-    "browser" -> FeatherIcons.Globe
-    "bash", "terminal" -> FeatherIcons.Terminal
-    "askuserquestion" -> FeatherIcons.HelpCircle
-    "todo" -> FeatherIcons.Check
-    "task" -> FeatherIcons.Cpu
-    "memory" -> FeatherIcons.Database
-    else -> FeatherIcons.Tool
+    "editfile", "writefile", "generateimage" -> MiniMeIcons.Edit3
+    "readfile", "list", "sendfile" -> MiniMeIcons.FileText
+    "viewimage" -> MiniMeIcons.Image
+    "search", "websearch", "webfetch" -> MiniMeIcons.Search
+    "browser" -> MiniMeIcons.Globe
+    "bash", "terminal" -> MiniMeIcons.Terminal
+    "askuserquestion" -> MiniMeIcons.HelpCircle
+    "todo" -> MiniMeIcons.Check
+    "task" -> MiniMeIcons.Cpu
+    "memory" -> MiniMeIcons.Database
+    else -> MiniMeIcons.Tool
 }
 
 /**

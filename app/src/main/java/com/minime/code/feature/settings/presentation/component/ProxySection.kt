@@ -46,10 +46,7 @@ import com.minime.code.core.ui.AppTextField
 import com.minime.code.feature.settings.data.repository.ProxyConfig
 import com.minime.code.feature.settings.domain.model.ProxyType
 import com.minime.code.feature.settings.presentation.SettingsViewModel.ProxyTestUiState
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Check
-import compose.icons.feathericons.Eye
-import compose.icons.feathericons.EyeOff
+import com.minime.code.core.ui.MiniMeIcons
 
 /** 默认测试目标：返回 204 的连通性端点，不依赖响应体格式。 */
 private const val DEFAULT_TEST_URL = "https://www.google.com"
@@ -157,7 +154,7 @@ internal fun ProxySection(
                     singleLine = true,
                     trailingIcon = {
                         Icon(
-                            imageVector = if (passwordVisible) FeatherIcons.Eye else FeatherIcons.EyeOff,
+                            imageVector = if (passwordVisible) MiniMeIcons.Eye else MiniMeIcons.EyeOff,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
@@ -303,7 +300,7 @@ private fun ProxyTypeSelectionSheet(
                         )
                         if (isSelected) {
                             Icon(
-                                imageVector = FeatherIcons.Check,
+                                imageVector = MiniMeIcons.Check,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary

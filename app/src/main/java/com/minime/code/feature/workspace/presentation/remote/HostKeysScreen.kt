@@ -56,14 +56,7 @@ import com.minime.code.feature.settings.presentation.component.SettingsRow
 import com.minime.code.feature.settings.presentation.component.settingsLightMode
 import com.minime.code.feature.settings.presentation.component.settingsPageBackground
 import com.minime.code.R
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ArrowLeft
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.Clipboard
-import compose.icons.feathericons.FileText
-import compose.icons.feathericons.Key
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.Shield
+import com.minime.code.core.ui.MiniMeIcons
 
 /** SSH 密钥设置独立页面：底部双 tab——「密钥」管理登录私钥库，「指纹」展示已保存的主机指纹。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -133,13 +126,13 @@ fun HostKeysScreen(
                 title = { Text(stringResource(R.string.ssh_host_key_settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     if (pagerState.currentPage == 0) {
                         IconButton(onClick = { showAddKeySheet = true }) {
-                            Icon(FeatherIcons.Plus, contentDescription = stringResource(R.string.ssh_login_key_add))
+                            Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.ssh_login_key_add))
                         }
                     }
                 }
@@ -223,7 +216,7 @@ fun HostKeysScreen(
                                             }
                                             Spacer(modifier = Modifier.width(Spacing.xs))
                                             Icon(
-                                                imageVector = FeatherIcons.ChevronRight,
+                                                imageVector = MiniMeIcons.ChevronRight,
                                                 contentDescription = null,
                                                 tint = MaterialTheme.semanticColors.subtleText,
                                                 modifier = Modifier.width(18.dp)
@@ -240,8 +233,8 @@ fun HostKeysScreen(
             FloatingTabBar(
                 pagerState = pagerState,
                 items = listOf(
-                    FloatingTabItem(FeatherIcons.Key, stringResource(R.string.ssh_host_key_tab_keys)),
-                    FloatingTabItem(FeatherIcons.Shield, stringResource(R.string.ssh_host_key_tab_fingerprints))
+                    FloatingTabItem(MiniMeIcons.Key, stringResource(R.string.ssh_host_key_tab_keys)),
+                    FloatingTabItem(MiniMeIcons.Shield, stringResource(R.string.ssh_host_key_tab_fingerprints))
                 ),
                 maskColor = settingsPageBackground(),
                 isScrolling = tabsScrolling,
@@ -334,7 +327,7 @@ private fun LoginKeyRow(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = FeatherIcons.Key,
+                    imageVector = MiniMeIcons.Key,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(22.dp)
@@ -359,7 +352,7 @@ private fun LoginKeyRow(
             }
             Spacer(modifier = Modifier.width(Spacing.xs))
             Icon(
-                imageVector = FeatherIcons.ChevronRight,
+                imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)
@@ -396,14 +389,14 @@ private fun AddLoginKeyMethodSheet(
             )
             SettingsGroup {
                 SettingsRow(
-                    icon = FeatherIcons.FileText,
+                    icon = MiniMeIcons.FileText,
                     title = stringResource(R.string.ssh_login_key_add_from_file),
                     subtitle = stringResource(R.string.ssh_login_key_add_from_file_desc),
                     onClick = onPickFile
                 )
                 SettingsDivider()
                 SettingsRow(
-                    icon = FeatherIcons.Clipboard,
+                    icon = MiniMeIcons.Clipboard,
                     title = stringResource(R.string.ssh_login_key_add_from_paste),
                     subtitle = stringResource(R.string.ssh_login_key_add_from_paste_desc),
                     onClick = onPaste

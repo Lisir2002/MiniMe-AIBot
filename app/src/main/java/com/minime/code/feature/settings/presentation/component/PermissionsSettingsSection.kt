@@ -41,12 +41,7 @@ import com.minime.code.core.ui.AppSwitch
 import com.minime.code.core.ui.SwipeToDeleteRow
 import com.minime.code.feature.agent.domain.permission.PermissionDecision
 import com.minime.code.feature.agent.domain.permission.PermissionRule
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.CheckCircle
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.Shield
-import compose.icons.feathericons.XCircle
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.coroutines.delay
 
 /**
@@ -81,7 +76,7 @@ internal fun PermissionsSection(
         SettingsGroupHeader(text = stringResource(R.string.perm_safety_group))
         SettingsGroup {
             SettingsRow(
-                icon = FeatherIcons.Shield,
+                icon = MiniMeIcons.Shield,
                 title = stringResource(R.string.perm_disable_safety_interception),
                 subtitle = stringResource(R.string.perm_disable_safety_interception_desc),
                 trailing = {
@@ -218,7 +213,7 @@ internal fun RuleRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = if (allowed) FeatherIcons.CheckCircle else FeatherIcons.XCircle,
+                imageVector = if (allowed) MiniMeIcons.CheckCircle else MiniMeIcons.XCircle,
                 contentDescription = null,
                 tint = iconTint,
                 modifier = Modifier.size(18.dp)
@@ -251,7 +246,7 @@ internal fun RuleRow(
             if (onPromote != null) {
                 IconButton(onClick = onPromote) {
                     Icon(
-                        imageVector = FeatherIcons.Plus,
+                        imageVector = MiniMeIcons.Plus,
                         contentDescription = stringResource(R.string.perm_promote_to_global),
                         tint = iconTint,
                         modifier = Modifier.size(18.dp)

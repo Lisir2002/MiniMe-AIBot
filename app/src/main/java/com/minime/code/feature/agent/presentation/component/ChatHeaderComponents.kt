@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,12 +45,7 @@ import com.minime.code.feature.agent.domain.model.AgentMode
 import com.minime.code.feature.onboarding.domain.OnboardingStep
 import com.minime.code.feature.onboarding.presentation.onboardingTarget
 import com.minime.code.feature.settings.presentation.component.ModelLogoIcon
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.GitBranch
-import compose.icons.feathericons.Globe
-import compose.icons.feathericons.Menu
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.Terminal
+import com.minime.code.core.ui.MiniMeIcons
 
 @Composable
 internal fun ChatHeader(
@@ -68,10 +64,13 @@ internal fun ChatHeader(
     showMenuButton: Boolean = true,
     terminalActive: Boolean = false,
     gitActive: Boolean = false,
-    browserActive: Boolean = false
+    browserActive: Boolean = false,
+    // 滚动淡出：与输入框使用同一套理念——内容滚动中顶栏淡化，停止后恢复，把视觉重心让给正文。
+    headerAlpha: Float = 1f
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.background
+        color = MaterialTheme.colorScheme.background,
+        modifier = Modifier.graphicsLayer { alpha = headerAlpha }
     ) {
         Column(
             modifier = Modifier
@@ -81,7 +80,7 @@ internal fun ChatHeader(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Spacing.sm, vertical = Spacing.sm),
+                    .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // 大屏常驻侧栏时隐掉汉堡键：侧栏已经摆在左边，再给个开关反而困惑。
@@ -91,7 +90,7 @@ internal fun ChatHeader(
                         modifier = Modifier.onboardingTarget(OnboardingStep.OPEN_SIDEBAR)
                     ) {
                         Icon(
-                            FeatherIcons.Menu,
+                            MiniMeIcons.Menu,
                             contentDescription = stringResource(R.string.chat_open_sidebar),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -124,18 +123,18 @@ internal fun ChatHeader(
                 }
                 IconButton(onClick = onNewChat) {
                     Icon(
-                        FeatherIcons.Plus,
+                        MiniMeIcons.Plus,
                         contentDescription = stringResource(R.string.chat_new_session),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 WorkbenchIconButton(
-                    icon = FeatherIcons.GitBranch,
+                    icon = MiniMeIcons.GitBranch,
                     contentDescription = stringResource(R.string.chat_open_git),
                     active = gitActive,
                     onClick = onNavigateToGit
                 )
                 WorkbenchIconButton(
-                    icon = FeatherIcons.Terminal,
+                    icon = MiniMeIcons.Terminal,
                     contentDescription = stringResource(R.string.chat_open_terminal),
                     active = terminalActive,
                     onClick = onNavigateToTerminal

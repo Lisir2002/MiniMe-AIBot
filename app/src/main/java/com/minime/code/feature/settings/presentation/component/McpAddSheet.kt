@@ -17,9 +17,7 @@ import com.minime.code.core.theme.Spacing
 import com.minime.code.core.ui.AdaptiveModalBottomSheet
 import com.minime.code.core.ui.SegmentedTabs
 import com.minime.code.feature.agent.domain.mcp.McpScope
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Edit3
-import compose.icons.feathericons.FileText
+import com.minime.code.core.ui.MiniMeIcons
 
 /**
  * 「添加 MCP 服务器」底部弹层：顶部选作用域（全局 / 当前项目），下方两种添加方式——
@@ -73,14 +71,14 @@ internal fun McpAddSheet(
 
             SettingsGroup {
                 SettingsRow(
-                    icon = FeatherIcons.Edit3,
+                    icon = MiniMeIcons.Edit3,
                     title = stringResource(R.string.mcp_add_manual),
                     subtitle = stringResource(R.string.mcp_add_manual_desc),
                     onClick = onManual
                 )
                 SettingsDivider()
                 SettingsRow(
-                    icon = FeatherIcons.FileText,
+                    icon = MiniMeIcons.FileText,
                     title = stringResource(R.string.mcp_add_from_json),
                     subtitle = stringResource(R.string.mcp_add_from_json_desc),
                     onClick = onImportJson

@@ -62,14 +62,7 @@ import com.minime.code.feature.settings.presentation.component.settingsPageBackg
 import com.minime.code.feature.workspace.domain.model.RemoteConnection
 import com.minime.code.feature.workspace.domain.model.RemoteMount
 import com.minime.code.R
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ArrowLeft
-import compose.icons.feathericons.Folder
-import compose.icons.feathericons.Key
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.Server
-import compose.icons.feathericons.Settings
-import compose.icons.feathericons.UploadCloud
+import com.minime.code.core.ui.MiniMeIcons
 import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -124,16 +117,16 @@ fun RemoteServerScreen(
                 title = { Text(stringResource(R.string.remote_workspace_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     if (pagerState.currentPage == 0) {
                         IconButton(onClick = { showHostKeysScreen = true }) {
-                            Icon(FeatherIcons.Key, contentDescription = stringResource(R.string.ssh_host_key_settings_title))
+                            Icon(MiniMeIcons.Key, contentDescription = stringResource(R.string.ssh_host_key_settings_title))
                         }
                         IconButton(onClick = { showSyncSettingsSheet = true }) {
-                            Icon(FeatherIcons.Settings, contentDescription = stringResource(R.string.sync_settings_title))
+                            Icon(MiniMeIcons.Settings, contentDescription = stringResource(R.string.sync_settings_title))
                         }
                     }
                     if (pagerState.currentPage == 0 || pagerState.currentPage == 1) {
@@ -146,7 +139,7 @@ fun RemoteServerScreen(
                                 showAddMountDialog = true
                             }
                         }) {
-                            Icon(FeatherIcons.Plus, contentDescription = stringResource(R.string.common_add))
+                            Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.common_add))
                         }
                     }
                 }
@@ -274,9 +267,9 @@ fun RemoteServerScreen(
             FloatingTabBar(
                 pagerState = pagerState,
                 items = listOf(
-                    FloatingTabItem(FeatherIcons.Server, stringResource(R.string.remote_tab_connections)),
-                    FloatingTabItem(FeatherIcons.Folder, stringResource(R.string.remote_tab_mounts)),
-                    FloatingTabItem(FeatherIcons.UploadCloud, stringResource(R.string.remote_tab_ftp))
+                    FloatingTabItem(MiniMeIcons.Server, stringResource(R.string.remote_tab_connections)),
+                    FloatingTabItem(MiniMeIcons.Folder, stringResource(R.string.remote_tab_mounts)),
+                    FloatingTabItem(MiniMeIcons.UploadCloud, stringResource(R.string.remote_tab_ftp))
                 ),
                 maskColor = settingsPageBackground(),
                 isScrolling = tabsScrolling,

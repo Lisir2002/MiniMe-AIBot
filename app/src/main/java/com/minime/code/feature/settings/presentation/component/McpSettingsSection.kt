@@ -51,13 +51,7 @@ import com.minime.code.feature.agent.domain.mcp.McpScope
 import com.minime.code.feature.agent.domain.mcp.McpServerConfig
 import com.minime.code.feature.agent.domain.mcp.McpServerEntry
 import com.minime.code.feature.agent.domain.mcp.McpServerStatus
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Box
-import compose.icons.feathericons.ChevronRight
-import compose.icons.feathericons.RefreshCw
-import compose.icons.feathericons.Search
-import compose.icons.feathericons.Terminal
-import compose.icons.feathericons.Trash2
+import com.minime.code.core.ui.MiniMeIcons
 import com.minime.code.R
 
 /**
@@ -88,7 +82,7 @@ internal fun McpSection(
             if (selection.isActive) selection.exit()
         }
         SettingsEmptyState(
-            icon = FeatherIcons.Terminal,
+            icon = MiniMeIcons.Terminal,
             title = stringResource(R.string.mcp_empty),
             hint = stringResource(R.string.mcp_empty_hint),
             modifier = Modifier
@@ -147,13 +141,13 @@ internal fun McpSection(
                     onClick = { onBatchSetEnabled(targets, false) }
                 )
                 SelectionActionIconButton(
-                    icon = FeatherIcons.RefreshCw,
+                    icon = MiniMeIcons.RefreshCw,
                     contentDescription = stringResource(R.string.common_batch_reconnect),
                     enabled = enabled,
                     onClick = { onBatchReconnect(targets.map { it.first }) }
                 )
                 SelectionActionIconButton(
-                    icon = FeatherIcons.Trash2,
+                    icon = MiniMeIcons.Trash2,
                     contentDescription = stringResource(R.string.common_batch_delete),
                     enabled = enabled,
                     onClick = { showBatchDeleteConfirm = true },
@@ -193,7 +187,7 @@ internal fun McpSection(
                             verticalArrangement = Arrangement.spacedBy(Spacing.sm)
                         ) {
                             Icon(
-                                FeatherIcons.Search,
+                                MiniMeIcons.Search,
                                 contentDescription = null,
                                 modifier = Modifier.size(28.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
@@ -322,7 +316,7 @@ internal fun McpServerRow(
                     )
             ) {
                 Icon(
-                    imageVector = FeatherIcons.Box,
+                    imageVector = MiniMeIcons.Box,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
@@ -381,7 +375,7 @@ internal fun McpServerRow(
             )
             Spacer(modifier = Modifier.width(Spacing.xs))
             Icon(
-                imageVector = FeatherIcons.ChevronRight,
+                imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = stringResource(R.string.mcp_details),
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)
