@@ -1,10 +1,10 @@
 export default {
   meta: {
-    title: "AiCode Official Website — Open-source AI Coding Agent for Android",
-    description: "The official website of AiCode, a general-purpose, open-source AI Coding Agent for Android. Includes a full Alpine Linux container and multi-tab terminals, with local development, remote SSH, visual Git, MCP and support for multiple AI providers."
+    title: "MiniMe-Code Official Website — Open-source AI Coding Agent for Android",
+    description: "The official website of MiniMe-Code, a general-purpose, open-source AI Coding Agent for Android. Includes a full Alpine Linux container and multi-tab terminals, with local development, remote SSH, visual Git, MCP and support for multiple AI providers."
   },
   nav: {
-    logoAlt: "AiCode logo",
+    logoAlt: "MiniMe-Code logo",
     label: "Main navigation",
     links: {
       preview: "Preview",
@@ -98,19 +98,19 @@ export default {
       qiniu: {
         name: "Qiniu AI",
         tag: "Referral link",
-        desc: "New users receive 3 million Tokens valid for 2 years. Supports 50+ popular AI models and connects directly to AiCode.",
+        desc: "New users receive 3 million Tokens valid for 2 years. Supports 50+ popular AI models and connects directly to MiniMe-Code.",
         linkText: "Learn more"
       }
     }
   },
   cta: {
     title: "Start your next project on your phone",
-    subtitle: "If AiCode helps you, give it a Star on GitHub.",
+    subtitle: "If MiniMe-Code helps you, give it a Star on GitHub.",
     download: "Download the latest version",
     github: "Star on GitHub"
   },
   footer: {
-    backToTop: "AiCode, back to top",
+    backToTop: "MiniMe-Code, back to top",
     description: "A general-purpose AI Coding Agent for Android with a Linux development environment, supporting local work and remote SSH.",
     navigation: "Footer navigation",
     columns: {
@@ -139,7 +139,7 @@ export default {
         }
       }
     },
-    copyright: "© 2026 AiCode · GPL-3.0 open-source license",
+    copyright: "© 2026 MiniMe-Code · GPL-3.0 open-source license",
     usage: "For learning, research and lawful software development only"
   }
 };

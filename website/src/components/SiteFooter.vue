@@ -5,7 +5,7 @@
         <div class="footer__brand-block">
           <a href="#top" class="footer__brand" :aria-label="copy.site.footer.backToTop">
             <img src="/assets/logo.png" alt="" width="32" height="32" class="footer__logo" />
-            <span>AiCode</span>
+            <span>MiniMe-Code</span>
           </a>
           <p class="footer__description">
             {{ copy.site.footer.description }}
@@ -45,18 +45,18 @@ const columns = computed(() => [
     id: "quickLinks",
     title: copy.value.site.footer.columns.quickLinks.title,
     links: [
-      { label: copy.value.site.footer.columns.quickLinks.links.releases, href: "https://github.com/jieapi/aicode/releases/latest" },
-      { label: copy.value.site.footer.columns.quickLinks.links.download, href: "https://aicode.murk.top/download" },
-      { label: copy.value.site.footer.columns.quickLinks.links.guide, href: "https://aicode.murk.top" },
-      { label: copy.value.site.footer.columns.quickLinks.links.quickStart, href: "https://aicode.murk.top/guide/quick-start" }
+      { label: copy.value.site.footer.columns.quickLinks.links.releases, href: "https://github.com/jieapi/minimecode/releases/latest" },
+      { label: copy.value.site.footer.columns.quickLinks.links.download, href: "https://minimecode.murk.top/download" },
+      { label: copy.value.site.footer.columns.quickLinks.links.guide, href: "https://minimecode.murk.top" },
+      { label: copy.value.site.footer.columns.quickLinks.links.quickStart, href: "https://minimecode.murk.top/guide/quick-start" }
     ]
   },
   {
     id: "contribute",
     title: copy.value.site.footer.columns.contribute.title,
     links: [
-      { label: copy.value.site.footer.columns.contribute.links.issues, href: "https://github.com/jieapi/aicode/issues" },
-      { label: copy.value.site.footer.columns.contribute.links.pulls, href: "https://github.com/jieapi/aicode/pulls" }
+      { label: copy.value.site.footer.columns.contribute.links.issues, href: "https://github.com/jieapi/minimecode/issues" },
+      { label: copy.value.site.footer.columns.contribute.links.pulls, href: "https://github.com/jieapi/minimecode/pulls" }
     ]
   },
   {

@@ -103,8 +103,8 @@ test("a local build without an origin still gets translated metadata but no SEO 
 });
 
 test("metadata and environment-derived href attributes are HTML-escaped", () => {
-  const text = `AiCode & <test> "quoted" 'text'`;
-  const escaped = "AiCode &amp; &lt;test&gt; &quot;quoted&quot; &#39;text&#39;";
+  const text = `MiniMe-Code & <test> "quoted" 'text'`;
+  const escaped = "MiniMe-Code &amp; &lt;test&gt; &quot;quoted&quot; &#39;text&#39;";
   const head = createPageHead("en", null, { title: text, description: text });
   assert.equal(head, `<title>${escaped}</title>\n<meta name="description" content="${escaped}" />`);
 

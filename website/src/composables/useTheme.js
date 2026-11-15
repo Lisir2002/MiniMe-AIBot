@@ -1,6 +1,6 @@
 import { onMounted, ref } from "vue";
 
-const STORAGE_KEY = "aicode-site-theme";
+const STORAGE_KEY = "minimecode-site-theme";
 
 export function useTheme() {
   const theme = ref("light");

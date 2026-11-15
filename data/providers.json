@@ -103,8 +103,8 @@
     ]
   },
   {
-    "id": "aicode",
-    "name": "AiCode",
+    "id": "minimecode",
+    "name": "MiniMe-Code",
     "type": "OPENAI",
     "baseUrl": "https://ai.murk.top/v1",
     "isRecommended": true,

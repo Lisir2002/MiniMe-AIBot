@@ -30,7 +30,7 @@
           </div>
           <div class="quick-start__actions">
             <a
-              href="https://github.com/jieapi/aicode/releases/latest"
+              href="https://github.com/jieapi/minimecode/releases/latest"
               target="_blank"
               rel="noopener noreferrer"
               class="btn btn--lg quick-start__download-primary"
@@ -39,7 +39,7 @@
               <span>{{ copy.site.download.github }}</span>
             </a>
             <a
-              href="https://aicode.murk.top/download"
+              href="https://minimecode.murk.top/download"
               target="_blank"
               rel="noopener noreferrer"
               class="quick-start__download-secondary"

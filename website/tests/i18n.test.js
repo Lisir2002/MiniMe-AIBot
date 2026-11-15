@@ -108,7 +108,7 @@ test("the prerender template matches the default Chinese locale and metadata", (
 
 test("both languages provide translated page metadata", () => {
   for (const messages of Object.values(translations)) {
-    assert.match(messages.site.meta.title, /AiCode/);
+    assert.match(messages.site.meta.title, /MiniMe-Code/);
     assert.ok(messages.site.meta.description.length > 30);
   }
   assert.match(translations["zh-CN"].site.meta.title, /[\u4e00-\u9fff]/);

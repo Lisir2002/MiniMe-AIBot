@@ -31,7 +31,7 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file_
 ASSETS_PATH = os.path.join(REPO_ROOT, "app", "src", "main", "assets", "container-images.json")
 TARGET_PATH = os.path.join(REPO_ROOT, "data", "container-images.json")
 
-UA = "aicode-container-images-sync"
+UA = "minimecode-container-images-sync"
 TIMEOUT = 30
 
 EOL_API = {

@@ -1,6 +1,6 @@
-# AiCode 官网
+# MiniMe-Code 官网
 
-AiCode 官方网站，基于 Vue 3 + Vite 5，构建时预渲染为静态 HTML（SSG）。
+MiniMe-Code 官方网站，基于 Vue 3 + Vite 5，构建时预渲染为静态 HTML（SSG）。
 
 ## 开发
 
@@ -9,7 +9,7 @@ npm install
 npm run dev      # http://localhost:5173
 ```
 
-中文默认地址为 `/`，英文独立地址为 `/en/`（含末尾斜杠）；两种语言都可以直接访问，也可通过顶部语言入口切换。
+中文默认地址为 `/`，英文独立地址为 `/en/`（含末尾斜杠）；两种语言均可直接访问，也可通过顶部语言入口切换。
 
 ## 构建
 

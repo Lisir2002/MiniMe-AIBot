@@ -2,7 +2,7 @@
   <div class="replica-stage reveal" v-reveal style="--delay: 0.15s">
     <div class="replica-glow"></div>
 
-    <div class="aicode-device" :class="{ 'drawer-open': drawerOpen }">
+    <div class="minimecode-device" :class="{ 'drawer-open': drawerOpen }">
       <!-- Android Status Bar -->
       <div class="ac-statusbar" :class="{ 'is-surface': statusbarSurface }">
         <div class="ac-statusbar__left">

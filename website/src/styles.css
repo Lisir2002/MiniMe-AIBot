@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AiCode Official Website — 1:1 Native HTML Replica + Minimalist Landing Page
+   MiniMe-Code Official Website — 1:1 Native HTML Replica + Minimalist Landing Page
    ========================================================================== */
 
 :root {
@@ -23,7 +23,7 @@
   --card-gradient: linear-gradient(135deg, rgba(193, 95, 60, 0.04) 0%, rgba(106, 155, 204, 0.04) 100%);
   --glow-orb: rgba(193, 95, 60, 0.08);
 
-  /* AiCode App Replica Tokens (Exact Match with AppThemePreset.COFFEE) */
+  /* MiniMe-Code App Replica Tokens (Exact Match with AppThemePreset.COFFEE) */
   --ac-bg: #F5F3EC;
   --ac-surface: #FCFBF7;
   --ac-surface-variant: #EDEAE0;
@@ -79,7 +79,7 @@ html[data-theme="dark"] {
   --card-gradient: linear-gradient(135deg, rgba(224, 138, 107, 0.06) 0%, rgba(143, 180, 219, 0.04) 100%);
   --glow-orb: rgba(224, 138, 107, 0.12);
 
-  /* AiCode App Replica Dark Tokens */
+  /* MiniMe-Code App Replica Dark Tokens */
   --ac-bg: #1A1917;
   --ac-surface: #232220;
   --ac-surface-variant: #2E2C29;
@@ -491,7 +491,7 @@ code {
 }
 
 /* ==========================================================================
-   1:1 Native HTML/CSS Replica of AiCode App
+   1:1 Native HTML/CSS Replica of MiniMe-Code App
    ========================================================================== */
 
 .replica-stage {
@@ -511,7 +511,7 @@ code {
   pointer-events: none;
 }
 
-.aicode-device {
+.minimecode-device {
   position: relative;
   width: 100%;
   max-width: 1100px;
@@ -529,7 +529,7 @@ code {
 
 /* Phone Single-Pane Mode (<= 860px) */
 @media (max-width: 860px) {
-  .aicode-device {
+  .minimecode-device {
     max-width: 400px;
     height: 740px;
     border-radius: 28px;
@@ -603,7 +603,7 @@ code {
 }
 
 @media (max-width: 860px) {
-  .aicode-device .ac-drawer {
+  .minimecode-device .ac-drawer {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -615,14 +615,14 @@ code {
 }
 
 @media (max-width: 860px) {
-  .aicode-device.drawer-open .ac-drawer {
+  .minimecode-device.drawer-open .ac-drawer {
     transform: translateX(0);
     box-shadow: 12px 0 32px rgba(0, 0, 0, 0.18);
   }
 }
 
 @media (max-width: 860px) {
-  .aicode-device.drawer-open .ac-scrim {
+  .minimecode-device.drawer-open .ac-scrim {
     display: block;
     position: absolute;
     inset: 0;
@@ -846,7 +846,7 @@ code {
 }
 
 @media (max-width: 860px) {
-  .aicode-device .ac-header__menu {
+  .minimecode-device .ac-header__menu {
     display: inline-flex;
   }
 }
@@ -858,7 +858,7 @@ code {
 }
 
 @media (max-width: 860px) {
-  .aicode-device .ac-header__titles {
+  .minimecode-device .ac-header__titles {
     padding-left: 0;
   }
 }
@@ -1108,7 +1108,7 @@ code {
 }
 
 @media (max-width: 860px) {
-  .aicode-device .ac-workbench-pane {
+  .minimecode-device .ac-workbench-pane {
     position: absolute;
     inset: 0;
     border-left: none;
