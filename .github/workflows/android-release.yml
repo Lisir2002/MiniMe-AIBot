@@ -21,7 +21,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # 版本号已在 app/build.gradle.kts 固定为 1.0.0（versionCode=1），不再依赖 git 历史。
+          # 版本号由 GITHUB_REF_NAME（tag）派生：v1.0.0-rc2 → versionName 1.0.0-rc2。
           fetch-depth: 0
 
       - name: Set up JDK 17

@@ -19,8 +19,14 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
-// 版本号：回退到 1.0.0 初始版本（固定值，不再由 git tag / 提交数动态生成）。
-val APP_VERSION_NAME = "1.0.0"
+// 版本号由发布 tag 派生：CI 打 v1.0.0-rc2 tag 时 GITHUB_REF_NAME=v1.0.0-rc2 → versionName=1.0.0-rc2；
+// 正式版 v1.0.0 → 1.0.0。本地构建 / 手动触发（无匹配 tag）回退到 1.0.0。
+// 用 providers.environmentVariable 而非 Project.exec，兼容 org.gradle.configuration-cache。
+val APP_VERSION_NAME: String = providers.environmentVariable("GITHUB_REF_NAME")
+    .orNull
+    ?.takeIf { it.matches(Regex("v\\d+.*")) }
+    ?.removePrefix("v")
+    ?: "1.0.0"
 val APP_VERSION_CODE = 1
 
 // AI 内置文档（~/.minimecode/docs）的源在仓库根的 docs-site/docs：同一份 Markdown 既构建 VitePress
