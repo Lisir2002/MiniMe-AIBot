@@ -52,7 +52,11 @@ class AgentRunner(
         store.setTaskStatus(taskId, TaskStatus.QUEUED)
         val job = scope.launch(Dispatchers.IO) {
             try {
-                runLoop(sessionId, taskId, userText, providerConfig)
+                // 多轮：把会话已有历史接上本轮用户提问，云端自带完整上下文
+                val history = store.getSessionContext(sessionId).toMutableList()
+                history += AgentMessage.UserMessage(content = userText)
+                store.append(NewEvent(sessionId, EventKind.USER_MESSAGE, taskId, text = userText))
+                runLoop(sessionId, taskId, history, providerConfig, startIteration = 0, appendUserEvent = false)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Throwable) {
@@ -66,56 +70,120 @@ class AgentRunner(
         running[taskId] = job
     }
 
-    private suspend fun runLoop(sessionId: String, taskId: String, userText: String, cfg: ProviderConfigDto) {
+    /**
+     * 服务启动后续跑：扫描非终态任务，从其 checkpoint 恢复对话与迭代轮次继续执行。
+     * 进程重启会丢失挂起的审批 deferred——这类任务重新跑到该工具时会重新发 pending_decision 等待审批。
+     */
+    fun resumeUnfinished() {
+        val tasks = store.unfinishedTasks()
+        if (tasks.isEmpty()) return
+        log.info("发现 ${tasks.size} 个未完成任务，开始续跑")
+        for (t in tasks) {
+            val cfg = store.getTaskProvider(t.taskId) ?: run {
+                log.warn("任务 ${t.taskId} 缺少 provider 配置，标记失败")
+                store.setTaskStatus(t.taskId, TaskStatus.FAILED)
+                store.append(NewEvent(t.sessionId, EventKind.TASK_FAILED, t.taskId, text = "续跑失败：缺少模型配置", isError = true))
+                continue
+            }
+            val cp = store.getCheckpoint(t.taskId)
+            val messages = if (cp != null && cp.messagesJson != "[]") {
+                runCatching { json.decodeFromString<List<AgentMessage>>(cp.messagesJson) }.getOrDefault(mutableListOf())
+            } else emptyList()
+            if (messages.isEmpty()) {
+                // 尚无有效 checkpoint（任务刚入队就崩溃），标记失败让 App 重新提交
+                store.setTaskStatus(t.taskId, TaskStatus.FAILED)
+                store.append(NewEvent(t.sessionId, EventKind.TASK_FAILED, t.taskId, text = "续跑失败：无有效断点，请重新提问", isError = true))
+                continue
+            }
+            val startIteration = cp?.iteration ?: 0
+            val taskId = t.taskId
+            val sessionId = t.sessionId
+            val job = scope.launch(Dispatchers.IO) {
+                try {
+                    log.info("续跑任务 $taskId，从第 $startIteration 轮恢复")
+                    runLoop(sessionId, taskId, messages.toMutableList(), cfg, startIteration, appendUserEvent = false)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    log.error("续跑任务 $taskId 失败", e)
+                    store.append(NewEvent(sessionId, EventKind.TASK_FAILED, taskId, text = e.message ?: "续跑错误", isError = true))
+                    store.setTaskStatus(taskId, TaskStatus.FAILED)
+                } finally {
+                    running.remove(taskId)
+                }
+            }
+            running[taskId] = job
+        }
+    }
+
+    private suspend fun runLoop(
+        sessionId: String,
+        taskId: String,
+        initialMessages: MutableList<AgentMessage>,
+        cfg: ProviderConfigDto,
+        startIteration: Int,
+        appendUserEvent: Boolean
+    ) {
         store.setTaskStatus(taskId, TaskStatus.RUNNING)
-        store.append(NewEvent(sessionId, EventKind.USER_MESSAGE, taskId, text = userText))
+        if (appendUserEvent) {
+            store.append(NewEvent(sessionId, EventKind.USER_MESSAGE, taskId, text = initialMessages.lastOrNull()?.let {
+                (it as? AgentMessage.UserMessage)?.content
+            } ?: ""))
+        }
 
         val provider = buildProvider(cfg)
         provider.logSessionId = sessionId
 
-        // 第一版：每个任务一条用户消息起步（历史回放留待 P4 App 接入时补齐）。
-        val messages = mutableListOf<AgentMessage>(AgentMessage.UserMessage(content = userText))
+        val messages = initialMessages
         val tools: List<AgentTool> = listOf(BashTool(workspaceRoot))
 
         val maxIterations = 30
-        var iteration = 0
+        var iteration = startIteration
         while (iteration < maxIterations) {
-            // checkpoint：每轮保存对话与轮次，服务重启后可从这里恢复（P5 续跑用）。
-            store.saveCheckpoint(taskId, TaskCheckpoint(messagesJson = json.encodeToString(messages), iteration = iteration))
+            // 续跑检测：若 checkpoint 恰好停在「assistant 已回填、工具未执行完」（常见于审批挂起时崩溃），
+            // 直接续执行这些 toolCalls，不再调 LLM、不重复落 assistant_text 事件。
+            val last = messages.lastOrNull()
+            val resumeCalls = if (last is AgentMessage.AssistantMessage && last.toolCalls.isNotEmpty()) last.toolCalls else null
+            if (resumeCalls == null) {
+                val response = provider.complete(
+                    systemPrompt = SYSTEM_PROMPT,
+                    messages = messages,
+                    tools = tools
+                )
 
-            val response = provider.complete(
-                systemPrompt = SYSTEM_PROMPT,
-                messages = messages,
-                tools = tools
-            )
+                // 记录助手文本 + thinking（终态事件，App 拉回放）
+                if (response.content.isNotBlank() || response.toolCalls.isNotEmpty()) {
+                    store.append(NewEvent(
+                        sessionId = sessionId, kind = EventKind.ASSISTANT_TEXT, taskId = taskId,
+                        text = response.content, reasoning = response.reasoning ?: "",
+                        thinkingBlocksJson = response.thinkingBlocksJson ?: "", signature = response.signature ?: ""
+                    ))
+                }
 
-            // 记录助手文本 + thinking（终态事件，App 拉回放）
-            if (response.content.isNotBlank() || response.toolCalls.isNotEmpty()) {
-                store.append(NewEvent(
-                    sessionId = sessionId, kind = EventKind.ASSISTANT_TEXT, taskId = taskId,
-                    text = response.content, reasoning = response.reasoning ?: "",
-                    thinkingBlocksJson = response.thinkingBlocksJson ?: "", signature = response.signature ?: ""
-                ))
+                // 把助手消息回填上下文（thinking/signature 原样保留， Anthropic 工具循环必需）
+                messages += AgentMessage.AssistantMessage(
+                    content = response.content,
+                    toolCalls = response.toolCalls,
+                    reasoning = response.reasoning ?: "",
+                    signature = response.signature ?: "",
+                    thinkingBlocksJson = response.thinkingBlocksJson ?: "",
+                    inputTokens = response.inputTokens
+                )
+
+                if (response.toolCalls.isEmpty()) {
+                    // 任务正常完成：写回会话上下文，下一轮提问可在云端续接多轮历史
+                    store.updateSessionContext(sessionId, messages)
+                    store.append(NewEvent(sessionId, EventKind.TASK_COMPLETED, taskId, text = response.content))
+                    store.setTaskStatus(taskId, TaskStatus.COMPLETED)
+                    return
+                }
+                // assistant 已回填、工具待执行——保存断点，供审批挂起崩溃后精确续跑
+                store.saveCheckpoint(taskId, TaskCheckpoint(messagesJson = json.encodeToString(messages), iteration = iteration))
             }
 
-            // 把助手消息回填上下文（thinking/signature 原样保留， Anthropic 工具循环必需）
-            messages += AgentMessage.AssistantMessage(
-                content = response.content,
-                toolCalls = response.toolCalls,
-                reasoning = response.reasoning ?: "",
-                signature = response.signature ?: "",
-                thinkingBlocksJson = response.thinkingBlocksJson ?: "",
-                inputTokens = response.inputTokens
-            )
-
-            if (response.toolCalls.isEmpty()) {
-                store.append(NewEvent(sessionId, EventKind.TASK_COMPLETED, taskId, text = response.content))
-                store.setTaskStatus(taskId, TaskStatus.COMPLETED)
-                return
-            }
-
+            val calls = resumeCalls ?: (messages.last() as AgentMessage.AssistantMessage).toolCalls
             // 逐个执行工具（第一版串行，审批挂起更简单）
-            for (call in response.toolCalls) {
+            for (call in calls) {
                 val tool = tools.firstOrNull { it.name == call.name }
                 if (tool == null) {
                     val err = "未知工具: ${call.name}"
@@ -165,7 +233,10 @@ class AgentRunner(
                     modelResult = resultText
                 )
             }
+            // 一轮完整结束（含所有工具结果）后保存干净边界 checkpoint：
+            // 恢复时从此 messages + iteration+1 继续，不重复执行任何工具。
             iteration++
+            store.saveCheckpoint(taskId, TaskCheckpoint(messagesJson = json.encodeToString(messages), iteration = iteration))
         }
 
         val msg = "达到最大迭代次数 ($maxIterations)"

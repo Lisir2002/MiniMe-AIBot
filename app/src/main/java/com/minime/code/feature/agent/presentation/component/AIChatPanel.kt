@@ -698,6 +698,9 @@ fun AIChatPanel(
     val sessionOutputTokens = currentSession?.totalOutputTokens ?: 0
     val sessionLastInputTokens = currentSession?.lastInputTokens ?: 0
     val contextUsages by viewModel.contextUsages.collectAsStateWithLifecycle()
+    // 完全云端模式：当前会话待审批的云端工具决策
+    val cloudPending by viewModel.cloudPendingDecisions.collectAsStateWithLifecycle()
+    val cloudDecision = cloudPending[currentSessionId]
     val messagesReady = messagesState.loaded && messagesState.sessionId == currentSessionId
     val runningTool by viewModel.runningTool.collectAsStateWithLifecycle()
     val isCompacting by viewModel.isCompacting.collectAsStateWithLifecycle()
@@ -1803,6 +1806,25 @@ fun AIChatPanel(
                         onRefine = { viewModel.refinePlan(state.id) },
                         forceCollapse = dashboardCollapseActive,
                         sessionTitle = planApprovalSessionTitle
+                    )
+                }
+            }
+
+            // 完全云端模式：云端挂起高风险工具，等待用户审批
+            val cloudDecisionForPanel = rememberLastNonNull(cloudDecision)
+            AnimatedVisibility(
+                visible = cloudDecision != null,
+                modifier = Modifier.graphicsLayer { alpha = floatingPanelAlpha },
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                cloudDecisionForPanel?.let { d ->
+                    CloudApprovalPanel(
+                        toolName = d.toolName,
+                        argsPreview = d.argsPreview,
+                        onApprove = { viewModel.decideCloudPending(d.sessionId, d.decisionId, true) },
+                        onReject = { viewModel.decideCloudPending(d.sessionId, d.decisionId, false) },
+                        forceCollapse = dashboardCollapseActive
                     )
                 }
             }

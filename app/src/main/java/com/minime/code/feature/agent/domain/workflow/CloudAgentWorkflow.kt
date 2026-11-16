@@ -119,10 +119,12 @@ class CloudAgentWorkflow @Inject constructor(
     }
 
     private suspend fun ensureCloudSession(baseUrl: String, auth: String, appSessionId: String): String {
-        // 第一版：每轮复用固定键映射；持久化映射的读写放在 settings（此处先用固定 title 建/取）。
-        // 真正的 sessionId 映射需要 DataStore 读写，见 CloudAgentSettingsRepository.cloudSessionKey。
-        // 为避免重复建会话，云端按 title 去重不可用——这里每轮建一个新会话，上下文由 App 历史补齐future。
-        return api.createSession(baseUrl, auth, CreateSessionReq("cloud-$appSessionId")).sessionId
+        // 同一 App 会话 + 同一服务器地址 → 复用同一云端 session，多轮上下文完整留在云端
+        val cached = settings.getCloudSessionId(appSessionId, baseUrl)
+        if (!cached.isNullOrBlank()) return cached
+        val created = api.createSession(baseUrl, auth, CreateSessionReq("cloud-$appSessionId")).sessionId
+        settings.setCloudSessionId(appSessionId, baseUrl, created)
+        return created
     }
 
     /** 解析当前生效 provider 配置（单 Key；多 Key 取第一个）。 */

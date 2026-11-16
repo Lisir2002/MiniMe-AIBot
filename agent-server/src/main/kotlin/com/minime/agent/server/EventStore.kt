@@ -34,9 +34,19 @@ class EventStore(dbPath: String) : AutoCloseable {
                 CREATE TABLE IF NOT EXISTS sessions (
                     id TEXT PRIMARY KEY,
                     title TEXT NOT NULL,
+                    context_json TEXT NOT NULL DEFAULT '[]',
                     created_at INTEGER NOT NULL
                 )
             """.trimIndent())
+            // 兼容已有库：老版本 sessions 表没有 context_json 列
+            runCatching {
+                val cols = st.executeQuery("PRAGMA table_info(sessions)").use { rs ->
+                    val names = mutableListOf<String>()
+                    while (rs.next()) names += rs.getString("name")
+                    names
+                }
+                if (!cols.contains("context_json")) st.executeUpdate("ALTER TABLE sessions ADD COLUMN context_json TEXT NOT NULL DEFAULT '[]'")
+            }
             st.executeUpdate("""
                 CREATE TABLE IF NOT EXISTS events (
                     seq INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -146,6 +156,47 @@ class EventStore(dbPath: String) : AutoCloseable {
         }
     }
 
+    /** 读取会话累积的对话上下文（多轮历史），供云端续接新提问。 */
+    @Synchronized
+    fun getSessionContext(sessionId: String): List<com.minime.code.feature.agent.domain.model.AgentMessage> {
+        conn.prepareStatement("SELECT context_json FROM sessions WHERE id=?").use { ps ->
+            ps.setString(1, sessionId); ps.executeQuery().use { rs ->
+                if (rs.next()) {
+                    val s = rs.getString(1)
+                    if (!s.isNullOrBlank() && s != "[]") {
+                        return runCatching {
+                            json.decodeFromString<List<com.minime.code.feature.agent.domain.model.AgentMessage>>(s)
+                        }.getOrDefault(emptyList())
+                    }
+                }
+                return emptyList()
+            }
+        }
+    }
+
+    /** 任务正常完成后写回会话上下文，作为下一轮提问的历史。 */
+    @Synchronized
+    fun updateSessionContext(sessionId: String, messages: List<com.minime.code.feature.agent.domain.model.AgentMessage>) {
+        conn.prepareStatement("UPDATE sessions SET context_json=? WHERE id=?").use { ps ->
+            ps.setString(1, json.encodeToString(messages)); ps.setString(2, sessionId); ps.executeUpdate()
+        }
+    }
+
+    /** 扫描服务重启后需要续跑的任务（非终态）。 */
+    @Synchronized
+    fun unfinishedTasks(): List<TaskInfo> {
+        val out = mutableListOf<TaskInfo>()
+        conn.prepareStatement("SELECT id,session_id,provider_json FROM tasks WHERE status IN (?,?,?)").use { ps ->
+            ps.setString(1, TaskStatus.QUEUED)
+            ps.setString(2, TaskStatus.RUNNING)
+            ps.setString(3, TaskStatus.WAITING_APPROVAL)
+            ps.executeQuery().use { rs ->
+                while (rs.next()) out += TaskInfo(rs.getString("id"), rs.getString("session_id"), rs.getString("provider_json"))
+            }
+        }
+        return out
+    }
+
     /** 追加一条事件，返回其 seq。 */
     @Synchronized
     fun append(event: NewEvent): Long {
@@ -228,3 +279,6 @@ data class TaskCheckpoint(
     val messagesJson: String = "[]",
     val iteration: Int = 0
 )
+
+/** 待续跑任务的精简信息。 */
+data class TaskInfo(val taskId: String, val sessionId: String, val providerJson: String)

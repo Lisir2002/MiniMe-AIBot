@@ -52,6 +52,19 @@ class CloudAgentSettingsRepository @Inject constructor(
     suspend fun serverUrl(): String = serverUrlFlow.first()
     suspend fun token(): String = tokenFlow.first()
 
-    /** serverUrl -> sessionId 的云端会话映射键前缀（存在本 DataStore，避免重复建云端会话）。 */
-    fun cloudSessionKey(appSessionId: String): String = "cloud_session_$appSessionId"
+    /** appSessionId -> 云端 sessionId 的映射键（同一 App 会话复用同一云端会话，多轮上下文留在云端）。 */
+    private fun cloudSessionKey(appSessionId: String, serverUrl: String) =
+        "cloud_session_${serverUrl.hashCode()}_$appSessionId"
+
+    /** 读取该 App 会话对应的云端 sessionId；换服务器地址后自动失效（哈希进 key）。 */
+    suspend fun getCloudSessionId(appSessionId: String, serverUrl: String): String? =
+        context.cloudAgentDataStore.data.map { it[stringPreferencesKey(cloudSessionKey(appSessionId, serverUrl))] }.first()
+
+    suspend fun setCloudSessionId(appSessionId: String, serverUrl: String, cloudSessionId: String) {
+        context.cloudAgentDataStore.edit { it[stringPreferencesKey(cloudSessionKey(appSessionId, serverUrl))] = cloudSessionId }
+    }
+
+    suspend fun clearCloudSessionId(appSessionId: String, serverUrl: String) {
+        context.cloudAgentDataStore.edit { it.remove(stringPreferencesKey(cloudSessionKey(appSessionId, serverUrl))) }
+    }
 }

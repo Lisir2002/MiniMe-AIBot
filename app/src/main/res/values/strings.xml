@@ -2012,4 +2012,24 @@
     <string name="browser_ua_custom_dialog_title">自定义 User-Agent</string>
     <string name="browser_ua_custom_input_hint">输入完整的 User-Agent 字符串</string>
     <string name="browser_ua_applied_toast">已切换浏览器标识并刷新页面</string>
+
+    <!-- 完全云端 Agent -->
+    <string name="cloud_agent_title">完全云端 Agent</string>
+    <string name="cloud_agent_desc">让 AI 在你的云服务器上持续运行。提问提交后即使关闭 App，云端也会继续思考与执行，下次打开自动同步结果。</string>
+    <string name="cloud_agent_enable">启用云端执行</string>
+    <string name="cloud_agent_enable_desc">开启后，新提问将提交到云端而非本机运行</string>
+    <string name="cloud_agent_server_url">服务器地址</string>
+    <string name="cloud_agent_server_url_hint">http://你的服务器IP:8080</string>
+    <string name="cloud_agent_token">访问令牌（可选）</string>
+    <string name="cloud_agent_token_hint">服务端 MINIME_TOKEN，留空表示不校验</string>
+    <string name="cloud_agent_test">测试连接</string>
+    <string name="cloud_agent_testing">正在连接…</string>
+    <string name="cloud_agent_test_ok">连接成功，云端服务正常</string>
+    <string name="cloud_agent_test_fail">连接失败：%1$s</string>
+    <string name="cloud_agent_setup_guide">在服务器上运行 agent-server 并开放 8080 端口。模型密钥只保存在服务端，App 不接触。</string>
+    <string name="cloud_agent_need_url">请先填写服务器地址</string>
+    <string name="cloud_agent_approval_title">云端请求执行操作</string>
+    <string name="cloud_agent_approve">批准</string>
+    <string name="cloud_agent_reject">拒绝</string>
+    <string name="cloud_agent_waiting">等待你的决策，云端任务已挂起…</string>
 </resources>

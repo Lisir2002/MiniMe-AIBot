@@ -16,6 +16,9 @@ fun main(args: Array<String>) {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     val runner = AgentRunner(store, workspaceRoot, scope)
 
+    // 崩溃续跑：服务重启后恢复未完成任务（App 删后台/进程被杀不影响云端执行）
+    runner.resumeUnfinished()
+
     embeddedServer(Netty, port = port, host = "0.0.0.0") {
         configureServer(store, runner, token)
     }.start(wait = true)
