@@ -63,11 +63,12 @@ fun MiniMeIcon(
     }
 
     Box(modifier = modifier) {
-        // 主体层：定义尺寸（无显式尺寸时取图标 24dp 固有尺寸）
+        // 主体层：不设 modifier，由 24dp 固有尺寸（或 Box 约束）撑开整个组件，
+        // 避免全 matchParentSize 导致无显式尺寸时塌缩为 0x0 不可见
         Icon(
             imageVector = imageVector,
             contentDescription = contentDescription,
-            modifier = Modifier.matchParentSize(),
+            modifier = Modifier,
             tint = tint
         )
         // 点缀层：同几何重描，语义槽位色

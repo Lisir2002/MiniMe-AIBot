@@ -69,10 +69,12 @@ def icon_svg(name, body, accent):
     parts.append(f'<path d="{to_svg_path(paths[name])}" fill="none" stroke="{body}" '
                  f'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>')
     if name in ACCENTS:
-        for idxs, slot in ACCENTS[name]:
+        for part in ACCENTS[name]:
+            idxs, slot = part[0], part[1]
+            width = part[2] if len(part) > 2 else 2
             d = " ".join(to_svg_path(paths[name][i]) for i in idxs)
             parts.append(f'<path d="{d}" fill="none" stroke="{accent[slot]}" '
-                         f'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>')
+                         f'stroke-width="{width}" stroke-linecap="round" stroke-linejoin="round"/>')
     return (f'<svg viewBox="0 0 24 24" width="28" height="28">{"".join(parts)}</svg>')
 
 html = ['<html><head><meta charset="utf-8"><style>',

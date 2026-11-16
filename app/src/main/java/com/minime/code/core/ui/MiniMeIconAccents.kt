@@ -26,7 +26,11 @@ data class MiniMeAccentPart(
 )
 
 object MiniMeIconAccents {
-    private fun accentVector(name: String, block: androidx.compose.ui.graphics.vector.PathBuilder.() -> Unit): ImageVector =
+    private fun accentVector(
+        name: String,
+        width: Float = 2f,
+        block: androidx.compose.ui.graphics.vector.PathBuilder.() -> Unit
+    ): ImageVector =
         ImageVector.Builder(
             name = name,
             defaultWidth = 24.dp,
@@ -36,7 +40,7 @@ object MiniMeIconAccents {
         ).apply {
             path(
                 stroke = SolidColor(Color(0xFF000000)),
-                strokeLineWidth = 2f,
+                strokeLineWidth = width,
                 strokeLineCap = StrokeCap.Round,
                 strokeLineJoin = StrokeJoin.Round
             ) { block() }
@@ -62,6 +66,12 @@ object MiniMeIconAccents {
                 lineTo(12.01f, 16f)
             }, MiniMeAccentSlot.WARNING),
         ),
+        "Archive" to listOf(
+            MiniMeAccentPart(accentVector("Archive.accent2") {
+                moveTo(10f, 12f)
+                lineTo(14f, 12f)
+            }, MiniMeAccentSlot.PRIMARY),
+        ),
         "BarChart2" to listOf(
             MiniMeAccentPart(accentVector("BarChart2.accent0") {
                 moveTo(18f, 20f)
@@ -81,6 +91,24 @@ object MiniMeIconAccents {
                 moveTo(13.73f, 21f)
                 arcToRelative(2f, 2f, 0f, false, true, -3.46f, 0f)
             }, MiniMeAccentSlot.WARNING),
+        ),
+        "BookOpen" to listOf(
+            MiniMeAccentPart(accentVector("BookOpen.accent0") {
+                moveTo(2f, 3f)
+                horizontalLineToRelative(6f)
+                arcToRelative(4f, 4f, 0f, false, true, 4f, 4f)
+                verticalLineToRelative(14f)
+                arcToRelative(3f, 3f, 0f, false, false, -3f, -3f)
+                horizontalLineTo(2f)
+                close()
+            }, MiniMeAccentSlot.SECONDARY),
+        ),
+        "Box" to listOf(
+            MiniMeAccentPart(accentVector("Box.accent1") {
+                moveTo(3.27f, 6.96f)
+                lineToRelative(8.73f, 5.05f)
+                lineToRelative(8.73f, -5.05f)
+            }, MiniMeAccentSlot.SECONDARY),
         ),
         "Camera" to listOf(
             MiniMeAccentPart(accentVector("Camera.accent1") {
@@ -125,6 +153,40 @@ object MiniMeIconAccents {
                 lineToRelative(4f, 2f)
             }, MiniMeAccentSlot.PRIMARY),
         ),
+        "Cloud" to listOf(
+            MiniMeAccentPart(accentVector("Cloud.accent0") {
+                moveTo(18f, 10f)
+                horizontalLineToRelative(-1.26f)
+                arcTo(8f, 8f, 0f, true, false, 9f, 20f)
+                horizontalLineToRelative(9f)
+                arcToRelative(5f, 5f, 0f, false, false, 0f, -10f)
+                close()
+            }, MiniMeAccentSlot.PRIMARY),
+        ),
+        "Code" to listOf(
+            MiniMeAccentPart(accentVector("Code.accent0") {
+                moveTo(16f, 18f)
+                lineToRelative(6f, -6f)
+                lineToRelative(-6f, -6f)
+            }, MiniMeAccentSlot.PRIMARY),
+            MiniMeAccentPart(accentVector("Code.accent1") {
+                moveTo(8f, 6f)
+                lineToRelative(-6f, 6f)
+                lineToRelative(6f, 6f)
+            }, MiniMeAccentSlot.SECONDARY),
+        ),
+        "Copy" to listOf(
+            MiniMeAccentPart(accentVector("Copy.accent1") {
+                moveTo(5f, 15f)
+                horizontalLineTo(4f)
+                arcToRelative(2f, 2f, 0f, false, true, -2f, -2f)
+                verticalLineTo(4f)
+                arcToRelative(2f, 2f, 0f, false, true, 2f, -2f)
+                horizontalLineToRelative(9f)
+                arcToRelative(2f, 2f, 0f, false, true, 2f, 2f)
+                verticalLineToRelative(1f)
+            }, MiniMeAccentSlot.SECONDARY),
+        ),
         "Cpu" to listOf(
             MiniMeAccentPart(accentVector("Cpu.accent1") {
                 moveTo(9f, 9f)
@@ -133,6 +195,14 @@ object MiniMeIconAccents {
                 horizontalLineToRelative(-6f)
                 close()
             }, MiniMeAccentSlot.PRIMARY),
+        ),
+        "Database" to listOf(
+            MiniMeAccentPart(accentVector("Database.accent0") {
+                moveTo(3f, 5f)
+                arcToRelative(9f, 3f, 0f, true, false, 18f, 0f)
+                arcToRelative(9f, 3f, 0f, true, false, -18f, 0f)
+                close()
+            }, MiniMeAccentSlot.SECONDARY),
         ),
         "Download" to listOf(
             MiniMeAccentPart(accentVector("Download.accent1_2") {
@@ -151,6 +221,37 @@ object MiniMeIconAccents {
                 moveTo(12f, 12f)
                 lineTo(12f, 21f)
             }, MiniMeAccentSlot.PRIMARY),
+        ),
+        "Edit2" to listOf(
+            MiniMeAccentPart(accentVector("Edit2.accent0") {
+                moveTo(17f, 3f)
+                arcToRelative(2.828f, 2.828f, 0f, true, true, 4f, 4f)
+                lineTo(7.5f, 20.5f)
+                lineTo(2f, 22f)
+                lineToRelative(1.5f, -5.5f)
+                lineTo(17f, 3f)
+                close()
+            }, MiniMeAccentSlot.SECONDARY),
+        ),
+        "Edit3" to listOf(
+            MiniMeAccentPart(accentVector("Edit3.accent1") {
+                moveTo(16.5f, 3.5f)
+                arcToRelative(2.121f, 2.121f, 0f, false, true, 3f, 3f)
+                lineTo(7f, 19f)
+                lineToRelative(-4f, 1f)
+                lineToRelative(1f, -4f)
+                lineTo(16.5f, 3.5f)
+                close()
+            }, MiniMeAccentSlot.SECONDARY),
+        ),
+        "ExternalLink" to listOf(
+            MiniMeAccentPart(accentVector("ExternalLink.accent1_2") {
+                moveTo(15f, 3f)
+                lineToRelative(6f, 0f)
+                lineToRelative(0f, 6f)
+                moveTo(10f, 14f)
+                lineTo(21f, 3f)
+            }, MiniMeAccentSlot.SECONDARY),
         ),
         "Eye" to listOf(
             MiniMeAccentPart(accentVector("Eye.accent1") {
@@ -174,6 +275,14 @@ object MiniMeIconAccents {
                 moveTo(9f, 15f)
                 lineTo(15f, 15f)
             }, MiniMeAccentSlot.PRIMARY),
+        ),
+        "FileText" to listOf(
+            MiniMeAccentPart(accentVector("FileText.accent2_3") {
+                moveTo(16f, 13f)
+                lineTo(8f, 13f)
+                moveTo(16f, 17f)
+                lineTo(8f, 17f)
+            }, MiniMeAccentSlot.TERTIARY),
         ),
         "FolderPlus" to listOf(
             MiniMeAccentPart(accentVector("FolderPlus.accent1_2") {
@@ -218,7 +327,7 @@ object MiniMeIconAccents {
             }, MiniMeAccentSlot.SECONDARY),
         ),
         "HardDrive" to listOf(
-            MiniMeAccentPart(accentVector("HardDrive.accent2_3") {
+            MiniMeAccentPart(accentVector("HardDrive.accent2_3", width = 3.6f) {
                 moveTo(6f, 16f)
                 lineTo(6.01f, 16f)
                 moveTo(10f, 16f)
@@ -249,6 +358,57 @@ object MiniMeIconAccents {
                 moveTo(12f, 8f)
                 lineTo(12.01f, 8f)
             }, MiniMeAccentSlot.INFO),
+        ),
+        "Key" to listOf(
+            MiniMeAccentPart(accentVector("Key.accent0") {
+                moveTo(21f, 2f)
+                lineToRelative(-2f, 2f)
+                moveToRelative(-7.61f, 7.61f)
+                arcToRelative(5.5f, 5.5f, 0f, true, true, -7.778f, 7.778f)
+                arcToRelative(5.5f, 5.5f, 0f, false, true, 7.777f, -7.777f)
+                close()
+                moveTo(11.39f, 11.61f)
+                lineTo(15.5f, 7.5f)
+                moveToRelative(0f, 0f)
+                lineToRelative(3f, 3f)
+                lineTo(22f, 7f)
+                lineToRelative(-3f, -3f)
+                moveToRelative(-3.5f, 3.5f)
+                lineTo(19f, 4f)
+            }, MiniMeAccentSlot.WARNING),
+        ),
+        "Lock" to listOf(
+            MiniMeAccentPart(accentVector("Lock.accent1") {
+                moveTo(7f, 11f)
+                verticalLineTo(7f)
+                arcToRelative(5f, 5f, 0f, false, true, 10f, 0f)
+                verticalLineToRelative(4f)
+            }, MiniMeAccentSlot.WARNING),
+        ),
+        "MessageSquare" to listOf(
+            MiniMeAccentPart(accentVector("MessageSquare.accent0") {
+                moveTo(21f, 15f)
+                arcToRelative(2f, 2f, 0f, false, true, -2f, 2f)
+                horizontalLineTo(7f)
+                lineToRelative(-4f, 4f)
+                verticalLineTo(5f)
+                arcToRelative(2f, 2f, 0f, false, true, 2f, -2f)
+                horizontalLineToRelative(14f)
+                arcToRelative(2f, 2f, 0f, false, true, 2f, 2f)
+                close()
+            }, MiniMeAccentSlot.PRIMARY),
+        ),
+        "Music" to listOf(
+            MiniMeAccentPart(accentVector("Music.accent1_2") {
+                moveTo(6f, 18f)
+                moveToRelative(-3f, 0f)
+                arcToRelative(3f, 3f, 0f, true, true, 6f, 0f)
+                arcToRelative(3f, 3f, 0f, true, true, -6f, 0f)
+                moveTo(18f, 16f)
+                moveToRelative(-3f, 0f)
+                arcToRelative(3f, 3f, 0f, true, true, 6f, 0f)
+                arcToRelative(3f, 3f, 0f, true, true, -6f, 0f)
+            }, MiniMeAccentSlot.PRIMARY),
         ),
         "Package" to listOf(
             MiniMeAccentPart(accentVector("Package.accent2_3") {
@@ -290,8 +450,14 @@ object MiniMeIconAccents {
                 lineToRelative(0f, 8f)
             }, MiniMeAccentSlot.PRIMARY),
         ),
+        "Search" to listOf(
+            MiniMeAccentPart(accentVector("Search.accent1") {
+                moveTo(21f, 21f)
+                lineTo(16.65f, 16.65f)
+            }, MiniMeAccentSlot.PRIMARY),
+        ),
         "Server" to listOf(
-            MiniMeAccentPart(accentVector("Server.accent2_3") {
+            MiniMeAccentPart(accentVector("Server.accent2_3", width = 3.6f) {
                 moveTo(6f, 6f)
                 lineTo(6.01f, 6f)
                 moveTo(6f, 18f)
@@ -326,8 +492,26 @@ object MiniMeIconAccents {
                 arcToRelative(3f, 3f, 0f, true, true, -6f, 0f)
             }, MiniMeAccentSlot.TERTIARY),
         ),
+        "Shield" to listOf(
+            MiniMeAccentPart(accentVector("Shield.accent0") {
+                moveTo(12f, 22f)
+                reflectiveCurveToRelative(8f, -4f, 8f, -10f)
+                verticalLineTo(5f)
+                lineToRelative(-8f, -3f)
+                lineToRelative(-8f, 3f)
+                verticalLineToRelative(7f)
+                curveToRelative(0f, 6f, 8f, 10f, 8f, 10f)
+                close()
+            }, MiniMeAccentSlot.SUCCESS),
+        ),
+        "Sliders" to listOf(
+            MiniMeAccentPart(accentVector("Sliders.accent7") {
+                moveTo(9f, 8f)
+                lineTo(15f, 8f)
+            }, MiniMeAccentSlot.SECONDARY),
+        ),
         "Smartphone" to listOf(
-            MiniMeAccentPart(accentVector("Smartphone.accent1") {
+            MiniMeAccentPart(accentVector("Smartphone.accent1", width = 3.2f) {
                 moveTo(12f, 18f)
                 lineTo(12.01f, 18f)
             }, MiniMeAccentSlot.PRIMARY),
@@ -341,13 +525,13 @@ object MiniMeIconAccents {
             }, MiniMeAccentSlot.WARNING),
         ),
         "Tablet" to listOf(
-            MiniMeAccentPart(accentVector("Tablet.accent1") {
+            MiniMeAccentPart(accentVector("Tablet.accent1", width = 3.2f) {
                 moveTo(12f, 18f)
                 lineTo(12.01f, 18f)
             }, MiniMeAccentSlot.PRIMARY),
         ),
         "Tag" to listOf(
-            MiniMeAccentPart(accentVector("Tag.accent1") {
+            MiniMeAccentPart(accentVector("Tag.accent1", width = 3.6f) {
                 moveTo(7f, 7f)
                 lineTo(7.01f, 7f)
             }, MiniMeAccentSlot.PRIMARY),
@@ -394,6 +578,22 @@ object MiniMeIconAccents {
                 moveTo(16f, 16f)
                 lineToRelative(-4f, -4f)
                 lineToRelative(-4f, 4f)
+            }, MiniMeAccentSlot.PRIMARY),
+        ),
+        "User" to listOf(
+            MiniMeAccentPart(accentVector("User.accent1") {
+                moveTo(12f, 7f)
+                moveToRelative(-4f, 0f)
+                arcToRelative(4f, 4f, 0f, true, true, 8f, 0f)
+                arcToRelative(4f, 4f, 0f, true, true, -8f, 0f)
+            }, MiniMeAccentSlot.PRIMARY),
+        ),
+        "Users" to listOf(
+            MiniMeAccentPart(accentVector("Users.accent1") {
+                moveTo(9f, 7f)
+                moveToRelative(-4f, 0f)
+                arcToRelative(4f, 4f, 0f, true, true, 8f, 0f)
+                arcToRelative(4f, 4f, 0f, true, true, -8f, 0f)
             }, MiniMeAccentSlot.PRIMARY),
         ),
         "Video" to listOf(

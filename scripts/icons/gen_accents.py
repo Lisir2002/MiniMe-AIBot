@@ -8,8 +8,8 @@
   SUCCESS/WARNING/INFO 随明暗切换（FunctionalHues 跨预设稳定）。
 """
 
-# 点缀表：icon -> [(主体 path 下标列表, 槽位)]
-# 未列出的图标保持纯黑白（无点缀），约占一半，保证界面不花。
+# 点缀表：icon -> [(主体 path 下标列表, 槽位[, 线宽])]
+# 未列出的图标保持纯黑白（无点缀）。线宽默认 2f；小点缀（点/环）可加粗到 3~3.6f 提高可见度。
 ACCENTS = {
     # 状态反馈
     "CheckCircle":   [([1], "SUCCESS")],
@@ -23,6 +23,7 @@ ACCENTS = {
     "FolderPlus":    [([1, 2], "PRIMARY")],
     "FilePlus":      [([2, 3], "PRIMARY")],
     "File":          [([1], "TERTIARY")],
+    "FileText":      [([2, 3], "TERTIARY")],
     # 网络/终端/版本控制
     "Globe":         [([2], "SECONDARY")],
     "Terminal":      [([0], "PRIMARY")],
@@ -34,33 +35,55 @@ ACCENTS = {
     "Activity":      [([0], "SUCCESS")],
     "Bell":          [([1], "WARNING")],
     "Clock":         [([1], "PRIMARY")],
+    "Cloud":         [([0], "PRIMARY")],
+    "Power":         [([1], "ERROR")],
     # 媒体
     "Camera":        [([1], "SECONDARY")],
     "Eye":           [([1], "PRIMARY")],
     "Image":         [([1], "WARNING")],
     "Video":         [([0], "PRIMARY")],
     "Play":          [([0], "PRIMARY")],
+    "Music":         [([1, 2], "PRIMARY")],
     # 传输
     "Download":      [([1, 2], "PRIMARY")],
     "Upload":        [([1, 2], "PRIMARY")],
     "DownloadCloud": [([0, 1], "PRIMARY")],
     "UploadCloud":   [([0, 1, 3], "PRIMARY")],
+    "ExternalLink":  [([1, 2], "SECONDARY")],
     # 系统/存储
     "Save":          [([1], "PRIMARY")],
-    "Server":        [([2, 3], "SUCCESS")],
-    "HardDrive":     [([2, 3], "SUCCESS")],
+    "Server":        [([2, 3], "SUCCESS", 3.6)],
+    "HardDrive":     [([2, 3], "SUCCESS", 3.6)],
     "Cpu":           [([1], "PRIMARY")],
     "Package":       [([2, 3], "TERTIARY")],
-    "Power":         [([1], "ERROR")],
+    "Database":      [([0], "SECONDARY")],
+    "Archive":       [([2], "PRIMARY")],
+    "Box":           [([1], "SECONDARY")],
+    # 安全
+    "Lock":          [([1], "WARNING")],
+    "Shield":        [([0], "SUCCESS")],
+    "Key":           [([0], "WARNING")],
     # 设置/数据
     "Settings":      [([0], "PRIMARY")],
-    "Tag":           [([1], "PRIMARY")],
+    "Tag":           [([1], "PRIMARY", 3.6)],
     "Clipboard":     [([1], "PRIMARY")],
     "Target":        [([2], "ERROR")],
     "PieChart":      [([1], "WARNING")],
     "Sun":           [([0], "WARNING")],
-    "Smartphone":    [([1], "PRIMARY")],
-    "Tablet":        [([1], "PRIMARY")],
+    "Sliders":       [([7], "SECONDARY")],
+    "Search":        [([1], "PRIMARY")],
+    "Smartphone":    [([1], "PRIMARY", 3.2)],
+    "Tablet":        [([1], "PRIMARY", 3.2)],
+    # 人物/沟通
+    "User":          [([1], "PRIMARY")],
+    "Users":         [([1], "PRIMARY")],
+    "MessageSquare": [([0], "PRIMARY")],
+    "BookOpen":      [([0], "SECONDARY")],
+    # 编辑/代码
+    "Edit2":         [([0], "SECONDARY")],
+    "Edit3":         [([1], "SECONDARY")],
+    "Code":          [([0], "PRIMARY"), ([1], "SECONDARY")],
+    "Copy":          [([1], "SECONDARY")],
     # 多彩点缀（多 path 多槽位）
     "BarChart2":     [([0], "SECONDARY"), ([1], "PRIMARY"), ([2], "TERTIARY")],
     "Share2":        [([0], "SECONDARY"), ([1], "PRIMARY"), ([2], "TERTIARY")],
@@ -94,7 +117,11 @@ data class MiniMeAccentPart(
 )
 
 object MiniMeIconAccents {
-    private fun accentVector(name: String, block: androidx.compose.ui.graphics.vector.PathBuilder.() -> Unit): ImageVector =
+    private fun accentVector(
+        name: String,
+        width: Float = 2f,
+        block: androidx.compose.ui.graphics.vector.PathBuilder.() -> Unit
+    ): ImageVector =
         ImageVector.Builder(
             name = name,
             defaultWidth = 24.dp,
@@ -104,7 +131,7 @@ object MiniMeIconAccents {
         ).apply {
             path(
                 stroke = SolidColor(Color(0xFF000000)),
-                strokeLineWidth = 2f,
+                strokeLineWidth = width,
                 strokeLineCap = StrokeCap.Round,
                 strokeLineJoin = StrokeJoin.Round
             ) { block() }
@@ -133,7 +160,8 @@ for icon, parts in ACCENTS.items():
     if icon not in paths:
         errors.append(f"{icon}: 不存在于主体图标")
         continue
-    for idxs, _slot in parts:
+    for part in parts:
+        idxs = part[0]
         for i in idxs:
             if i >= len(paths[icon]):
                 errors.append(f"{icon}: path 下标 {i} 越界（共 {len(paths[icon])} 块）")
@@ -144,10 +172,12 @@ entries = []
 for icon in sorted(ACCENTS):
     parts = ACCENTS[icon]
     lines = [f'        "{icon}" to listOf(']
-    for idxs, slot in parts:
-        vec_name = f"{icon}.accent{chr(97 + len([p for p in parts]) and 0)}{''.join(str(i) for i in idxs)}"
+    for part in parts:
+        idxs, slot = part[0], part[1]
+        width = part[2] if len(part) > 2 else None
         vec_name = f"{icon}.accent" + "_".join(str(i) for i in idxs)
-        lines.append(f"            MiniMeAccentPart(accentVector(\"{vec_name}\") {{")
+        width_arg = f", width = {width}f" if width else ""
+        lines.append(f"            MiniMeAccentPart(accentVector(\"{vec_name}\"{width_arg}) {{")
         for i in idxs:
             for cmd in paths[icon][i]:
                 fn, args = cmd.split("(", 1)
