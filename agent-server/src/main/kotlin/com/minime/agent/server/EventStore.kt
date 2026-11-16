@@ -110,6 +110,14 @@ class EventStore(dbPath: String) : AutoCloseable {
         }
     }
 
+    /** 取某会话最新创建的任务状态（App 拉取时展示用，避免用历史事件反推状态导致卡在 waiting_approval）。 */
+    @Synchronized
+    fun latestTaskStatus(sessionId: String): String? {
+        conn.prepareStatement("SELECT status FROM tasks WHERE session_id=? ORDER BY created_at DESC, rowid DESC LIMIT 1").use { ps ->
+            ps.setString(1, sessionId); ps.executeQuery().use { rs -> return if (rs.next()) rs.getString(1) else null }
+        }
+    }
+
     @Synchronized
     fun getTaskProvider(taskId: String): ProviderConfigDto? {
         var result: ProviderConfigDto? = null

@@ -71,14 +71,8 @@ fun Application.configureServer(store: EventStore, runner: AgentRunner, token: S
             val after = call.request.queryParameters["after"]?.toLongOrNull() ?: 0L
             val events = store.eventsAfter(sessionId, after)
             val nextSeq = events.lastOrNull()?.seq ?: store.latestSeq(sessionId)
-            // 若事件里有待决策，状态置 waiting_approval；有失败置 failed；否则 running
-            val status = when {
-                events.any { it.kind == EventKind.PENDING_DECISION } -> TaskStatus.WAITING_APPROVAL
-                events.any { it.kind == EventKind.TASK_FAILED } -> TaskStatus.FAILED
-                events.any { it.kind == EventKind.TASK_COMPLETED } -> TaskStatus.COMPLETED
-                events.isNotEmpty() -> TaskStatus.RUNNING
-                else -> "idle"
-            }
+            // 直接读任务真实状态（历史事件里永久保留 pending_decision，不能用它反推，否则会卡在 waiting_approval）
+            val status = store.latestTaskStatus(sessionId) ?: "idle"
             call.respond(EventsResponse(events, nextSeq, status))
         }
 
