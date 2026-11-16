@@ -106,10 +106,13 @@ class CloudAgentServerManager @Inject constructor(
                     ?: throw IllegalStateException("暂无包含 agent-server.jar 的 Release，请先发布服务端版本")
                 val tag = rel.tagName
                 val version = tag.removePrefix("v")
+                // CI 里资产命名用完整 tag（含 v）：agent-server-v1.0.0-rc10.jar。
+                // 必须从 Release 的实际 assets 名取，不能用去 v 的 version 拼（会 404）。
+                val assetName = rel.assets.first { it.name.startsWith("agent-server-") && it.name.endsWith(".jar") }.name
                 ReleaseInfo(
                     tag = tag,
                     version = version,
-                    jarUrl = "https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$tag/agent-server-$version.jar",
+                    jarUrl = "https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$tag/$assetName",
                     htmlUrl = rel.htmlUrl
                 )
             }
