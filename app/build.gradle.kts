@@ -236,6 +236,10 @@ gradle.projectsEvaluated {
 }
 
 dependencies {
+    // 共享 Agent 核心（纯 JVM 模块）：领域模型 + LLM 协议层 + 工具接口，App 与云端 agent-server 复用。
+    // 源码包名沿用 com.minime.code.*，App 侧 import 无需改动。
+    implementation(project(":agent-core"))
+
     // Compose BOM
     val composeBom = platform("androidx.compose:compose-bom:2026.01.00")
     implementation(composeBom)

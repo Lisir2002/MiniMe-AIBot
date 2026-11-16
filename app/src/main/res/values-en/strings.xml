@@ -2013,4 +2013,24 @@
     <string name="browser_ua_custom_dialog_title">Custom User-Agent</string>
     <string name="browser_ua_custom_input_hint">Enter full User-Agent string</string>
     <string name="browser_ua_applied_toast">User-Agent updated, page reloaded</string>
+
+    <!-- Fully Cloud Agent -->
+    <string name="cloud_agent_title">Fully Cloud Agent</string>
+    <string name="cloud_agent_desc">Run AI continuously on your cloud server. After you send a question, the cloud keeps thinking and executing even if you close the app; results sync automatically next time you open it.</string>
+    <string name="cloud_agent_enable">Enable cloud execution</string>
+    <string name="cloud_agent_enable_desc">When on, new questions are submitted to the cloud instead of running locally</string>
+    <string name="cloud_agent_server_url">Server address</string>
+    <string name="cloud_agent_server_url_hint">http://your-server-ip:8080</string>
+    <string name="cloud_agent_token">Access token (optional)</string>
+    <string name="cloud_agent_token_hint">Server MINIME_TOKEN, leave blank if not set</string>
+    <string name="cloud_agent_test">Test connection</string>
+    <string name="cloud_agent_testing">Connecting…</string>
+    <string name="cloud_agent_test_ok">Connected, cloud service is healthy</string>
+    <string name="cloud_agent_test_fail">Connection failed: %1$s</string>
+    <string name="cloud_agent_setup_guide">Run agent-server on your server and open port 8080. Model keys stay on the server; the app never sees them.</string>
+    <string name="cloud_agent_need_url">Enter the server address first</string>
+    <string name="cloud_agent_approval_title">Cloud requests permission</string>
+    <string name="cloud_agent_approve">Approve</string>
+    <string name="cloud_agent_reject">Reject</string>
+    <string name="cloud_agent_waiting">Waiting for your decision, cloud task is paused…</string>
 </resources>

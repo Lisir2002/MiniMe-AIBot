@@ -1,0 +1,30 @@
+# 云端 Agent 服务编排（用户自己的云服务器上一键起）
+#   docker compose -f docker/agent-server/docker-compose.yml up -d
+#
+# 关键点：
+#  - restart: always —— App 删后台、甚至服务异常退出，容器都会自动拉起，Agent 持续可用
+#  - workspace bind mount —— 与 ai-runtime 沙箱共享同一份工作区，工具改动 App 可见
+#  - data 卷 —— SQLite 事件/任务持久化，容器重建不丢历史
+#  - MINIME_TOKEN —— 可选 Bearer 鉴权，强烈建议设置，避免端点被公网滥用
+
+services:
+  agent-server:
+    image: minimecode/agent-server:latest
+    container_name: minimecode-agent-server
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      MINIME_DB: /data/agent-server/events.db
+      MINIME_WORKSPACE: /workspace
+      MINIME_PORT: "8080"
+      # 从宿主 .env 注入；为空则不鉴权（仅内网测试用）
+      MINIME_TOKEN: ${MINIME_TOKEN:-}
+    volumes:
+      # 工作区：与沙箱容器同一目录
+      - ${MINIME_WORKSPACE_HOST:-/root/minimecode-workspace}:/workspace
+      # 事件/断点持久化
+      - agent-data:/data/agent-server
+
+volumes:
+  agent-data:

@@ -91,6 +91,18 @@ sealed class AgentEvent {
 
     /** 模式已切换（由 AI 调用 planMode 触发），UI 据此展示计划审查面板等。 */
     data class ModeChanged(val newMode: AgentMode, val reason: String) : AgentEvent()
+
+    /**
+     * 云端 Agent 执行到高风险工具时挂起，等待用户在 App 审批（完全云端模式专用）。
+     * 本地模式的权限由 ToolPermissionManager 进程内处理，不产生本事件。
+     * UI 收到后展示审批卡片，用户决策后由 CloudAgentClient 回传 POST /decisions/{id}。
+     */
+    data class PendingDecision(
+        val decisionId: String,
+        val toolName: String,
+        val argsPreview: String,
+        val sessionId: String
+    ) : AgentEvent()
 }
 
 interface AgentWorkflow {

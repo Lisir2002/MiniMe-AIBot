@@ -1,7 +1,5 @@
 package com.minime.code.core.util
 
-import android.content.Context
-import android.util.Log
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
@@ -45,6 +43,11 @@ interface UpstreamErrorBodyCarrier {
 
 object AILogger {
 
+    /** 错误日志输出宿：宿主可在启动时注入（Android 端接 android.util.Log 保留 logcat），默认 stderr。 */
+    @Volatile
+    var errorSink: (tag: String, message: String, throwable: Throwable?) -> Unit =
+        { tag, message, throwable -> System.err.println("E/$tag: $message" + (throwable?.let { " ${it.stackTraceToString()}" } ?: "")) }
+
     private const val TAG = "AILogger"
     private const val MAX_AGE_DAYS = 7
     private const val MAX_FILE_BYTES = 20 * 1024 * 1024 // 单会话文件上限 20MB（每轮重发完整历史，增长快）
@@ -74,12 +77,10 @@ object AILogger {
     /** 每会话的调用计数：用于把同一次交互的 REQUEST / RESPONSE 配上同一序号。 */
     private val counters = ConcurrentHashMap<String, AtomicInteger>()
 
-    /** 初始化日志目录。重复调用安全。 */
-    fun init(context: Context) {
+    /** 初始化日志目录。重复调用安全。[baseDir] 由宿主提供（Android 端传外部/内部私有目录，JVM 服务端传数据目录）。 */
+    fun init(baseDir: File) {
         if (logDir != null) return
-        // 优先外部私有目录，便于（root 或 adb 下）取出；不可用时回退内部存储。
-        val base = context.getExternalFilesDir(null) ?: context.filesDir
-        val dir = File(base, "ai-logs").apply { mkdirs() }
+        val dir = File(baseDir, "ai-logs").apply { mkdirs() }
         logDir = dir
         ioExecutor.execute { cleanupOldLogs(dir) }
         FileLogger.i(TAG, "AILogger 初始化完成，AI 会话日志目录: ${dir.absolutePath}")
@@ -215,7 +216,7 @@ object AILogger {
                     if (file.delete()) freed.addAndGet(size)
                 }
                 counters.clear()
-            }.onFailure { Log.e(TAG, "清空 AI 会话日志失败", it) }
+            }.onFailure { errorSink(TAG, "清空 AI 会话日志失败", it) }
             latch.countDown()
         }
         runCatching { latch.await(5, java.util.concurrent.TimeUnit.SECONDS) }
@@ -301,7 +302,7 @@ object AILogger {
                     block(w)
                     w.flush()
                 }
-            }.onFailure { Log.e(TAG, "写入 AI 会话日志失败", it) }
+            }.onFailure { errorSink(TAG, "写入 AI 会话日志失败", it) }
         }
     }
 

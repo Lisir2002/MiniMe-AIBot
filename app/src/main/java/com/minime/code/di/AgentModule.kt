@@ -96,6 +96,7 @@ import com.minime.code.feature.agent.domain.tool.search.WebFetchTool
 import com.minime.code.feature.agent.domain.tool.search.WebSearchTool
 import com.minime.code.feature.agent.domain.tool.browser.BrowserTool
 import com.minime.code.feature.agent.domain.workflow.ContextCompactor
+import com.minime.code.feature.agent.domain.workflow.DelegatingAgentWorkflow
 import com.minime.code.feature.agent.domain.workflow.StatefulAgentWorkflow
 import com.minime.code.feature.settings.data.repository.CompactionModelSettingsRepository
 import com.minime.code.feature.settings.data.repository.DefaultModelSettingsRepository
@@ -411,7 +412,8 @@ object AgentModule {
 
     @Provides
     @Singleton
-    fun provideAgentWorkflow(
+    @Named("local")
+    fun provideLocalAgentWorkflow(
         toolRegistry: ToolRegistry,
         aiProviderRepository: AIProviderRepository,
         openAIApi: OpenAIApi,
@@ -466,4 +468,12 @@ object AgentModule {
             context
         )
     }
+
+    /**
+     * 对 ViewModel 暴露的唯一 AgentWorkflow：内部按「完全云端模式」开关转发到本地或云端。
+     * 本地实例用 @Named("local") 区分，避免与这里产生类型歧义。
+     */
+    @Provides
+    @Singleton
+    fun provideAgentWorkflow(delegating: DelegatingAgentWorkflow): AgentWorkflow = delegating
 }

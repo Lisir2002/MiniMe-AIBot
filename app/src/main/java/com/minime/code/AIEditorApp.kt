@@ -125,8 +125,21 @@ class AIEditorApp : Application(), Configuration.Provider {
         // 最早入口：在任何 Hilt 注入/业务初始化之前就绪日志与崩溃落盘。
         // 启动早期（如 Hilt 注入链实例化 @Singleton 工具）的崩溃若发生在 FileLogger 初始化之前
         // 会不留任何痕迹，故把日志与全局崩溃处理器提到 attachBaseContext 最前。
-        FileLogger.init(base)
-        AILogger.init(base)
+        // 注入 logcat 镜像宿，保持 Android 端原有 logcat 行为（core 模块为纯 JVM，不再直接依赖 android.util.Log）。
+        FileLogger.logcatSink = { level, tag, message, throwable ->
+            when (level) {
+                "V" -> android.util.Log.v(tag, message, throwable)
+                "D" -> android.util.Log.d(tag, message, throwable)
+                "I" -> android.util.Log.i(tag, message, throwable)
+                "W" -> android.util.Log.w(tag, message, throwable)
+                "E" -> android.util.Log.e(tag, message, throwable)
+            }
+        }
+        AILogger.errorSink = { tag, message, throwable -> android.util.Log.e(tag, message, throwable) }
+        val logBase = base.getExternalFilesDir(null) ?: base.filesDir
+        val debuggable = (base.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        FileLogger.init(logBase, debuggable)
+        AILogger.init(logBase)
         installCrashHandler()
         // 全局代理入口：必须在任何 Hilt 注入 / OkHttpClient 构建之前设置，
         // 使 App 侧全部 HTTP 链路（对话、MCP、更新检查等）按需走全局/提供商代理。

@@ -1026,7 +1026,7 @@ internal fun ToolPermissionPanel(
                     )
 
                     Spacer(Modifier.height(Spacing.sm))
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Spacing.sm)) {
                         AgentActionButton(
                             text = stringResource(R.string.chat_perm_deny),
                             onClick = { onChoice(PermissionChoice.REJECT) },
@@ -1238,7 +1238,7 @@ internal fun PlanApprovalPanel(
                     }
 
                     Spacer(Modifier.height(Spacing.md))
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Spacing.sm)) {
                         AgentActionButton(
                             text = stringResource(R.string.chat_continue_feedback),
                             onClick = onRefine,
@@ -1344,6 +1344,111 @@ private fun GoalBannerRow(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)
                 )
+            }
+        }
+    }
+}
+/**
+ * 完全云端模式下的审批卡片：云端执行高风险工具前挂起任务，等待用户批准/拒绝。
+ * 与 [PlanApprovalPanel] 同为悬浮层，但它们互斥出现（云端模式不产生 PlanApproval）。
+ */
+@Composable
+internal fun CloudApprovalPanel(
+    toolName: String,
+    argsPreview: String,
+    onApprove: () -> Unit,
+    onReject: () -> Unit,
+    forceCollapse: Boolean = false
+) {
+    var expanded by remember { mutableStateOf(true) }
+    val effectiveExpanded = expanded && !forceCollapse
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(Radius.md),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.semanticColors.warning)
+    ) {
+        Column(modifier = Modifier.padding(Spacing.md)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                MiniMeIcon(
+                    MiniMeIcons.Shield,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.semanticColors.warning
+                )
+                Spacer(Modifier.width(Spacing.sm))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        stringResource(com.minime.code.R.string.cloud_agent_approval_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        toolName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.semanticColors.warning
+                    )
+                }
+                IconButton(onClick = { expanded = !expanded }) {
+                    MiniMeIcon(
+                        if (effectiveExpanded) MiniMeIcons.ChevronDown else MiniMeIcons.ChevronUp,
+                        contentDescription = null
+                    )
+                }
+            }
+            androidx.compose.animation.AnimatedVisibility(visible = effectiveExpanded) {
+                Column {
+                    if (argsPreview.isNotBlank()) {
+                        Spacer(Modifier.height(Spacing.sm))
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = RoundedCornerShape(Radius.sm),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                argsPreview.take(600),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(Spacing.sm)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(Spacing.sm))
+                    Text(
+                        stringResource(com.minime.code.R.string.cloud_agent_waiting),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(Spacing.sm))
+                    Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Spacing.sm)) {
+                        Surface(
+                            shape = RoundedCornerShape(Radius.sm),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clickable { onApprove() }
+                        ) {
+                            Text(
+                                stringResource(com.minime.code.R.string.cloud_agent_approve),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                style = MaterialTheme.typography.labelLarge,
+                                modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.xs)
+                            )
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(Radius.sm),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.clickable { onReject() }
+                        ) {
+                            Text(
+                                stringResource(com.minime.code.R.string.cloud_agent_reject),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelLarge,
+                                modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.xs)
+                            )
+                        }
+                    }
+                }
             }
         }
     }

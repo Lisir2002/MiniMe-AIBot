@@ -130,6 +130,7 @@ internal enum class SettingsSection(@param:StringRes val titleRes: Int) {
     SubAgentEditor(R.string.settings_subagents),
     Container(R.string.settings_container),
     ContainerDownloads(R.string.container_download_image),
+    CloudAgent(R.string.cloud_agent_title),
     Proxy(R.string.proxy_title),
     Log(R.string.settings_log),
     Permissions(R.string.settings_permissions),
@@ -596,6 +597,11 @@ fun SettingsScreen(
 
             current == SettingsSection.RemoteServers ->
                 com.minime.code.feature.workspace.presentation.remote.RemoteServerScreen(
+                    onNavigateBack = { section = SettingsSection.Menu }
+                )
+
+            current == SettingsSection.CloudAgent ->
+                CloudAgentSettingsScreen(
                     onNavigateBack = { section = SettingsSection.Menu }
                 )
 
@@ -1159,6 +1165,7 @@ fun SettingsScreen(
                 SettingsSection.SkillEditor -> {} // 已在上方 early return 处理
                 SettingsSection.SubAgentEditor -> {} // 已在上方 early return 处理
                 SettingsSection.RemoteServers -> {} // 已在上方 early return 处理
+                SettingsSection.CloudAgent -> {} // 已在上方 early return 处理
                 SettingsSection.Backup -> {} // 已在上方 early return 处理
                 SettingsSection.About -> AboutSection(
                     updateCheckEnabled = updateCheckEnabled,
@@ -1733,6 +1740,12 @@ internal fun SettingsMenu(
                 icon = MiniMeIcons.Server,
                 title = stringResource(SettingsSection.RemoteServers.titleRes),
                 onClick = { onOpen(SettingsSection.RemoteServers) }
+            )
+            SettingsDivider()
+            SettingsRow(
+                icon = MiniMeIcons.Cloud,
+                title = stringResource(SettingsSection.CloudAgent.titleRes),
+                onClick = { onOpen(SettingsSection.CloudAgent) }
             )
         }
 
