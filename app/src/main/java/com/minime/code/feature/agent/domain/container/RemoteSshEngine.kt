@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
@@ -51,6 +52,15 @@ class RemoteSshEngine @Inject constructor(
     override val initProgress: StateFlow<ContainerInitState> = _initProgress.asStateFlow()
 
     private val connectMutex = Mutex()
+
+    /**
+     * 云端沙箱容器名（从服务器 ~/.minimecode/sandbox-mode.marker 探测）。
+     * 非 null 表示当前 SSH 服务器已通过配置向导装好 AI 沙箱容器，AI 命令应经 docker exec 进入容器执行；
+     * null 表示旧版纯 SSH 连接（用户手动添加），命令直接在宿主机执行，保持向后兼容。
+     * 每次连接建立后探测一次，容器失活时自动清空降级。
+     */
+    @Volatile private var sandboxContainer: String? = null
+    @Volatile private var sandboxChecked: Boolean = false
 
     override fun runCommandStream(
         command: String,
@@ -226,31 +236,74 @@ class RemoteSshEngine @Inject constructor(
     override fun defaultShell(): String = "/bin/bash"
 
     override suspend fun ensureInstalled() = connectMutex.withLock {
-        if (connection.isConnected()) {
-            _initProgress.value = ContainerInitState.Ready
-            return@withLock
+        if (!connection.isConnected()) {
+            _initProgress.value = ContainerInitState.InstallingPackages(line = "正在连接 SSH 服务器…")
+            try {
+                connection.connect()
+            } catch (e: Exception) {
+                FileLogger.e(TAG, "SSH 连接失败", e)
+                val friendly = friendlySshError(e)
+                _initProgress.value = ContainerInitState.Failed(friendly)
+                throw RuntimeException(friendly, e)
+            }
         }
-        _initProgress.value = ContainerInitState.InstallingPackages(line = "正在连接 SSH 服务器…")
-        try {
-            connection.connect()
-            _initProgress.value = ContainerInitState.Ready
-        } catch (e: Exception) {
-            FileLogger.e(TAG, "SSH 连接失败", e)
-            val friendly = friendlySshError(e)
-            _initProgress.value = ContainerInitState.Failed(friendly)
-            throw RuntimeException(friendly, e)
+        // 连接就绪后探测云端沙箱标记（每次连接只探一次）
+        if (!sandboxChecked) detectSandbox()
+        _initProgress.value = ContainerInitState.Ready
+    }
+
+    /**
+     * 探测服务器是否配置了 AI 沙箱容器：
+     * 读 ~/.minimecode/sandbox-mode.marker 的 container= 值，并确认该容器仍在运行。
+     * 标记不存在 / 容器已失活 → sandboxContainer=null（宿主机模式）。
+     * 探测失败一律静默降级，绝不阻断命令执行。
+     */
+    private fun detectSandbox() {
+        sandboxChecked = true
+        if (!connection.isConnected()) return
+        val probe = "m=\$HOME/.minimecode/sandbox-mode.marker; " +
+            "[ -f \"\$m\" ] && c=\$(sed -n 's/^container=//p' \"\$m\" | head -1) || c=; " +
+            "if [ -n \"\$c\" ] && command -v docker >/dev/null 2>&1; then " +
+            "docker inspect -f '{{.State.Running}}' \"\$c\" 2>/dev/null | grep -q true && echo \"SANDBOX=\$c\" || echo 'SANDBOX='; " +
+            "else echo 'SANDBOX='; fi"
+        runCatching {
+            val session = connection.startExecSession(probe)
+            val out = StringBuilder()
+            BufferedReader(InputStreamReader(session.inputStream)).use { r ->
+                while (true) { val l = r.readLine() ?: break; out.append(l).append('\n') }
+            }
+            runCatching { session.close() }
+            val value = out.lines().firstOrNull { it.startsWith("SANDBOX=") }
+                ?.removePrefix("SANDBOX=")?.trim()
+            sandboxContainer = value?.takeIf { it.isNotEmpty() }
+            FileLogger.i(TAG, "云端沙箱探测: ${sandboxContainer ?: "未配置（宿主机模式）"}")
+        }.onFailure {
+            sandboxContainer = null
+            FileLogger.w(TAG, "云端沙箱探测失败，降级宿主机模式", it)
         }
     }
 
     /** 拼接 cd 到 projectPath 再执行 command 的完整命令；projectPath 为 null 则直接执行。
      *  优先 cd 到 ~/workspace（符号链接），让 AI 执行 pwd 时看到 ~/workspace 而非真实路径。
-     *  ~/workspace 不存在（符号链接未建成）时 fallback 到 projectPath。
-     *  注入 GIT_CONFIG_GLOBAL 指向 App 管理的 ~/.minimecode/gitconfig：
-     *  仅当用户开启「自动注入」时该文件存在（含 include 用户全局配置 + includeIf 限定工作区根），
-     *  文件不存在时 git 静默跳过——不影响用户在服务器上手动 git。 */
+     *  注入 GIT_CONFIG_GLOBAL 指向 App 管理的 ~/.minimecode/gitconfig。
+     *  若当前服务器配置了云端沙箱容器，则整条命令经 `docker exec` 进入容器执行
+     *  （容器内 ~/workspace→/workspace 符号链接、~/.minimecode 为 bind mount），实现与本地 proot 一致的隔离执行。 */
     private fun buildCdCommand(command: String, projectPath: String?): String {
-        val prefix = "export GIT_CONFIG_GLOBAL=\"\$HOME/.minimecode/gitconfig\"; "
-        if (projectPath == null) return prefix + command
-        return prefix + "cd ~/workspace 2>/dev/null || cd ${shellQuote(projectPath)} 2>/dev/null; $command"
+        val container = sandboxContainer
+        // 进容器后的工作目录切换 + git 配置注入（在容器内 HOME=/root 下生效）
+        val inner = buildString {
+            append("export GIT_CONFIG_GLOBAL=\"\$HOME/.minimecode/gitconfig\"; ")
+            if (projectPath != null) {
+                append("cd ~/workspace 2>/dev/null || cd ${shellQuote(projectPath)} 2>/dev/null; ")
+            }
+            append(command)
+        }
+        return if (container != null) {
+            // docker exec 用 bash -lc 承载；shellQuote 处理任意引号，命令原样传入容器执行
+            "docker exec -i ${shellQuote(container)} /bin/bash -lc ${shellQuote(inner)}"
+        } else {
+            // 旧版纯 SSH：宿主机直接执行（保持向后兼容）
+            inner
+        }
     }
 }

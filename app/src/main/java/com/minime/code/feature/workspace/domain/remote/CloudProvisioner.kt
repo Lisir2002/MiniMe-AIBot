@@ -393,8 +393,8 @@ class CloudProvisioner @Inject constructor(
                 val image = shellQuote(params.imageName)
                 "(docker image inspect $image >/dev/null 2>&1 && echo '镜像已存在') || docker pull $image"
             }
-            "docker.run" -> "docker rm -f minimecode-ai >/dev/null 2>&1 || true; docker run -d --name minimecode-ai --restart unless-stopped -v \"\$HOME/.minimecode:/root/.minimecode\" -v $ws:/workspace ${shellQuote(params.imageName)} && sleep 2 && docker exec minimecode-ai sh -c 'echo container-ok; git --version 2>/dev/null || true' && echo 'AI 容器已启动'"
-            "native.runtime" -> "mkdir -p \"\$HOME/.local/bin\" && { command -v apt-get >/dev/null 2>&1 && sudo apt-get update -qq && sudo apt-get install -y -qq git curl ripgrep python3; } || { command -v dnf >/dev/null 2>&1 && sudo dnf install -y git curl ripgrep python3; } || echo '未识别发行版，请手动安装 git/curl/ripgrep/python3'; echo '原生工具链安装结束'"
+            "docker.run" -> "docker rm -f minimecode-ai >/dev/null 2>&1 || true; docker run -d --name minimecode-ai --restart unless-stopped -v \"\$HOME/.minimecode:/root/.minimecode\" -v $ws:/workspace ${shellQuote(params.imageName)} && sleep 2 && docker exec minimecode-ai sh -c 'echo container-ok; git --version 2>/dev/null || true; [ -L /root/workspace ] || ln -sfn /workspace /root/workspace' && printf 'container=minimecode-ai\\nimage=%s\\n' ${shellQuote(params.imageName)} > \"\$HOME/.minimecode/sandbox-mode.marker\" && echo 'AI 沙箱容器已启动并标记'"
+            "native.runtime" -> "mkdir -p \"\$HOME/.local/bin\" && { command -v apt-get >/dev/null 2>&1 && sudo apt-get update -qq && sudo apt-get install -y -qq git curl ripgrep python3; } || { command -v dnf >/dev/null 2>&1 && sudo dnf install -y git curl ripgrep python3; } || echo '未识别发行版，请手动安装 git/curl/ripgrep/python3'; rm -f \"\$HOME/.minimecode/sandbox-mode.marker\"; echo '原生工具链安装结束'"
             "native.marker" -> "printf 'strategy=native\\ninstalled_at=%s\\n' \"\$(date +%s)\" > \"\$HOME/.minimecode/cloud-env.marker\" && echo '环境标记写入完成'"
             else -> "echo '未知动作 $actionId'; exit 1"
         }
