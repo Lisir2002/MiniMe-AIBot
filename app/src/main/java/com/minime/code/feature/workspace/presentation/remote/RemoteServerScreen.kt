@@ -83,6 +83,8 @@ fun RemoteServerScreen(
     var showAddMountDialog by remember { mutableStateOf(false) }
     var showHostKeysScreen by remember { mutableStateOf(false) }
     var showSyncSettingsSheet by remember { mutableStateOf(false) }
+    // 云端一键配置向导（云服务器跑 AI 的入口）
+    var showCloudProvision by remember { mutableStateOf(false) }
 
     // 列表滚动状态提升到页面层：滚动时底部 tab 栏淡出（同 Git 页面）。
     // 连接列表是每行独立卡片（LazyColumn），挂载/FTP 仍是分组卡片（普通滚动容器）。
@@ -123,6 +125,9 @@ fun RemoteServerScreen(
                 },
                 actions = {
                     if (pagerState.currentPage == 0) {
+                        IconButton(onClick = { showCloudProvision = true }) {
+                            MiniMeIcon(MiniMeIcons.Cloud, contentDescription = "云端 AI 环境配置")
+                        }
                         IconButton(onClick = { showHostKeysScreen = true }) {
                             MiniMeIcon(MiniMeIcons.Key, contentDescription = stringResource(R.string.ssh_host_key_settings_title))
                         }
@@ -294,6 +299,14 @@ fun RemoteServerScreen(
                 }
             }
         }
+    }
+
+    if (showCloudProvision) {
+        CloudProvisionScreen(
+            onNavigateBack = { showCloudProvision = false },
+            onEnabled = { showCloudProvision = false }
+        )
+        return
     }
 
     if (showHostKeysScreen) {
