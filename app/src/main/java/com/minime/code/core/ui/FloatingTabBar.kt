@@ -330,8 +330,7 @@ fun FloatingTabBar(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            imageVector = item.icon,
+                        MiniMeIcon(imageVector = item.icon,
                             contentDescription = null,
                             modifier = Modifier
                                 .size(20.dp)
@@ -588,8 +587,7 @@ fun FloatingTabBar(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            imageVector = item.icon,
+                        MiniMeIcon(imageVector = item.icon,
                             contentDescription = null,
                             modifier = Modifier
                                 .size(20.dp)

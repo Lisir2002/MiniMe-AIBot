@@ -64,6 +64,7 @@ import com.minime.code.feature.settings.presentation.component.SettingsGroup
 import com.minime.code.feature.settings.presentation.component.SettingsRow
 import com.minime.code.feature.settings.presentation.component.settingsPageBackground
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * 凭据与署名独立页：底部悬浮 tab 切换「署名」与「凭据」两个标签页。
@@ -118,12 +119,12 @@ fun CredentialScreen(
                 ),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { showAddSheet = true }) {
-                        Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.credential_add))
+                        MiniMeIcon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.credential_add))
                     }
                 }
             )
@@ -343,8 +344,7 @@ private fun CredentialItem(
                 )
             }
             // 右侧大于号：与远程连接/MCP 行一致，整行点击编辑。
-            Icon(
-                imageVector = MiniMeIcons.ChevronRight,
+            MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = stringResource(R.string.common_edit),
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)
@@ -362,11 +362,11 @@ private fun PlatformIcon(host: String, modifier: Modifier = Modifier) {
     val tint = MaterialTheme.colorScheme.onSurfaceVariant
     when {
         host.contains("github", ignoreCase = true) ->
-            Icon(MiniMeIcons.Github, contentDescription = null, tint = tint, modifier = modifier)
+            MiniMeIcon(MiniMeIcons.Github, contentDescription = null, tint = tint, modifier = modifier)
         host.contains("gitee", ignoreCase = true) ->
             Icon(painterResource(R.drawable.logo_gitee), contentDescription = null, tint = tint, modifier = modifier)
         else ->
-            Icon(MiniMeIcons.Key, contentDescription = null, tint = tint, modifier = modifier)
+            MiniMeIcon(MiniMeIcons.Key, contentDescription = null, tint = tint, modifier = modifier)
     }
 }
 

@@ -52,6 +52,7 @@ import com.minime.code.feature.agent.domain.mcp.McpServerConfig
 import com.minime.code.feature.agent.domain.mcp.McpServerEntry
 import com.minime.code.feature.agent.domain.mcp.McpServerStatus
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import com.minime.code.R
 
 /**
@@ -186,8 +187,7 @@ internal fun McpSection(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(Spacing.sm)
                         ) {
-                            Icon(
-                                MiniMeIcons.Search,
+                            MiniMeIcon(MiniMeIcons.Search,
                                 contentDescription = null,
                                 modifier = Modifier.size(28.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
@@ -315,8 +315,7 @@ internal fun McpServerRow(
                         shape = RoundedCornerShape(8.dp)
                     )
             ) {
-                Icon(
-                    imageVector = MiniMeIcons.Box,
+                MiniMeIcon(imageVector = MiniMeIcons.Box,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
@@ -374,8 +373,7 @@ internal fun McpServerRow(
                 backgroundColor = statusBgColor
             )
             Spacer(modifier = Modifier.width(Spacing.xs))
-            Icon(
-                imageVector = MiniMeIcons.ChevronRight,
+            MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = stringResource(R.string.mcp_details),
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)

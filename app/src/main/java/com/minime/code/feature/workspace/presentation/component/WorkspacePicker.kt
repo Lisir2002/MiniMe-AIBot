@@ -54,6 +54,7 @@ import com.minime.code.feature.workspace.domain.model.Workspace
 import com.minime.code.feature.workspace.domain.model.WorkspaceType
 import com.minime.code.feature.workspace.presentation.WorkspaceViewModel
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import androidx.compose.ui.res.stringResource
 import android.widget.Toast
 import com.minime.code.R
@@ -77,8 +78,7 @@ fun WorkspaceChip(
             .padding(horizontal = Spacing.md, vertical = Spacing.xs),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            MiniMeIcons.Folder,
+        MiniMeIcon(MiniMeIcons.Folder,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(16.dp)
@@ -91,8 +91,7 @@ fun WorkspaceChip(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        Icon(
-            MiniMeIcons.MoreHorizontal,
+        MiniMeIcon(MiniMeIcons.MoreHorizontal,
             contentDescription = stringResource(R.string.workspace_switch),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(16.dp)
@@ -125,8 +124,7 @@ fun WorkspaceIconButton(
         onClick = { showSheet = true },
         modifier = modifier
     ) {
-        Icon(
-            MiniMeIcons.Folder,
+        MiniMeIcon(MiniMeIcons.Folder,
             contentDescription = stringResource(R.string.workspace_open),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(iconSize)
@@ -347,13 +345,13 @@ private fun WorkspaceSheet(
                 )
                 if (isLocalMode) {
                     TextButton(onClick = onAddExternal) {
-                        Icon(MiniMeIcons.HardDrive, contentDescription = null, modifier = Modifier.size(18.dp))
+                        MiniMeIcon(MiniMeIcons.HardDrive, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(Spacing.xs))
                         Text(stringResource(R.string.workspace_add_external))
                     }
                 }
                 TextButton(onClick = { showCreateDialog = true }) {
-                    Icon(MiniMeIcons.Plus, contentDescription = null, modifier = Modifier.size(18.dp))
+                    MiniMeIcon(MiniMeIcons.Plus, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(Spacing.xs))
                     Text(createWorkspaceLabel)
                 }
@@ -450,8 +448,7 @@ private fun WorkspaceRow(
             .padding(horizontal = Spacing.md, vertical = Spacing.md),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            if (external) MiniMeIcons.HardDrive else MiniMeIcons.Folder,
+        MiniMeIcon(if (external) MiniMeIcons.HardDrive else MiniMeIcons.Folder,
             contentDescription = null,
             tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(20.dp)
@@ -499,8 +496,7 @@ private fun WorkspaceRow(
                     .clickable(onClick = onDelete),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    MiniMeIcons.Trash2,
+                MiniMeIcon(MiniMeIcons.Trash2,
                     contentDescription = stringResource(R.string.common_delete),
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(18.dp)

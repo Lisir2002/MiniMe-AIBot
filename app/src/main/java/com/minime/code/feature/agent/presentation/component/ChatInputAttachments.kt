@@ -70,6 +70,7 @@ import com.minime.code.core.ui.decodeSampledBitmap
 import com.minime.code.feature.agent.presentation.QueuedRequest
 import com.minime.code.core.ui.ExpandableChevronIcon
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import java.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -163,8 +164,7 @@ internal fun QueuedRequestPanel(
                                 .padding(horizontal = Spacing.md, vertical = Spacing.xs),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                MiniMeIcons.Menu,
+                            MiniMeIcon(MiniMeIcons.Menu,
                                 contentDescription = stringResource(R.string.chat_queue_drag),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier
@@ -220,8 +220,7 @@ internal fun QueuedRequestPanel(
                                 onClick = { onInterjectQueued(req.id) },
                                 modifier = Modifier.size(28.dp)
                             ) {
-                                Icon(
-                                    MiniMeIcons.Zap,
+                                MiniMeIcon(MiniMeIcons.Zap,
                                     contentDescription = stringResource(R.string.chat_queue_interject),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(14.dp)
@@ -231,8 +230,7 @@ internal fun QueuedRequestPanel(
                                 onClick = { onEditQueued(req) },
                                 modifier = Modifier.size(28.dp)
                             ) {
-                                Icon(
-                                    MiniMeIcons.Edit2,
+                                MiniMeIcon(MiniMeIcons.Edit2,
                                     contentDescription = stringResource(R.string.chat_queue_edit),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(14.dp)
@@ -242,8 +240,7 @@ internal fun QueuedRequestPanel(
                                 onClick = { onRemoveQueued(req.id) },
                                 modifier = Modifier.size(28.dp)
                             ) {
-                                Icon(
-                                    MiniMeIcons.X,
+                                MiniMeIcon(MiniMeIcons.X,
                                     contentDescription = stringResource(R.string.chat_queue_remove),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(14.dp)
@@ -320,8 +317,7 @@ private fun PendingAttachmentPreviewItem(
                     onClick = onRemove,
                     modifier = Modifier.size(24.dp)
                 ) {
-                    Icon(
-                        MiniMeIcons.X,
+                    MiniMeIcon(MiniMeIcons.X,
                         contentDescription = stringResource(R.string.chat_remove_attachment),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(14.dp)
@@ -367,8 +363,7 @@ private fun ImageThumbnail(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    MiniMeIcons.Image,
+                MiniMeIcon(MiniMeIcons.Image,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
@@ -387,8 +382,7 @@ private fun FileAttachmentPreview(attachment: PendingUploadAttachment) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            MiniMeIcons.FileText,
+        MiniMeIcon(MiniMeIcons.FileText,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(22.dp)
@@ -510,7 +504,7 @@ private fun AttachmentSheetItem(
             .padding(horizontal = Spacing.md, vertical = Spacing.md),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
+        MiniMeIcon(
             icon,
             contentDescription = null,
             tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),

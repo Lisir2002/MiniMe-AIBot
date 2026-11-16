@@ -93,6 +93,7 @@ import com.minime.code.feature.agent.domain.skill.SkillImportError
 import com.minime.code.feature.agent.domain.skill.SkillScope
 import com.minime.code.feature.settings.presentation.SubAgentUiEntry
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import com.minime.code.feature.onboarding.domain.OnboardingStep
 import com.minime.code.feature.onboarding.presentation.onboardingTarget
 import com.minime.code.feature.settings.data.local.ProviderPreset
@@ -486,8 +487,7 @@ fun SettingsScreen(
                     ),
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) {
-                            Icon(
-                                MiniMeIcons.ArrowLeft,
+                            MiniMeIcon(MiniMeIcons.ArrowLeft,
                                 contentDescription = stringResource(R.string.common_back)
                             )
                         }
@@ -648,7 +648,7 @@ fun SettingsScreen(
                             val parent = parentSection
                             if (parent != null) section = parent else onNavigateBack()
                         }) {
-                            Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                            MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                         }
                     }
                 },
@@ -665,7 +665,7 @@ fun SettingsScreen(
                                 },
                                 modifier = Modifier.onboardingTarget(OnboardingStep.PROVIDER_ADD)
                             ) {
-                                Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.settings_add_provider))
+                                MiniMeIcon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.settings_add_provider))
                             }
                         }
                         SettingsSection.Mcp -> {
@@ -676,8 +676,7 @@ fun SettingsScreen(
                                 if (mcpReloading) {
                                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                                 } else {
-                                    Icon(
-                                        MiniMeIcons.RefreshCw,
+                                    MiniMeIcon(MiniMeIcons.RefreshCw,
                                         contentDescription = stringResource(R.string.settings_reconnect),
                                         tint = MaterialTheme.colorScheme.onBackground,
                                         modifier = Modifier.size(22.dp)
@@ -685,8 +684,7 @@ fun SettingsScreen(
                                 }
                             }
                             IconButton(onClick = { showMcpAddSheet = true }) {
-                                Icon(
-                                    MiniMeIcons.Plus,
+                                MiniMeIcon(MiniMeIcons.Plus,
                                     contentDescription = stringResource(R.string.settings_add_mcp_server),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -695,23 +693,21 @@ fun SettingsScreen(
                         }
                         SettingsSection.Container -> {
                             IconButton(onClick = { showContainerAnnouncement = true }) {
-                                Icon(
-                                    MiniMeIcons.Info,
+                                MiniMeIcon(MiniMeIcons.Info,
                                     contentDescription = stringResource(R.string.container_announcement_title),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
                             IconButton(onClick = { section = SettingsSection.ContainerDownloads }) {
-                                Icon(
-                                    MiniMeIcons.Download,
+                                MiniMeIcon(MiniMeIcons.Download,
                                     contentDescription = stringResource(R.string.container_download_image),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
                             IconButton(onClick = { showContainerAddSheet = true }) {
-                                Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.container_add_image))
+                                MiniMeIcon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.container_add_image))
                             }
                         }
                         SettingsSection.ContainerDownloads -> {
@@ -719,8 +715,7 @@ fun SettingsScreen(
                                 SelectionToggleAction(selectionFor(SettingsSection.ContainerDownloads))
                             }
                             IconButton(onClick = { showImageSourceSheet = true }) {
-                                Icon(
-                                    MiniMeIcons.Globe,
+                                MiniMeIcon(MiniMeIcons.Globe,
                                     contentDescription = stringResource(R.string.container_download_current_source_title),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -734,8 +729,7 @@ fun SettingsScreen(
                             IconButton(onClick = {
                                 showSkillAddSheet = true
                             }) {
-                                Icon(
-                                    MiniMeIcons.Plus,
+                                MiniMeIcon(MiniMeIcons.Plus,
                                     contentDescription = stringResource(R.string.skills_add),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -748,8 +742,7 @@ fun SettingsScreen(
                                 skillEditorReturn = SettingsSection.SkillDetail
                                 section = SettingsSection.SkillEditor
                             }) {
-                                Icon(
-                                    MiniMeIcons.Edit2,
+                                MiniMeIcon(MiniMeIcons.Edit2,
                                     contentDescription = stringResource(R.string.skills_edit),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(20.dp)
@@ -765,8 +758,7 @@ fun SettingsScreen(
                                 subAgentEditorReturn = SettingsSection.SubAgents
                                 section = SettingsSection.SubAgentEditor
                             }) {
-                                Icon(
-                                    MiniMeIcons.Plus,
+                                MiniMeIcon(MiniMeIcons.Plus,
                                     contentDescription = stringResource(R.string.subagent_add),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -779,8 +771,7 @@ fun SettingsScreen(
                                 subAgentEditorReturn = SettingsSection.SubAgentDetail
                                 section = SettingsSection.SubAgentEditor
                             }) {
-                                Icon(
-                                    MiniMeIcons.Edit2,
+                                MiniMeIcon(MiniMeIcons.Edit2,
                                     contentDescription = stringResource(R.string.subagent_edit),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(20.dp)
@@ -789,13 +780,12 @@ fun SettingsScreen(
                         }
                         SettingsSection.Log -> {
                             IconButton(onClick = { viewModel.refreshLogs() }) {
-                                Icon(MiniMeIcons.RefreshCw, contentDescription = stringResource(R.string.settings_refresh_logs))
+                                MiniMeIcon(MiniMeIcons.RefreshCw, contentDescription = stringResource(R.string.settings_refresh_logs))
                             }
                         }
                         SettingsSection.TokenStats -> {
                             IconButton(onClick = { showResetTokenStats = true }) {
-                                Icon(
-                                    MiniMeIcons.Trash2,
+                                MiniMeIcon(MiniMeIcons.Trash2,
                                     contentDescription = stringResource(R.string.settings_token_stats_reset),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -814,8 +804,7 @@ fun SettingsScreen(
                             )
                             // 帮助入口只保留这一个：原来「+」弹层里的帮助项与它重复，弹层已去掉。
                             IconButton(onClick = { showPromptsAnnouncement = true }) {
-                                Icon(
-                                    MiniMeIcons.Info,
+                                MiniMeIcon(MiniMeIcons.Info,
                                     contentDescription = stringResource(R.string.prompts_help),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -823,8 +812,7 @@ fun SettingsScreen(
                             }
                             // 重置：清空自定义提示词，各编号回落到内置（排在「+」左侧）。
                             IconButton(onClick = { showResetPrompts = true }) {
-                                Icon(
-                                    MiniMeIcons.RotateCcw,
+                                MiniMeIcon(MiniMeIcons.RotateCcw,
                                     contentDescription = stringResource(R.string.prompts_reset_custom),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -836,8 +824,7 @@ fun SettingsScreen(
                                 promptEditorReturn = SettingsSection.Prompts
                                 section = SettingsSection.PromptEditor
                             }) {
-                                Icon(
-                                    MiniMeIcons.Plus,
+                                MiniMeIcon(MiniMeIcons.Plus,
                                     contentDescription = stringResource(R.string.prompts_add_prompt),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
@@ -850,8 +837,7 @@ fun SettingsScreen(
                                 promptEditorReturn = SettingsSection.PromptDetail
                                 section = SettingsSection.PromptEditor
                             }) {
-                                Icon(
-                                    MiniMeIcons.Edit2,
+                                MiniMeIcon(MiniMeIcons.Edit2,
                                     contentDescription = stringResource(R.string.subagent_edit),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(20.dp)
@@ -860,8 +846,7 @@ fun SettingsScreen(
                         }
                         SettingsSection.Storage -> {
                             IconButton(onClick = { storageViewModel?.refresh() }) {
-                                Icon(
-                                    MiniMeIcons.RefreshCw,
+                                MiniMeIcon(MiniMeIcons.RefreshCw,
                                     contentDescription = stringResource(R.string.storage_refresh),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)

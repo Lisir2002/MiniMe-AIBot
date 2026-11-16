@@ -68,6 +68,7 @@ import com.minime.code.feature.settings.presentation.component.SettingsDivider
 import com.minime.code.core.ui.ChevronRotationStyle
 import com.minime.code.core.ui.ExpandableChevronIcon
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 @Composable
 internal fun StatusTab(
@@ -207,7 +208,7 @@ internal fun StatusTab(
                         disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
                     )
                 ) {
-                    Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(17.dp))
+                    MiniMeIcon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(17.dp))
                     Spacer(Modifier.width(Spacing.xs))
                     Text(
                         text = stringResource(R.string.git_commit_changes),
@@ -622,8 +623,7 @@ private fun StatusOverview(status: GitStatus?, clean: Boolean) {
     ) {
         Column(modifier = Modifier.padding(Spacing.lg)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    MiniMeIcons.GitBranch,
+                MiniMeIcon(MiniMeIcons.GitBranch,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(18.dp)
@@ -821,8 +821,7 @@ private fun FileRow(
         }
         Spacer(Modifier.width(Spacing.sm))
         IconButton(onClick = onAction, enabled = enabled) {
-            Icon(
-                actionIcon,
+            MiniMeIcon(actionIcon,
                 contentDescription = actionDesc,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -863,7 +862,7 @@ private fun ActionButton(
         ),
         contentPadding = PaddingValues(horizontal = Spacing.sm)
     ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(15.dp))
+        MiniMeIcon(icon, contentDescription = null, modifier = Modifier.size(15.dp))
         Spacer(Modifier.width(Spacing.xs))
         Text(
             text = label,
@@ -929,8 +928,7 @@ private fun UntrackedDirRow(
             )
         }
         IconButton(onClick = onStage, enabled = enabled) {
-            Icon(
-                MiniMeIcons.Plus,
+            MiniMeIcon(MiniMeIcons.Plus,
                 contentDescription = stringResource(R.string.git_stage),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1012,8 +1010,7 @@ private fun FileActionSheet(menu: FileMenu, onDismiss: () -> Unit) {
                             .padding(horizontal = Spacing.lg, vertical = Spacing.md),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = action.icon,
+                        MiniMeIcon(imageVector = action.icon,
                             contentDescription = null,
                             modifier = Modifier.size(20.dp),
                             tint = tint
@@ -1127,7 +1124,7 @@ private fun StashBottomSheet(
                         modifier = Modifier.fillMaxWidth().height(40.dp),
                         shape = RoundedCornerShape(Radius.md)
                     ) {
-                        Icon(MiniMeIcons.Archive, contentDescription = null, modifier = Modifier.size(16.dp))
+                        MiniMeIcon(MiniMeIcons.Archive, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(Spacing.xs))
                         Text(stringResource(R.string.git_action_stash))
                     }
@@ -1237,8 +1234,7 @@ private fun StashItemRow(
                     enabled = !busy,
                     modifier = Modifier.size(28.dp)
                 ) {
-                    Icon(
-                        MiniMeIcons.Trash2,
+                    MiniMeIcon(MiniMeIcons.Trash2,
                         contentDescription = stringResource(R.string.git_stash_drop),
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(15.dp)

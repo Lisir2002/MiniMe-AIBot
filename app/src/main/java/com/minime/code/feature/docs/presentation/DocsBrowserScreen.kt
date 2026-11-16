@@ -63,6 +63,7 @@ import com.minime.code.R
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.theme.semanticColors
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import com.minime.code.core.ui.isExpandedWidth
 
 /**
@@ -127,14 +128,14 @@ fun DocsBrowserScreen(
             },
             navigationIcon = {
                 IconButton(onClick = { goBack() }) {
-                    Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                    MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                 }
             },
             actions = {
                 // 大屏左侧目录常驻，不需要目录按钮
                 if (!expanded && !showIndex) {
                     IconButton(onClick = { showIndex = true }) {
-                        Icon(MiniMeIcons.Menu, contentDescription = stringResource(R.string.docs_index))
+                        MiniMeIcon(MiniMeIcons.Menu, contentDescription = stringResource(R.string.docs_index))
                     }
                 }
             },
@@ -238,8 +239,7 @@ private fun DocsIndex(
                         .padding(horizontal = Spacing.md, vertical = Spacing.md),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = MiniMeIcons.FileText,
+                    MiniMeIcon(imageVector = MiniMeIcons.FileText,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.semanticColors.subtleText
@@ -251,8 +251,7 @@ private fun DocsIndex(
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f)
                     )
-                    Icon(
-                        imageVector = MiniMeIcons.ChevronRight,
+                    MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.semanticColors.subtleText

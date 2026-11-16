@@ -62,6 +62,7 @@ import com.minime.code.feature.workspace.domain.model.RemoteProtocol
 import com.minime.code.feature.workspace.domain.model.SyncConnectionState
 import com.minime.code.R
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /** 同步设置底部弹窗（右上角齿轮打开）。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -166,8 +167,7 @@ fun SyncSettingsSheet(
 @Composable
 private fun EditRowButton(onEdit: () -> Unit) {
     IconButton(onClick = onEdit) {
-        Icon(
-            imageVector = MiniMeIcons.ChevronRight,
+        MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
             contentDescription = stringResource(R.string.common_edit),
             tint = MaterialTheme.semanticColors.subtleText,
             modifier = Modifier.size(18.dp)
@@ -186,8 +186,7 @@ private fun RowIconBox(icon: androidx.compose.ui.graphics.vector.ImageVector) {
                 shape = RoundedCornerShape(8.dp)
             )
     ) {
-        Icon(
-            imageVector = icon,
+        MiniMeIcon(imageVector = icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
@@ -391,8 +390,7 @@ fun RemoteMountCard(
                             onClick = { actionsExpanded = true },
                             modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(
-                                imageVector = MiniMeIcons.MoreHorizontal,
+                            MiniMeIcon(imageVector = MiniMeIcons.MoreHorizontal,
                                 contentDescription = stringResource(R.string.common_more),
                                 tint = MaterialTheme.semanticColors.subtleText,
                                 modifier = Modifier.size(18.dp)
@@ -426,7 +424,7 @@ fun RemoteMountCard(
                             .height(40.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(MiniMeIcons.Play, contentDescription = null, modifier = Modifier.size(16.dp))
+                        MiniMeIcon(MiniMeIcons.Play, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(stringResource(R.string.sync_connect_and_sync))
                     }

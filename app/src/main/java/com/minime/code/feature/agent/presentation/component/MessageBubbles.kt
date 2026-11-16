@@ -65,6 +65,7 @@ import com.minime.code.feature.agent.presentation.AgentUIMessage
 import com.minime.code.feature.agent.presentation.hasVisibleContent
 import com.minime.code.feature.agent.presentation.MessageRole
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -448,8 +449,7 @@ internal fun AgentMessageItem(
                         }
                         if (cacheHitRate != null) {
                             if (emitted) Spacer(Modifier.width(Spacing.sm))
-                            Icon(
-                                MiniMeIcons.Database,
+                            MiniMeIcon(MiniMeIcons.Database,
                                 contentDescription = stringResource(R.string.chat_cache_hit_rate, cacheHitRate),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(12.dp)
@@ -460,8 +460,7 @@ internal fun AgentMessageItem(
                         }
                         if (durationText != null) {
                             if (emitted) Spacer(Modifier.width(Spacing.sm))
-                            Icon(
-                                MiniMeIcons.Clock,
+                            MiniMeIcon(MiniMeIcons.Clock,
                                 contentDescription = stringResource(R.string.chat_task_duration, durationText),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(13.dp)
@@ -564,7 +563,7 @@ private fun MessageActionIconButton(
         modifier = Modifier.size(24.dp),
         colors = IconButtonDefaults.iconButtonColors(contentColor = tint),
     ) {
-        Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(14.dp))
+        MiniMeIcon(icon, contentDescription = contentDescription, modifier = Modifier.size(14.dp))
     }
 }
 

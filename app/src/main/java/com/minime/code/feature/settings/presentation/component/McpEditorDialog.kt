@@ -60,6 +60,7 @@ import com.minime.code.feature.agent.domain.mcp.McpServerConfig
 import com.minime.code.feature.agent.domain.mcp.McpToolDescriptor
 import com.minime.code.feature.settings.presentation.McpAuthUiState
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.serialization.json.JsonObject
 import androidx.compose.ui.res.stringResource
 import com.minime.code.R
@@ -203,8 +204,7 @@ fun McpServerEditDialog(
                                 onClick = onOpenLogs,
                                 modifier = Modifier.size(36.dp)
                             ) {
-                                Icon(
-                                    MiniMeIcons.FileText,
+                                MiniMeIcon(MiniMeIcons.FileText,
                                     contentDescription = stringResource(R.string.mcp_view_logs),
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
@@ -214,8 +214,7 @@ fun McpServerEditDialog(
                             onClick = onRefreshTools,
                             modifier = Modifier.size(36.dp)
                         ) {
-                            Icon(
-                                MiniMeIcons.RefreshCw,
+                            MiniMeIcon(MiniMeIcons.RefreshCw,
                                 contentDescription = stringResource(R.string.mcp_refresh_tools),
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
@@ -380,8 +379,7 @@ fun McpServerEditDialog(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(
-                                    MiniMeIcons.Tool,
+                                MiniMeIcon(MiniMeIcons.Tool,
                                     contentDescription = null,
                                     modifier = Modifier.size(32.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
@@ -470,8 +468,7 @@ fun McpServerEditDialog(
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        Icon(
-                                            MiniMeIcons.Search,
+                                        MiniMeIcon(MiniMeIcons.Search,
                                             contentDescription = null,
                                             modifier = Modifier.size(24.dp),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
@@ -590,7 +587,7 @@ fun McpServerEditDialog(
                             .height(44.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                        MiniMeIcon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(stringResource(R.string.common_save), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                     }

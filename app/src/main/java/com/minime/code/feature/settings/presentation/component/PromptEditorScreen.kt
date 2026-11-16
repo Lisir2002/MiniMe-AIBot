@@ -36,6 +36,7 @@ import com.minime.code.core.ui.AppTextField
 import com.minime.code.feature.agent.domain.prompt.PromptFragment
 import com.minime.code.feature.agent.domain.prompt.PromptFragmentSource
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * 提示词片段新建/编辑页：自带顶栏（返回 + 右上角保存），与 [SubAgentEditorScreen] 一致，
@@ -85,7 +86,7 @@ internal fun PromptEditorScreen(
                 ),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {

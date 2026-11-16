@@ -128,6 +128,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.minime.code.core.ui.ExpandableChevronIcon
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import android.widget.Toast
 import com.minime.code.feature.agent.domain.model.ReasoningEffort
 import com.minime.code.feature.agent.presentation.component.AdaptiveCardView
@@ -401,7 +402,7 @@ fun ProviderEditorScreen(
                             saveAndNavigateBack()
                         }
                     }) {
-                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
@@ -410,8 +411,7 @@ fun ProviderEditorScreen(
                             isSelectionMode = !isSelectionMode
                             if (!isSelectionMode) selectedModels.clear()
                         }) {
-                            Icon(
-                                MiniMeIcons.CheckSquare,
+                            MiniMeIcon(MiniMeIcons.CheckSquare,
                                 contentDescription = stringResource(R.string.provider_models_select),
                                 tint = if (isSelectionMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -421,7 +421,7 @@ fun ProviderEditorScreen(
                         scope.launch { pagerState.animateScrollToPage(1) }
                         showAddModelSheet = true
                     }) {
-                        Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.provider_add_model))
+                        MiniMeIcon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.provider_add_model))
                     }
                 }
             )
@@ -466,8 +466,7 @@ fun ProviderEditorScreen(
                                     PasswordVisualTransformation()
                                 },
                                 trailing = {
-                                    Icon(
-                                        imageVector = if (apiKeyVisible) MiniMeIcons.EyeOff else MiniMeIcons.Eye,
+                                    MiniMeIcon(imageVector = if (apiKeyVisible) MiniMeIcons.EyeOff else MiniMeIcons.Eye,
                                         contentDescription = stringResource(
                                             if (apiKeyVisible) R.string.provider_hide_api_key else R.string.provider_show_api_key
                                         ),
@@ -632,8 +631,7 @@ fun ProviderEditorScreen(
                                             onClick = { dashboardScriptPath = "" },
                                             modifier = Modifier.size(32.dp)
                                         ) {
-                                            Icon(
-                                                imageVector = MiniMeIcons.X,
+                                            MiniMeIcon(imageVector = MiniMeIcons.X,
                                                 contentDescription = stringResource(R.string.provider_dashboard_clear_script),
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.size(16.dp)
@@ -647,8 +645,7 @@ fun ProviderEditorScreen(
                                         },
                                         modifier = Modifier.size(36.dp)
                                     ) {
-                                        Icon(
-                                            imageVector = MiniMeIcons.Folder,
+                                        MiniMeIcon(imageVector = MiniMeIcons.Folder,
                                             contentDescription = stringResource(R.string.provider_dashboard_select_script),
                                             tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(20.dp)
@@ -693,8 +690,7 @@ fun ProviderEditorScreen(
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 } else {
-                                    Icon(
-                                        imageVector = MiniMeIcons.Play,
+                                    MiniMeIcon(imageVector = MiniMeIcons.Play,
                                         contentDescription = stringResource(R.string.provider_dashboard_run_test),
                                         tint = if (dashboardScriptPath.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                                         modifier = Modifier.size(20.dp)
@@ -777,7 +773,7 @@ fun ProviderEditorScreen(
                                     contentColor = MaterialTheme.colorScheme.primary
                                 )
                             ) {
-                                Icon(MiniMeIcons.Play, contentDescription = null, modifier = Modifier.size(16.dp))
+                                MiniMeIcon(MiniMeIcons.Play, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(Spacing.xs))
                                 Text(stringResource(R.string.provider_models_batch_test))
                             }
@@ -788,7 +784,7 @@ fun ProviderEditorScreen(
                                     contentColor = MaterialTheme.colorScheme.error
                                 )
                             ) {
-                                Icon(MiniMeIcons.Trash2, contentDescription = null, modifier = Modifier.size(16.dp))
+                                MiniMeIcon(MiniMeIcons.Trash2, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(Spacing.xs))
                                 Text(stringResource(R.string.provider_models_batch_delete))
                             }
@@ -820,7 +816,7 @@ fun ProviderEditorScreen(
                                 ),
                                 modifier = Modifier.onboardingTarget(OnboardingStep.PROVIDER_FETCH_MODELS)
                             ) {
-                                Icon(MiniMeIcons.DownloadCloud, contentDescription = null, modifier = Modifier.size(18.dp))
+                                MiniMeIcon(MiniMeIcons.DownloadCloud, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(Spacing.xs))
                                 Text(stringResource(R.string.provider_fetch_models))
                             }
@@ -1410,7 +1406,7 @@ private fun AddModelSheet(
                         .height(44.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                    MiniMeIcon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(confirmLabel, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 }
@@ -1461,8 +1457,7 @@ private fun ReasoningLevelRow(title: String, checked: Boolean, onToggle: () -> U
             modifier = Modifier.weight(1f)
         )
         if (checked) {
-            Icon(
-                MiniMeIcons.Check,
+            MiniMeIcon(MiniMeIcons.Check,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(18.dp)
@@ -1609,8 +1604,7 @@ private fun FetchModelsDialog(
                         onClick = { showAddAllConfirm = true },
                         contentPadding = PaddingValues(horizontal = Spacing.sm, vertical = 0.dp)
                     ) {
-                        Icon(
-                            imageVector = MiniMeIcons.Plus,
+                        MiniMeIcon(imageVector = MiniMeIcons.Plus,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )
@@ -1699,8 +1693,7 @@ private fun FetchModelsDialog(
                                         )
                                         .padding(horizontal = Spacing.md, vertical = Spacing.sm)
                                 ) {
-                                    Icon(
-                                        imageVector = MiniMeIcons.AlertCircle,
+                                    MiniMeIcon(imageVector = MiniMeIcons.AlertCircle,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.size(16.dp)
@@ -1713,8 +1706,7 @@ private fun FetchModelsDialog(
                                     )
                                     if (debugInfo != null) {
                                         Spacer(Modifier.width(4.dp))
-                                        Icon(
-                                            imageVector = MiniMeIcons.ChevronRight,
+                                        MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                             modifier = Modifier.size(14.dp)
@@ -1994,7 +1986,7 @@ private fun ProviderProxyPage(
                 ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 }
             )
@@ -2066,8 +2058,7 @@ private fun ProviderTypeSelectionSheet(
                             modifier = Modifier.weight(1f)
                         )
                         if (isSelected) {
-                            Icon(
-                                imageVector = MiniMeIcons.Check,
+                            MiniMeIcon(imageVector = MiniMeIcons.Check,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary
@@ -2147,12 +2138,12 @@ private fun ProviderKeysPage(
                 ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { addKey() }) {
-                        Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.provider_multi_key_add))
+                        MiniMeIcon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.provider_multi_key_add))
                     }
                 }
             )
@@ -2254,8 +2245,7 @@ private fun ProviderKeysPage(
                             onClick = { onSetStrategy(item) },
                             trailing = {
                                 if (item == strategy) {
-                                    Icon(
-                                        imageVector = MiniMeIcons.Check,
+                                    MiniMeIcon(imageVector = MiniMeIcons.Check,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(20.dp)
@@ -2357,8 +2347,7 @@ private fun ProviderKeyCard(
                         PasswordVisualTransformation()
                     },
                     trailing = {
-                        Icon(
-                            imageVector = if (valueVisible) MiniMeIcons.EyeOff else MiniMeIcons.Eye,
+                        MiniMeIcon(imageVector = if (valueVisible) MiniMeIcons.EyeOff else MiniMeIcons.Eye,
                             contentDescription = stringResource(
                                 if (valueVisible) R.string.provider_hide_api_key else R.string.provider_show_api_key
                             ),
@@ -2425,8 +2414,7 @@ private fun StepperRow(
             )
         }
         IconButton(onClick = onDecrease, modifier = Modifier.size(32.dp)) {
-            Icon(
-                imageVector = MiniMeIcons.Minus,
+            MiniMeIcon(imageVector = MiniMeIcons.Minus,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(16.dp)
@@ -2439,8 +2427,7 @@ private fun StepperRow(
             modifier = Modifier.padding(horizontal = Spacing.xs)
         )
         IconButton(onClick = onIncrease, modifier = Modifier.size(32.dp)) {
-            Icon(
-                imageVector = MiniMeIcons.Plus,
+            MiniMeIcon(imageVector = MiniMeIcons.Plus,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(16.dp)
@@ -2509,8 +2496,7 @@ private fun ScriptPickerBottomSheet(
                                 .padding(horizontal = Spacing.lg, vertical = Spacing.md),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = MiniMeIcons.FileText,
+                            MiniMeIcon(imageVector = MiniMeIcons.FileText,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary
@@ -2576,8 +2562,7 @@ private fun RawOutputBottomSheet(
                     },
                     modifier = Modifier.size(36.dp)
                 ) {
-                    Icon(
-                        imageVector = if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
+                    MiniMeIcon(imageVector = if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
                         contentDescription = stringResource(R.string.common_copy),
                         tint = if (copied) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
@@ -2696,8 +2681,7 @@ private fun DashboardTestResultBox(
                                 onClick = { showRawOutputSheet = true },
                                 modifier = Modifier.size(32.dp)
                             ) {
-                                Icon(
-                                    imageVector = MiniMeIcons.Terminal,
+                                MiniMeIcon(imageVector = MiniMeIcons.Terminal,
                                     contentDescription = stringResource(R.string.provider_dashboard_raw_output),
                                     modifier = Modifier.size(16.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2708,8 +2692,7 @@ private fun DashboardTestResultBox(
                             onClick = { isExpanded = true },
                             modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(
-                                imageVector = MiniMeIcons.ChevronDown,
+                            MiniMeIcon(imageVector = MiniMeIcons.ChevronDown,
                                 contentDescription = stringResource(R.string.common_expand),
                                 modifier = Modifier.size(18.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2741,8 +2724,7 @@ private fun DashboardTestResultBox(
                                         onClick = { showRawOutputSheet = true },
                                         modifier = Modifier.size(32.dp)
                                     ) {
-                                        Icon(
-                                            imageVector = MiniMeIcons.Terminal,
+                                        MiniMeIcon(imageVector = MiniMeIcons.Terminal,
                                             contentDescription = stringResource(R.string.provider_dashboard_raw_output),
                                             modifier = Modifier.size(16.dp),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2753,8 +2735,7 @@ private fun DashboardTestResultBox(
                                     onClick = { isExpanded = false },
                                     modifier = Modifier.size(32.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = MiniMeIcons.ChevronUp,
+                                    MiniMeIcon(imageVector = MiniMeIcons.ChevronUp,
                                         contentDescription = stringResource(R.string.common_collapse),
                                         modifier = Modifier.size(18.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2787,8 +2768,7 @@ private fun DashboardTestResultBox(
                             verticalAlignment = Alignment.Top,
                             horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
                         ) {
-                            Icon(
-                                imageVector = MiniMeIcons.AlertCircle,
+                            MiniMeIcon(imageVector = MiniMeIcons.AlertCircle,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(18.dp)
@@ -2814,8 +2794,7 @@ private fun DashboardTestResultBox(
                                 onClick = { showRawOutputSheet = true },
                                 modifier = Modifier.size(32.dp)
                             ) {
-                                Icon(
-                                    imageVector = MiniMeIcons.Terminal,
+                                MiniMeIcon(imageVector = MiniMeIcons.Terminal,
                                     contentDescription = stringResource(R.string.provider_dashboard_raw_output),
                                     modifier = Modifier.size(16.dp),
                                     tint = MaterialTheme.colorScheme.error
@@ -2892,8 +2871,7 @@ private fun ProviderHeadersSheet(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
-                    Icon(
-                        MiniMeIcons.X,
+                    MiniMeIcon(MiniMeIcons.X,
                         contentDescription = stringResource(R.string.common_close),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -2967,8 +2945,7 @@ private fun ProviderHeadersSheet(
                                         onClick = { headers.removeAt(index) },
                                         modifier = Modifier.size(32.dp)
                                     ) {
-                                        Icon(
-                                            MiniMeIcons.Trash2,
+                                        MiniMeIcon(MiniMeIcons.Trash2,
                                             contentDescription = stringResource(R.string.provider_headers_remove),
                                             tint = MaterialTheme.colorScheme.error,
                                             modifier = Modifier.size(16.dp)
@@ -3002,8 +2979,7 @@ private fun ProviderHeadersSheet(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            MiniMeIcons.Plus,
+                        MiniMeIcon(MiniMeIcons.Plus,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
@@ -3071,8 +3047,7 @@ private fun ProviderScriptParamsSheet(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
-                    Icon(
-                        MiniMeIcons.X,
+                    MiniMeIcon(MiniMeIcons.X,
                         contentDescription = stringResource(R.string.common_close),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -3146,8 +3121,7 @@ private fun ProviderScriptParamsSheet(
                                         onClick = { params.removeAt(index) },
                                         modifier = Modifier.size(32.dp)
                                     ) {
-                                        Icon(
-                                            MiniMeIcons.Trash2,
+                                        MiniMeIcon(MiniMeIcons.Trash2,
                                             contentDescription = stringResource(R.string.provider_script_param_remove),
                                             tint = MaterialTheme.colorScheme.error,
                                             modifier = Modifier.size(16.dp)
@@ -3181,8 +3155,7 @@ private fun ProviderScriptParamsSheet(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            MiniMeIcons.Plus,
+                        MiniMeIcon(MiniMeIcons.Plus,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)

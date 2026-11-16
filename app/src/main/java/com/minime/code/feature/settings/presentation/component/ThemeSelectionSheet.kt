@@ -43,6 +43,7 @@ import com.minime.code.core.theme.isDynamicColorSupported
 import com.minime.code.core.ui.AppSwitch
 import com.minime.code.feature.settings.data.repository.AppThemeMode
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * 外观主题面板：明暗模式、配色方案与莫奈取色。
@@ -99,8 +100,7 @@ internal fun ThemeSelectionSheet(
                             modifier = Modifier.weight(1f)
                         )
                         if (isSelected) {
-                            Icon(
-                                imageVector = MiniMeIcons.Check,
+                            MiniMeIcon(imageVector = MiniMeIcons.Check,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary

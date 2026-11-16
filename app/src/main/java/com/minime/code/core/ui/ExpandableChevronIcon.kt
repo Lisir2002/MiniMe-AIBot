@@ -53,8 +53,7 @@ fun ExpandableChevronIcon(
         ChevronRotationStyle.UP_DOWN -> MiniMeIcons.ChevronDown
         ChevronRotationStyle.RIGHT_DOWN -> MiniMeIcons.ChevronRight
     }
-    Icon(
-        imageVector = baseIcon,
+    MiniMeIcon(imageVector = baseIcon,
         contentDescription = contentDescription,
         tint = tint,
         modifier = modifier

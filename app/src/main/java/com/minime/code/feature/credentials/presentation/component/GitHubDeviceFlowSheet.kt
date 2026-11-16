@@ -62,6 +62,7 @@ import com.minime.code.feature.credentials.data.remote.GITHUB_APP_INSTALL_URL
 import com.minime.code.feature.credentials.presentation.QuickLoginUiState
 import com.minime.code.feature.settings.presentation.component.settingsPageBackground
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -186,8 +187,7 @@ private fun DeviceFlowHeader() {
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = MiniMeIcons.Github,
+            MiniMeIcon(imageVector = MiniMeIcons.Github,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(22.dp)
@@ -313,8 +313,7 @@ private fun AwaitingContent(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Icon(
-                                imageVector = if (justCopied) MiniMeIcons.Check else MiniMeIcons.Copy,
+                            MiniMeIcon(imageVector = if (justCopied) MiniMeIcons.Check else MiniMeIcons.Copy,
                                 contentDescription = null,
                                 tint = if (justCopied) {
                                     MaterialTheme.semanticColors.onSuccessContainer
@@ -395,8 +394,7 @@ private fun AwaitingContent(
                 .height(46.dp),
             shape = RoundedCornerShape(Radius.mdLarge)
         ) {
-            Icon(
-                imageVector = MiniMeIcons.ExternalLink,
+            MiniMeIcon(imageVector = MiniMeIcons.ExternalLink,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp)
             )
@@ -416,8 +414,7 @@ private fun AwaitingContent(
                 .height(44.dp),
             shape = RoundedCornerShape(Radius.mdLarge)
         ) {
-            Icon(
-                imageVector = MiniMeIcons.Copy,
+            MiniMeIcon(imageVector = MiniMeIcons.Copy,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp)
             )
@@ -484,8 +481,7 @@ private fun SuccessContent(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = MiniMeIcons.Check,
+                    MiniMeIcon(imageVector = MiniMeIcons.Check,
                         contentDescription = null,
                         tint = MaterialTheme.semanticColors.onSuccessContainer,
                         modifier = Modifier.size(24.dp)
@@ -589,8 +585,7 @@ private fun FailedContent(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = MiniMeIcons.AlertCircle,
+                MiniMeIcon(imageVector = MiniMeIcons.AlertCircle,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(24.dp)

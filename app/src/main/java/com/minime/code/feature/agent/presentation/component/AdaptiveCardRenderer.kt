@@ -83,6 +83,7 @@ import com.minime.code.feature.settings.domain.model.TextBlockElement
 import com.minime.code.feature.settings.domain.model.TextSize
 import com.minime.code.feature.settings.domain.model.TextWeight
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * Adaptive Card 原生 Compose 渲染主入口。
@@ -611,8 +612,7 @@ private fun RenderBadge(
         ) {
             val iconVector = element.icon?.let { resolveIcon(it) }
             if (iconVector != null) {
-                Icon(
-                    imageVector = iconVector,
+                MiniMeIcon(imageVector = iconVector,
                     contentDescription = null,
                     modifier = Modifier.size(11.dp),
                     tint = textColor
@@ -762,8 +762,7 @@ private fun RenderImage(
 ) {
     val iconVector = element.icon?.let { resolveIcon(it) } ?: return
     val tintColor = resolveColor(element.color, isSubtle = false)
-    Icon(
-        imageVector = iconVector,
+    MiniMeIcon(imageVector = iconVector,
         contentDescription = null,
         modifier = modifier
             .size(element.sizeDp.dp)
@@ -886,8 +885,7 @@ private fun TabLabel(
     ) {
         val iconVector = tab.icon?.let { resolveIcon(it) }
         if (iconVector != null) {
-            Icon(
-                imageVector = iconVector,
+            MiniMeIcon(imageVector = iconVector,
                 contentDescription = null,
                 modifier = Modifier.size(14.dp),
                 tint = activeColor
@@ -965,8 +963,7 @@ private fun RenderPillsTabBar(
                 ) {
                     val iconVector = tab.icon?.let { resolveIcon(it) }
                     if (iconVector != null) {
-                        Icon(
-                            imageVector = iconVector,
+                        MiniMeIcon(imageVector = iconVector,
                             contentDescription = null,
                             modifier = Modifier.size(14.dp),
                             tint = if (selected) selectedFg else unselectedFg
@@ -1044,8 +1041,7 @@ private fun RenderActionButton(
         ) {
             val iconVector = element.icon?.let { resolveIcon(it) }
             if (iconVector != null) {
-                Icon(
-                    imageVector = iconVector,
+                MiniMeIcon(imageVector = iconVector,
                     contentDescription = null,
                     modifier = Modifier.size(12.dp),
                     tint = fgColor

@@ -91,6 +91,7 @@ import com.minime.code.feature.settings.presentation.component.SettingsDivider
 import com.minime.code.feature.settings.presentation.component.SettingsGroup
 import com.minime.code.feature.settings.presentation.component.SettingsRow
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -243,8 +244,7 @@ fun BrowserScreen(
                         )
                         Spacer(Modifier.height(Spacing.sm))
                         IconButton(onClick = { scope.launchBrowserOp { browserManager.reload() } }) {
-                            Icon(
-                                MiniMeIcons.RefreshCw,
+                            MiniMeIcon(MiniMeIcons.RefreshCw,
                                 contentDescription = stringResource(R.string.browser_reload),
                                 tint = MaterialTheme.colorScheme.onErrorContainer
                             )
@@ -265,8 +265,7 @@ fun BrowserScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(Spacing.xl)
                     ) {
-                        Icon(
-                            MiniMeIcons.Globe,
+                        MiniMeIcon(MiniMeIcons.Globe,
                             contentDescription = null,
                             modifier = Modifier.size(56.dp),
                             tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
@@ -318,8 +317,7 @@ fun BrowserScreen(
                             }
                         }
                     ) {
-                        Icon(
-                            MiniMeIcons.Plus,
+                        MiniMeIcon(MiniMeIcons.Plus,
                             contentDescription = stringResource(R.string.browser_new_tab),
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -477,8 +475,7 @@ private fun BrowserTopBar(
                         onNavigateBack()
                     }
                 }) {
-                    Icon(
-                        if (isEditing || embedded) MiniMeIcons.X else MiniMeIcons.ArrowLeft,
+                    MiniMeIcon(if (isEditing || embedded) MiniMeIcons.X else MiniMeIcons.ArrowLeft,
                         contentDescription = stringResource(
                             if (isEditing || embedded) R.string.common_close else R.string.common_back
                         )
@@ -507,8 +504,7 @@ private fun BrowserTopBar(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(
-                                MiniMeIcons.Globe,
+                            MiniMeIcon(MiniMeIcons.Globe,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(15.dp)
@@ -532,8 +528,7 @@ private fun BrowserTopBar(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(
-                                MiniMeIcons.Globe,
+                            MiniMeIcon(MiniMeIcons.Globe,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(15.dp)
@@ -574,8 +569,7 @@ private fun BrowserTopBar(
                                     onClick = { addressInput = TextFieldValue("") },
                                     modifier = Modifier.size(24.dp)
                                 ) {
-                                    Icon(
-                                        MiniMeIcons.X,
+                                    MiniMeIcon(MiniMeIcons.X,
                                         contentDescription = stringResource(R.string.common_clear),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(14.dp)
@@ -599,8 +593,7 @@ private fun BrowserTopBar(
                             color = MaterialTheme.colorScheme.primary
                         )
                     } else {
-                        Icon(
-                            MiniMeIcons.RefreshCw,
+                        MiniMeIcon(MiniMeIcons.RefreshCw,
                             contentDescription = stringResource(R.string.browser_reload),
                             modifier = Modifier.size(18.dp)
                         )
@@ -667,8 +660,7 @@ private fun BrowserBottomBar(
                     onClick = onGoBack,
                     enabled = canGoBack
                 ) {
-                    Icon(
-                        MiniMeIcons.ChevronLeft,
+                    MiniMeIcon(MiniMeIcons.ChevronLeft,
                         contentDescription = stringResource(R.string.browser_back),
                         modifier = Modifier.size(24.dp)
                     )
@@ -679,8 +671,7 @@ private fun BrowserBottomBar(
                     onClick = onGoForward,
                     enabled = canGoForward
                 ) {
-                    Icon(
-                        MiniMeIcons.ChevronRight,
+                    MiniMeIcon(MiniMeIcons.ChevronRight,
                         contentDescription = stringResource(R.string.browser_forward),
                         modifier = Modifier.size(24.dp)
                     )
@@ -688,8 +679,7 @@ private fun BrowserBottomBar(
 
                 // 3. 新建标签页
                 IconButton(onClick = onNewTab) {
-                    Icon(
-                        MiniMeIcons.Plus,
+                    MiniMeIcon(MiniMeIcons.Plus,
                         contentDescription = stringResource(R.string.browser_new_tab),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
@@ -722,8 +712,7 @@ private fun BrowserBottomBar(
                 // 5. 更多更改菜单（三条杠图标）
                 IconButton(onClick = onOpenMenu) {
                     Box {
-                        Icon(
-                            MiniMeIcons.Menu,
+                        MiniMeIcon(MiniMeIcons.Menu,
                             contentDescription = stringResource(R.string.browser_menu),
                             tint = if (hasActiveSettings) {
                                 MaterialTheme.colorScheme.primary
@@ -782,8 +771,7 @@ private fun BrowserMenuSheet(
                         onClick = { menuLevel = 0 },
                         modifier = Modifier.size(32.dp)
                     ) {
-                        Icon(
-                            MiniMeIcons.ArrowLeft,
+                        MiniMeIcon(MiniMeIcons.ArrowLeft,
                             contentDescription = stringResource(R.string.common_back),
                             tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(18.dp)
@@ -888,8 +876,7 @@ private fun BrowserMenuSheet(
                                 .padding(horizontal = Spacing.lg, vertical = 11.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = icon,
+                            MiniMeIcon(imageVector = icon,
                                 contentDescription = null,
                                 tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(16.dp)
@@ -912,8 +899,7 @@ private fun BrowserMenuSheet(
                             }
                             if (selected) {
                                 Spacer(Modifier.width(Spacing.sm))
-                                Icon(
-                                    imageVector = MiniMeIcons.Check,
+                                MiniMeIcon(imageVector = MiniMeIcons.Check,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp)
@@ -999,8 +985,7 @@ private fun BrowserTabItemRow(
                 .padding(horizontal = Spacing.lg, vertical = 11.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = MiniMeIcons.Globe,
+            MiniMeIcon(imageVector = MiniMeIcons.Globe,
                 contentDescription = null,
                 tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp)
@@ -1042,8 +1027,7 @@ private fun BrowserTabItemRow(
                 onClick = onClose,
                 modifier = Modifier.size(28.dp)
             ) {
-                Icon(
-                    MiniMeIcons.X,
+                MiniMeIcon(MiniMeIcons.X,
                     contentDescription = stringResource(R.string.browser_close_tab),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)

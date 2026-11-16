@@ -48,6 +48,7 @@ import com.minime.code.core.theme.Spacing
 import com.minime.code.core.theme.semanticColors
 import com.minime.code.core.util.LineDiff
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import dev.snipme.highlights.Highlights
 import dev.snipme.highlights.model.BoldHighlight
 import dev.snipme.highlights.model.ColorHighlight
@@ -130,7 +131,7 @@ fun DiffViewerScreen(
                 ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
@@ -139,8 +140,7 @@ fun DiffViewerScreen(
                             onBack()
                             onOpenInEditor(path)
                         }) {
-                            Icon(
-                                MiniMeIcons.Edit3,
+                            MiniMeIcon(MiniMeIcons.Edit3,
                                 contentDescription = stringResource(R.string.git_open_in_editor),
                                 modifier = Modifier.size(18.dp)
                             )
@@ -342,8 +342,7 @@ private fun EmptyDiff(padding: androidx.compose.foundation.layout.PaddingValues)
 private fun BinaryHint(padding: androidx.compose.foundation.layout.PaddingValues) {
     Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                MiniMeIcons.File,
+            MiniMeIcon(MiniMeIcons.File,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(32.dp)

@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -133,8 +134,7 @@ internal fun TodoItemRow(item: ParsedTodoItem) {
         // 状态图标
         when {
             isCompleted -> {
-                Icon(
-                    imageVector = MiniMeIcons.Check,
+                MiniMeIcon(imageVector = MiniMeIcons.Check,
                     contentDescription = stringResource(R.string.todo_completed),
                     tint = DiffAddText,
                     modifier = Modifier.size(16.dp)

@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.minime.code.core.theme.Radius
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -156,8 +157,7 @@ private fun WebSearchSummary(result: ParsedWebSearchResult) {
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                MiniMeIcons.Search,
+            MiniMeIcon(MiniMeIcons.Search,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(17.dp)
@@ -222,8 +222,7 @@ private fun WebSearchResultItem(index: Int, item: ParsedWebSearchItem) {
                             modifier = Modifier.weight(1f)
                         )
                         Spacer(Modifier.width(Spacing.xs))
-                        Icon(
-                            MiniMeIcons.ExternalLink,
+                        MiniMeIcon(MiniMeIcons.ExternalLink,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                             modifier = Modifier.size(14.dp)

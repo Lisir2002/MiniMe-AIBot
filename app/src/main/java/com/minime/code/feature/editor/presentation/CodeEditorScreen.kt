@@ -71,6 +71,7 @@ import com.minime.code.feature.editor.data.EditorSettings
 import com.minime.code.feature.editor.domain.TextMateSetup
 import com.minime.code.feature.editor.presentation.component.MarkdownPreviewWebView
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import io.github.rosemoe.sora.event.ContentChangeEvent
 import io.github.rosemoe.sora.event.ScrollEvent
 import io.github.rosemoe.sora.event.SelectionChangeEvent
@@ -230,8 +231,7 @@ fun CodeEditorScreen(
                     ),
                     navigationIcon = {
                         IconButton(onClick = { handleBack() }) {
-                            Icon(
-                                if (embedded) MiniMeIcons.X else MiniMeIcons.ArrowLeft,
+                            MiniMeIcon(if (embedded) MiniMeIcons.X else MiniMeIcons.ArrowLeft,
                                 contentDescription = stringResource(
                                     if (embedded) R.string.common_close else R.string.common_back
                                 )
@@ -242,8 +242,7 @@ fun CodeEditorScreen(
                         val editable = state is EditorUiState.Success
                         if (isMarkdown && editable) {
                             IconButton(onClick = { previewMode = !previewMode }) {
-                                Icon(
-                                    if (previewMode) MiniMeIcons.Code else MiniMeIcons.Eye,
+                                MiniMeIcon(if (previewMode) MiniMeIcons.Code else MiniMeIcons.Eye,
                                     contentDescription = stringResource(
                                         if (previewMode) R.string.editor_md_show_source
                                         else R.string.editor_md_preview
@@ -255,8 +254,7 @@ fun CodeEditorScreen(
                             onClick = { editorRef.value?.undo() },
                             enabled = editable && canUndo
                         ) {
-                            Icon(
-                                MiniMeIcons.Undo,
+                            MiniMeIcon(MiniMeIcons.Undo,
                                 contentDescription = stringResource(R.string.editor_undo)
                             )
                         }
@@ -264,8 +262,7 @@ fun CodeEditorScreen(
                             onClick = { editorRef.value?.redo() },
                             enabled = editable && canRedo
                         ) {
-                            Icon(
-                                MiniMeIcons.Redo,
+                            MiniMeIcon(MiniMeIcons.Redo,
                                 contentDescription = stringResource(R.string.editor_redo)
                             )
                         }
@@ -276,8 +273,7 @@ fun CodeEditorScreen(
                             if (saving) {
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             } else {
-                                Icon(
-                                    MiniMeIcons.Save,
+                                MiniMeIcon(MiniMeIcons.Save,
                                     contentDescription = stringResource(R.string.common_save)
                                 )
                             }
@@ -286,8 +282,7 @@ fun CodeEditorScreen(
                             onClick = { showSettings = true },
                             enabled = editable
                         ) {
-                            Icon(
-                                MiniMeIcons.Settings,
+                            MiniMeIcon(MiniMeIcons.Settings,
                                 contentDescription = stringResource(R.string.editor_settings)
                             )
                         }
@@ -699,14 +694,12 @@ private fun EditorSymbolBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             SymbolKey(onClick = onMoveLeft) {
-                Icon(
-                    MiniMeIcons.ChevronLeft,
+                MiniMeIcon(MiniMeIcons.ChevronLeft,
                     contentDescription = stringResource(R.string.editor_cursor_left)
                 )
             }
             SymbolKey(onClick = onMoveRight) {
-                Icon(
-                    MiniMeIcons.ChevronRight,
+                MiniMeIcon(MiniMeIcons.ChevronRight,
                     contentDescription = stringResource(R.string.editor_cursor_right)
                 )
             }

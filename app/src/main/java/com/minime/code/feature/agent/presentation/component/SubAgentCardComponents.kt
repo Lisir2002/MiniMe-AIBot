@@ -37,6 +37,7 @@ import com.minime.code.core.theme.semanticColors
 import com.minime.code.feature.agent.presentation.SubAgentCardState
 import com.minime.code.feature.agent.presentation.SubAgentCardStatus
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -228,8 +229,7 @@ private fun SubAgentDispatchSummary(count: Int) {
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = MiniMeIcons.Cpu,
+            MiniMeIcon(imageVector = MiniMeIcons.Cpu,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(17.dp)
@@ -328,8 +328,7 @@ private fun SubAgentDispatchItemCard(
                         SubAgentStatusChip(liveState?.status)
                         if (hasSession) {
                             Spacer(Modifier.width(Spacing.xs))
-                            Icon(
-                                imageVector = MiniMeIcons.ChevronRight,
+                            MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
                                 contentDescription = stringResource(R.string.subagent_card_open),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                                 modifier = Modifier.size(16.dp)
@@ -393,8 +392,7 @@ private fun SubAgentWarningBanner(warning: String) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
         ) {
-            Icon(
-                imageVector = MiniMeIcons.AlertCircle,
+            MiniMeIcon(imageVector = MiniMeIcons.AlertCircle,
                 contentDescription = null,
                 tint = MaterialTheme.semanticColors.warning,
                 modifier = Modifier.size(12.dp)

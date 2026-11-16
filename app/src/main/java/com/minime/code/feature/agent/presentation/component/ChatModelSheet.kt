@@ -52,6 +52,7 @@ import com.minime.code.feature.settings.domain.model.modelMetadataKey
 import com.minime.code.feature.settings.presentation.component.ModelLogoIcon
 import com.minime.code.feature.settings.presentation.component.ModelSelectionSheet
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.coroutines.launch
 
 /**
@@ -141,8 +142,7 @@ internal fun ReasoningEffortSelector(
             .padding(horizontal = Spacing.xs),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            MiniMeIcons.Zap,
+        MiniMeIcon(MiniMeIcons.Zap,
             contentDescription = stringResource(effort.labelRes()),
             tint = tint,
             modifier = Modifier.size(20.dp)
@@ -221,8 +221,7 @@ internal fun ReasoningEffortSelector(
                             .padding(horizontal = Spacing.md, vertical = Spacing.md),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            MiniMeIcons.Zap,
+                        MiniMeIcon(MiniMeIcons.Zap,
                             contentDescription = null,
                             tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
@@ -253,8 +252,7 @@ internal fun ReasoningEffortSelector(
                         }
                         if (selected) {
                             Spacer(Modifier.width(Spacing.sm))
-                            Icon(
-                                MiniMeIcons.Check,
+                            MiniMeIcon(MiniMeIcons.Check,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)

@@ -50,6 +50,7 @@ import com.minime.code.feature.settings.presentation.component.SettingsGroup
 import com.minime.code.feature.settings.presentation.component.SettingsRow
 import com.minime.code.feature.settings.presentation.component.settingsPageBackground
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /** 私钥内容隐藏时的掩码占位。 */
 private const val MASKED_KEY = "••••••••••••••••••••••••••••••••"
@@ -100,7 +101,7 @@ fun LoginKeyEditorScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 }
             )
@@ -140,7 +141,7 @@ fun LoginKeyEditorScreen(
                 trailingIcon = {
                     val image = if (passphraseVisible) MiniMeIcons.Eye else MiniMeIcons.EyeOff
                     IconButton(onClick = { passphraseVisible = !passphraseVisible }) {
-                        Icon(image, stringResource(R.string.remote_toggle_password), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        MiniMeIcon(image, stringResource(R.string.remote_toggle_password), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             )
@@ -173,7 +174,7 @@ fun LoginKeyEditorScreen(
                         )
                         IconButton(onClick = { pemVisible = !pemVisible }) {
                             val image = if (pemVisible) MiniMeIcons.Eye else MiniMeIcons.EyeOff
-                            Icon(image, stringResource(R.string.ssh_login_key_toggle_content), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            MiniMeIcon(image, stringResource(R.string.ssh_login_key_toggle_content), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Surface(
@@ -204,7 +205,7 @@ fun LoginKeyEditorScreen(
                     .height(44.dp),
                 shape = RoundedCornerShape(Radius.mdLarge)
             ) {
-                Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                MiniMeIcon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(Spacing.sm))
                 Text(
                     stringResource(R.string.common_save),

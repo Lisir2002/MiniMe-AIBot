@@ -153,8 +153,7 @@ fun SwipeToDeleteRow(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(
-                        imageVector = MiniMeIcons.Trash2,
+                    MiniMeIcon(imageVector = MiniMeIcons.Trash2,
                         contentDescription = stringResource(R.string.common_delete),
                         tint = Color.White,
                         modifier = Modifier.size(20.dp)

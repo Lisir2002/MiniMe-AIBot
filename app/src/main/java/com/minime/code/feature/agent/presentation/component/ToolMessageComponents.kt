@@ -74,6 +74,7 @@ import com.minime.code.feature.agent.domain.session.SessionUseCase
 import com.minime.code.feature.agent.presentation.AgentUIMessage
 import com.minime.code.core.ui.ExpandableChevronIcon
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -575,8 +576,7 @@ internal fun ToolStatusIcon(running: Boolean, isError: Boolean, toolName: String
         }
     )
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            imageVector = toolIcon(toolName),
+        MiniMeIcon(imageVector = toolIcon(toolName),
             contentDescription = statusLabel,
             tint = tint,
             modifier = Modifier
@@ -667,8 +667,7 @@ internal fun ToolCallGroupHeader(
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = MiniMeIcons.Tool,
+        MiniMeIcon(imageVector = MiniMeIcons.Tool,
             contentDescription = null,
             tint = Brand.IconGray,
             modifier = Modifier.size(ChatStyle.rowIconSize)

@@ -28,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import com.minime.code.core.ui.AdaptiveModalBottomSheet
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -244,8 +245,7 @@ private fun TerminalFontSection(
             color = MaterialTheme.colorScheme.onSurface
         )
         TextButton(onClick = { importLauncher.launch(arrayOf("*/*")) }) {
-            Icon(
-                imageVector = MiniMeIcons.Upload,
+            MiniMeIcon(imageVector = MiniMeIcons.Upload,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp)
             )
@@ -283,8 +283,7 @@ private fun TerminalFontSection(
                 onClick = { onChangeFontPath(font.path) },
                 label = { Text(font.displayName) },
                 trailingIcon = {
-                    Icon(
-                        imageVector = MiniMeIcons.X,
+                    MiniMeIcon(imageVector = MiniMeIcons.X,
                         contentDescription = stringResource(R.string.terminal_font_delete),
                         modifier = Modifier
                             .size(16.dp)

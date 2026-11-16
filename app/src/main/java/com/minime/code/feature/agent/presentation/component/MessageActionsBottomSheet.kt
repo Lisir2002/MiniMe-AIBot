@@ -29,6 +29,7 @@ import com.minime.code.core.theme.Spacing
 import com.minime.code.feature.agent.presentation.AgentUIMessage
 import com.minime.code.feature.agent.presentation.hasVisibleContent
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -124,8 +125,7 @@ private fun MessageActionItem(
             .padding(horizontal = Spacing.md, vertical = Spacing.md),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = icon,
+        MiniMeIcon(imageVector = icon,
             contentDescription = title,
             tint = color,
             modifier = Modifier.size(20.dp)

@@ -56,6 +56,7 @@ import com.minime.code.core.theme.semanticColors
 import com.minime.code.feature.settings.data.remote.ModelTestResult
 import com.minime.code.feature.settings.domain.model.ModelMetadata
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import android.widget.Toast
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -278,8 +279,7 @@ internal fun ModelTestResultLine(
             .clickable { showDetail = true }
             .padding(horizontal = 4.dp, vertical = 2.dp)
     ) {
-        Icon(
-            imageVector = if (result.success) MiniMeIcons.Check else MiniMeIcons.AlertCircle,
+        MiniMeIcon(imageVector = if (result.success) MiniMeIcons.Check else MiniMeIcons.AlertCircle,
             contentDescription = null,
             tint = if (result.success) MaterialTheme.semanticColors.success else MaterialTheme.colorScheme.error,
             modifier = Modifier.size(14.dp)
@@ -300,8 +300,7 @@ internal fun ModelTestResultLine(
             overflow = TextOverflow.Ellipsis
         )
         Spacer(Modifier.width(4.dp))
-        Icon(
-            imageVector = MiniMeIcons.ChevronRight,
+        MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
             modifier = Modifier.size(12.dp)
@@ -427,8 +426,7 @@ internal fun ModelTestDetailBottomSheet(
                     },
                     modifier = Modifier.size(36.dp)
                 ) {
-                    Icon(
-                        imageVector = if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
+                    MiniMeIcon(imageVector = if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
                         contentDescription = stringResource(R.string.common_copy),
                         tint = if (copied) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
@@ -649,7 +647,7 @@ internal fun FetchModelRow(
             }
         }
         IconButton(onClick = onAdd, modifier = Modifier.size(32.dp)) {
-            Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.common_add), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            MiniMeIcon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.common_add), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

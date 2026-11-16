@@ -66,6 +66,7 @@ import com.minime.code.core.theme.Spacing
 import com.minime.code.feature.agent.domain.provider.RetryErrorInfo
 import com.minime.code.feature.agent.domain.provider.RetryErrorKind
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import com.minime.code.core.ui.ExpandableChevronIcon
 import kotlinx.coroutines.delay
 
@@ -233,8 +234,7 @@ internal fun RetryingBubble(attempt: Int, maxRetries: Int, error: RetryErrorInfo
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
             ) {
-                Icon(
-                    MiniMeIcons.AlertCircle,
+                MiniMeIcon(MiniMeIcons.AlertCircle,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(14.dp)
@@ -275,8 +275,7 @@ internal fun KeySwitchedBubble(newIndex: Int, total: Int) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
-        Icon(
-            MiniMeIcons.Key,
+        MiniMeIcon(MiniMeIcons.Key,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(14.dp)

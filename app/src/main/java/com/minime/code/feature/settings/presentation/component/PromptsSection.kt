@@ -55,6 +55,7 @@ import com.minime.code.feature.agent.domain.prompt.PromptFragment
 import com.minime.code.feature.agent.domain.prompt.PromptFragmentSource
 import com.minime.code.feature.settings.presentation.PromptsUiState
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
@@ -297,8 +298,7 @@ private fun PromptRow(
                         .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = MiniMeIcons.FileText,
+                    MiniMeIcon(imageVector = MiniMeIcons.FileText,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
@@ -328,8 +328,7 @@ private fun PromptRow(
             Spacer(modifier = Modifier.width(Spacing.sm))
             SourceBadge(fragment.source)
             Spacer(modifier = Modifier.width(Spacing.xs))
-            Icon(
-                imageVector = MiniMeIcons.ChevronRight,
+            MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)

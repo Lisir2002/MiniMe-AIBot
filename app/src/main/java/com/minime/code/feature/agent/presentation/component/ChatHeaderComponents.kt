@@ -46,6 +46,7 @@ import com.minime.code.feature.onboarding.domain.OnboardingStep
 import com.minime.code.feature.onboarding.presentation.onboardingTarget
 import com.minime.code.feature.settings.presentation.component.ModelLogoIcon
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 @Composable
 internal fun ChatHeader(
@@ -89,8 +90,7 @@ internal fun ChatHeader(
                         onClick = onOpenDrawer,
                         modifier = Modifier.onboardingTarget(OnboardingStep.OPEN_SIDEBAR)
                     ) {
-                        Icon(
-                            MiniMeIcons.Menu,
+                        MiniMeIcon(MiniMeIcons.Menu,
                             contentDescription = stringResource(R.string.chat_open_sidebar),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -122,8 +122,7 @@ internal fun ChatHeader(
                     }
                 }
                 IconButton(onClick = onNewChat) {
-                    Icon(
-                        MiniMeIcons.Plus,
+                    MiniMeIcon(MiniMeIcons.Plus,
                         contentDescription = stringResource(R.string.chat_new_session),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -183,8 +182,7 @@ private fun WorkbenchIconButton(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                icon,
+            MiniMeIcon(icon,
                 contentDescription = contentDescription,
                 tint = if (active) {
                     MaterialTheme.colorScheme.primary

@@ -61,6 +61,7 @@ import com.minime.code.feature.settings.domain.model.AIProviderConfig
 import com.minime.code.feature.settings.domain.model.ModelMetadata
 import com.minime.code.feature.settings.domain.model.modelMetadataKey
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * 默认模型二级页：集中管理应用中的默认/特定用途模型设置（如识图模型、压缩模型）。
@@ -556,8 +557,7 @@ private fun ModelSelectionRow(
             }
         } else if (selected) {
             Spacer(Modifier.width(Spacing.sm))
-            Icon(
-                imageVector = MiniMeIcons.Check,
+            MiniMeIcon(imageVector = MiniMeIcons.Check,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp)
@@ -618,8 +618,7 @@ private fun ModelTag(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (icon != null) {
-                Icon(
-                    imageVector = icon,
+                MiniMeIcon(imageVector = icon,
                     contentDescription = null,
                     modifier = Modifier.size(12.dp),
                     tint = textColor

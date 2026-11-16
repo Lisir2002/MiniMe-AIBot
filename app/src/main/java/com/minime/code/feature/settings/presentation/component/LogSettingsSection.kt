@@ -67,6 +67,7 @@ import com.minime.code.core.theme.semanticColors
 import com.minime.code.core.util.LogLevel
 import com.minime.code.feature.settings.presentation.LogViewerUiState
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -180,8 +181,7 @@ internal fun LogSection(
                         onClick = onClearFilter,
                         modifier = Modifier.size(24.dp)
                     ) {
-                        Icon(
-                            MiniMeIcons.X,
+                        MiniMeIcon(MiniMeIcons.X,
                             contentDescription = stringResource(R.string.log_clear_filter),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(14.dp)
@@ -432,8 +432,7 @@ private fun LogLine(
             modifier = Modifier.weight(1f)
         )
         if (copied) {
-            Icon(
-                MiniMeIcons.Check,
+            MiniMeIcon(MiniMeIcons.Check,
                 contentDescription = stringResource(R.string.log_copied),
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
@@ -496,8 +495,7 @@ private fun CopyLogButton(text: String, enabled: Boolean) {
             else -> idleColor.copy(alpha = 0.5f)
         }
     ) {
-        Icon(
-            imageVector = if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
+        MiniMeIcon(imageVector = if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
             contentDescription = stringResource(if (copied) R.string.log_copied else R.string.log_copy),
             tint = if (copied) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
@@ -559,8 +557,7 @@ private fun LogLevelSheet(
                         modifier = Modifier.weight(1f)
                     )
                     if (level == current) {
-                        Icon(
-                            MiniMeIcons.Check,
+                        MiniMeIcon(MiniMeIcons.Check,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
@@ -626,8 +623,7 @@ private fun LogFileSheet(
                         modifier = Modifier.weight(1f)
                     )
                     if (selected) {
-                        Icon(
-                            MiniMeIcons.Check,
+                        MiniMeIcon(MiniMeIcons.Check,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
@@ -703,8 +699,7 @@ private fun LogActionRow(
             .padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = icon,
+        MiniMeIcon(imageVector = icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(18.dp)

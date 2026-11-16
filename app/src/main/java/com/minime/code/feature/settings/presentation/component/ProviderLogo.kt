@@ -16,6 +16,7 @@ import com.minime.code.R
 import com.minime.code.core.theme.Brand
 import com.minime.code.feature.settings.domain.model.AIProviderConfig
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import android.content.Context
 import androidx.compose.ui.res.stringResource
 
@@ -152,8 +153,7 @@ fun ProviderLogoIcon(
             modifier = modifier.size(size)
         )
     } else {
-        Icon(
-            imageVector = MiniMeIcons.Cloud,
+        MiniMeIcon(imageVector = MiniMeIcons.Cloud,
             contentDescription = stringResource(R.string.common_ai_providers),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = modifier.size(size)
@@ -180,8 +180,7 @@ fun ModelLogoIcon(
             modifier = modifier.size(size)
         )
     } else {
-        Icon(
-            imageVector = MiniMeIcons.Cpu,
+        MiniMeIcon(imageVector = MiniMeIcons.Cpu,
             contentDescription = stringResource(R.string.provider_model_icon),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = modifier.size(size)

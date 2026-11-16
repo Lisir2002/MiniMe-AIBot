@@ -107,6 +107,7 @@ import com.minime.code.core.ui.ChevronRotationStyle
 import com.minime.code.core.ui.ExpandableChevronIcon
 import com.minime.code.core.ui.containerOsLogo
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import androidx.compose.ui.res.stringResource
 import com.minime.code.R
 import java.text.SimpleDateFormat
@@ -239,8 +240,7 @@ fun ChatDrawerContent(
                             },
                             modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(
-                                imageVector = MiniMeIcons.X,
+                            MiniMeIcon(imageVector = MiniMeIcons.X,
                                 contentDescription = stringResource(R.string.common_cancel),
                                 modifier = Modifier.size(18.dp),
                                 tint = MaterialTheme.colorScheme.onSurface
@@ -285,8 +285,7 @@ fun ChatDrawerContent(
                             enabled = selectedSessionIds.isNotEmpty(),
                             modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(
-                                imageVector = MiniMeIcons.Trash2,
+                            MiniMeIcon(imageVector = MiniMeIcons.Trash2,
                                 contentDescription = stringResource(R.string.chat_batch_delete_title),
                                 modifier = Modifier.size(18.dp),
                                 tint = if (selectedSessionIds.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
@@ -702,8 +701,7 @@ private fun ChatSearchField(
         trailing = if (query.isEmpty()) null else {
             {
                 IconButton(onClick = onClear, modifier = Modifier.size(24.dp)) {
-                    Icon(
-                        imageVector = MiniMeIcons.X,
+                    MiniMeIcon(imageVector = MiniMeIcons.X,
                         contentDescription = stringResource(R.string.chat_search_clear),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -966,8 +964,7 @@ private fun FileBrowserTab(
                 onClick = onRefresh,
                 modifier = Modifier.size(32.dp)
             ) {
-                Icon(
-                    imageVector = MiniMeIcons.RefreshCw,
+                MiniMeIcon(imageVector = MiniMeIcons.RefreshCw,
                     contentDescription = stringResource(R.string.file_browser_refresh),
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1126,8 +1123,7 @@ private fun ClipboardIndicator(
         onClick = onClear,
         modifier = modifier.size(32.dp)
     ) {
-        Icon(
-            imageVector = if (clipboard.isCut) MiniMeIcons.Scissors else MiniMeIcons.Copy,
+        MiniMeIcon(imageVector = if (clipboard.isCut) MiniMeIcons.Scissors else MiniMeIcons.Copy,
             contentDescription = stringResource(
                 if (clipboard.isCut) R.string.file_browser_clipboard_cut
                 else R.string.file_browser_clipboard_copy
@@ -1326,8 +1322,7 @@ private fun FileTreeIcon(node: FileTreeNode, decorationColor: Color?) {
                 tint = tint
             )
         } else {
-            Icon(
-                imageVector = if (containerRoot.remote) MiniMeIcons.Server else MiniMeIcons.HardDrive,
+            MiniMeIcon(imageVector = if (containerRoot.remote) MiniMeIcons.Server else MiniMeIcons.HardDrive,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
                 tint = tint
@@ -1340,8 +1335,7 @@ private fun FileTreeIcon(node: FileTreeNode, decorationColor: Color?) {
     } else {
         fileTypeIconFor(node.entry.name)
     }
-    Icon(
-        imageVector = vector,
+    MiniMeIcon(imageVector = vector,
         contentDescription = null,
         modifier = Modifier.size(20.dp),
         tint = decorationColor
@@ -1458,8 +1452,7 @@ private fun SheetActionRow(
                 .padding(horizontal = Spacing.lg, vertical = Spacing.md),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
+            MiniMeIcon(imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
                 tint = tint

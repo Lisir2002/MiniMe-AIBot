@@ -45,6 +45,7 @@ import com.minime.code.core.ui.SwipeToDeleteRow
 import com.minime.code.feature.agent.domain.subagent.AgentDefinitionScope
 import com.minime.code.feature.settings.presentation.SubAgentUiEntry
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * 子代理二级页：与「技能」一致的折叠分组列表——「当前项目 / 全局」两组各自可折叠，
@@ -100,8 +101,7 @@ internal fun SubAgentsSection(
                         .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(Radius.lg)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        MiniMeIcons.Users,
+                    MiniMeIcon(MiniMeIcons.Users,
                         contentDescription = null,
                         modifier = Modifier.size(28.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -296,8 +296,7 @@ private fun SubAgentRow(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = MiniMeIcons.Users,
+                MiniMeIcon(imageVector = MiniMeIcons.Users,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
@@ -346,8 +345,7 @@ private fun SubAgentRow(
 
             Spacer(modifier = Modifier.width(Spacing.sm))
 
-            Icon(
-                imageVector = MiniMeIcons.ChevronRight,
+            MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)

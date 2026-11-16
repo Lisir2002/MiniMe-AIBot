@@ -67,6 +67,7 @@ import com.minime.code.feature.git.domain.model.GitTag
 import com.minime.code.core.ui.ChevronRotationStyle
 import com.minime.code.core.ui.ExpandableChevronIcon
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -537,8 +538,7 @@ private fun BranchesOverview(
     ) {
         Column(modifier = Modifier.padding(Spacing.lg)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    MiniMeIcons.GitBranch,
+                MiniMeIcon(MiniMeIcons.GitBranch,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(18.dp)
@@ -612,8 +612,7 @@ private fun RefSectionHeader(
         )
         if (onAdd != null) {
             IconButton(onClick = onAdd, modifier = Modifier.size(28.dp)) {
-                Icon(
-                    MiniMeIcons.Plus,
+                MiniMeIcon(MiniMeIcons.Plus,
                     contentDescription = stringResource(R.string.git_new),
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -705,8 +704,7 @@ private fun RefRow(
                     color = MaterialTheme.colorScheme.primary
                 )
             } else {
-                Icon(
-                    imageVector = icon,
+                MiniMeIcon(imageVector = icon,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
                     tint = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
@@ -788,8 +786,7 @@ private fun RefActionSheet(
                             .padding(horizontal = Spacing.lg, vertical = Spacing.md),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = action.icon,
+                        MiniMeIcon(imageVector = action.icon,
                             contentDescription = null,
                             modifier = Modifier.size(20.dp),
                             tint = tint

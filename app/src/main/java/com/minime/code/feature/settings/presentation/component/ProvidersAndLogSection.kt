@@ -51,6 +51,7 @@ import com.minime.code.core.ui.SelectionActionIconButton
 import com.minime.code.core.ui.SwipeToDeleteRow
 import com.minime.code.feature.settings.domain.model.AIProviderConfig
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import androidx.compose.ui.res.stringResource
 import com.minime.code.R
 import sh.calvin.reorderable.ReorderableItem
@@ -322,8 +323,7 @@ fun ProviderItem(
                 backgroundColor = statusColor.copy(alpha = 0.12f)
             )
             Spacer(Modifier.width(Spacing.xs))
-            Icon(
-                imageVector = MiniMeIcons.ChevronRight,
+            MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)

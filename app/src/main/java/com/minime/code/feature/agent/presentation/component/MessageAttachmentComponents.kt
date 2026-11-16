@@ -42,6 +42,7 @@ import com.minime.code.core.util.ApkInstaller
 import com.minime.code.feature.agent.presentation.AgentAttachment
 import com.minime.code.feature.workspace.domain.FileAccessProvider
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -145,8 +146,7 @@ private fun MessageAttachmentRow(
             }
             // 有动作才给指示箭头：不可点的行不该长得像能点（如助手气泡里的非图片附件）
             if (handler != null) {
-                Icon(
-                    MiniMeIcons.ChevronRight,
+                MiniMeIcon(MiniMeIcons.ChevronRight,
                     contentDescription = null,
                     tint = Brand.IconGray,
                     modifier = Modifier.size(16.dp)
@@ -167,8 +167,7 @@ private fun AttachmentThumb(attachment: AgentAttachment) {
             AttachmentImageThumb(attachment = attachment)
         } else {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Icon(
-                    MiniMeIcons.FileText,
+                MiniMeIcon(MiniMeIcons.FileText,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
@@ -196,8 +195,7 @@ private fun AttachmentImageThumb(attachment: AgentAttachment) {
         )
     } else {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Icon(
-                MiniMeIcons.Image,
+            MiniMeIcon(MiniMeIcons.Image,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp)

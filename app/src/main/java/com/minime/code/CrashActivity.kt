@@ -54,6 +54,7 @@ import com.minime.code.core.theme.AIEditorTheme
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.theme.semanticColors
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -232,8 +233,7 @@ private fun CrashScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onExit) {
-                        Icon(
-                            imageVector = MiniMeIcons.X,
+                        MiniMeIcon(imageVector = MiniMeIcons.X,
                             contentDescription = stringResource(R.string.crash_exit),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -241,8 +241,7 @@ private fun CrashScreen(
                 },
                 actions = {
                     IconButton(onClick = onCopy) {
-                        Icon(
-                            imageVector = MiniMeIcons.Copy,
+                        MiniMeIcon(imageVector = MiniMeIcons.Copy,
                             contentDescription = stringResource(R.string.crash_copy),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -273,7 +272,7 @@ private fun CrashScreen(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(MiniMeIcons.Copy, contentDescription = null, modifier = Modifier.size(16.dp))
+                        MiniMeIcon(MiniMeIcons.Copy, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(Spacing.xs))
                         Text(stringResource(R.string.crash_copy), maxLines = 1)
                     }
@@ -282,7 +281,7 @@ private fun CrashScreen(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(MiniMeIcons.RefreshCw, contentDescription = null, modifier = Modifier.size(16.dp))
+                        MiniMeIcon(MiniMeIcons.RefreshCw, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(Spacing.xs))
                         Text(stringResource(R.string.crash_restart), maxLines = 1)
                     }
@@ -309,8 +308,7 @@ private fun CrashScreen(
                     modifier = Modifier.padding(Spacing.md),
                     verticalAlignment = Alignment.Top
                 ) {
-                    Icon(
-                        imageVector = MiniMeIcons.AlertCircle,
+                    MiniMeIcon(imageVector = MiniMeIcons.AlertCircle,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier

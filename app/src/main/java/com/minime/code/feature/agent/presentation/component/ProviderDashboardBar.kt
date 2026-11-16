@@ -56,6 +56,7 @@ import com.minime.code.feature.settings.domain.model.AdaptiveCardAction
 import com.minime.code.feature.settings.domain.model.ProviderDashboardState
 import com.minime.code.core.ui.ExpandableChevronIcon
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * 位于聊天输入框上方的自定义面板栏。
@@ -149,8 +150,7 @@ fun ProviderDashboardBar(
                                 .clickable { onRefresh() }
                                 .padding(horizontal = Spacing.xs, vertical = 2.dp)
                         ) {
-                            Icon(
-                                imageVector = MiniMeIcons.AlertCircle,
+                            MiniMeIcon(imageVector = MiniMeIcons.AlertCircle,
                                 contentDescription = null,
                                 modifier = Modifier.size(14.dp),
                                 tint = MaterialTheme.colorScheme.error

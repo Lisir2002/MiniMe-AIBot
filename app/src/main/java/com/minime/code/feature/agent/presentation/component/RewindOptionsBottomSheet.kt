@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.minime.code.R
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 enum class RewindOption {
     RESTORE_CODE_AND_CONVERSATION,
@@ -117,8 +118,7 @@ private fun OptionRow(
             .padding(vertical = Spacing.xs, horizontal = Spacing.xs),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = icon,
+        MiniMeIcon(imageVector = icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(end = Spacing.sm)

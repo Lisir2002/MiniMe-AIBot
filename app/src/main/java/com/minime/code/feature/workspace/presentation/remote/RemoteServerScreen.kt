@@ -63,6 +63,7 @@ import com.minime.code.feature.workspace.domain.model.RemoteConnection
 import com.minime.code.feature.workspace.domain.model.RemoteMount
 import com.minime.code.R
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -117,16 +118,16 @@ fun RemoteServerScreen(
                 title = { Text(stringResource(R.string.remote_workspace_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     if (pagerState.currentPage == 0) {
                         IconButton(onClick = { showHostKeysScreen = true }) {
-                            Icon(MiniMeIcons.Key, contentDescription = stringResource(R.string.ssh_host_key_settings_title))
+                            MiniMeIcon(MiniMeIcons.Key, contentDescription = stringResource(R.string.ssh_host_key_settings_title))
                         }
                         IconButton(onClick = { showSyncSettingsSheet = true }) {
-                            Icon(MiniMeIcons.Settings, contentDescription = stringResource(R.string.sync_settings_title))
+                            MiniMeIcon(MiniMeIcons.Settings, contentDescription = stringResource(R.string.sync_settings_title))
                         }
                     }
                     if (pagerState.currentPage == 0 || pagerState.currentPage == 1) {
@@ -139,7 +140,7 @@ fun RemoteServerScreen(
                                 showAddMountDialog = true
                             }
                         }) {
-                            Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.common_add))
+                            MiniMeIcon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.common_add))
                         }
                     }
                 }

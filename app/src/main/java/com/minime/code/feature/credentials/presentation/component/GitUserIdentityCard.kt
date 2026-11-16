@@ -29,6 +29,7 @@ import com.minime.code.core.theme.Spacing
 import com.minime.code.core.ui.AppTextField
 import com.minime.code.feature.settings.presentation.component.SettingsGroupHeader
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * git 提交署名(user.name / user.email)与仓库地址配置：
@@ -81,7 +82,7 @@ internal fun GitUserIdentityCard(
                 contentColor = MaterialTheme.colorScheme.onPrimary
             )
         ) {
-            Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(17.dp))
+            MiniMeIcon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(17.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 stringResource(R.string.common_save),

@@ -1,0 +1,27 @@
+# MiniMe icon name -> Feather v4.29.0 source file (kebab-case)
+FEATHER_MAP = {
+ "Check":"check","Plus":"plus","Trash2":"trash-2","X":"x","ChevronRight":"chevron-right",
+ "ArrowLeft":"arrow-left","FileText":"file-text","Copy":"copy","RefreshCw":"refresh-cw",
+ "Folder":"folder","Globe":"globe","EyeOff":"eye-off","Eye":"eye","AlertCircle":"alert-circle",
+ "Terminal":"terminal","Key":"key","GitBranch":"git-branch","Zap":"zap","Image":"image",
+ "HardDrive":"hard-drive","Edit2":"edit-2","Shield":"shield","Download":"download",
+ "Sliders":"sliders","Server":"server","Search":"search","RotateCcw":"rotate-ccw",
+ "Edit3":"edit-3","Cpu":"cpu","UploadCloud":"upload-cloud","Info":"info","Github":"github",
+ "ExternalLink":"external-link","ChevronDown":"chevron-down","CheckSquare":"check-square",
+ "Tag":"tag","Tablet":"tablet","Smartphone":"smartphone","Settings":"settings","Play":"play",
+ "Cloud":"cloud","Book":"book","Users":"users","MoreHorizontal":"more-horizontal",
+ "MessageSquare":"message-square","Menu":"menu","GitCommit":"git-commit","Database":"database",
+ "Code":"code","Archive":"archive","Tool":"tool","Sun":"sun","Save":"save","Moon":"moon",
+ "Monitor":"monitor","Minus":"minus","HelpCircle":"help-circle","File":"file",
+ "DownloadCloud":"download-cloud","Clipboard":"clipboard","ChevronLeft":"chevron-left",
+ "Camera":"camera","Box":"box","ArrowUp":"arrow-up","ArrowDown":"arrow-down",
+ "Activity":"activity","XCircle":"x-circle","Video":"video","User":"user","Upload":"upload",
+ "Type":"type","Target":"target","Square":"square","Share2":"share-2","Power":"power",
+ "PieChart":"pie-chart","Pause":"pause","Package":"package","Music":"music",
+ "Minimize2":"minimize-2","Minimize":"minimize","Maximize":"maximize","Lock":"lock",
+ "GitMerge":"git-merge","FolderPlus":"folder-plus","FilePlus":"file-plus","Clock":"clock",
+ "ChevronUp":"chevron-up","CheckCircle":"check-circle","BookOpen":"book-open","Bell":"bell",
+ "BarChart2":"bar-chart-2","Scissors":"scissors",
+ # 自绘（Feather 无对应）
+ "Pin":None,"Undo":None,"Redo":None,
+}

@@ -108,8 +108,7 @@ fun SelectionToggleAction(selection: ListSelectionState, enabled: Boolean = true
         onClick = { if (selection.isActive) selection.exit() else selection.enter() },
         enabled = enabled
     ) {
-        Icon(
-            MiniMeIcons.CheckSquare,
+        MiniMeIcon(MiniMeIcons.CheckSquare,
             contentDescription = stringResource(R.string.common_select_mode),
             tint = if (selection.isActive) MaterialTheme.colorScheme.primary
             else MaterialTheme.colorScheme.onBackground.copy(alpha = if (enabled) 1f else 0.38f),
@@ -165,8 +164,7 @@ fun SelectionActionBar(
         }
         actions()
         IconButton(onClick = onExit, modifier = Modifier.size(36.dp)) {
-            Icon(
-                MiniMeIcons.X,
+            MiniMeIcon(MiniMeIcons.X,
                 contentDescription = stringResource(R.string.common_cancel),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp)
@@ -196,7 +194,7 @@ fun SelectionActionButton(
         modifier = modifier.height(36.dp)
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+            MiniMeIcon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(Spacing.xs))
         }
         Text(text = text, style = MaterialTheme.typography.labelMedium, maxLines = 1)
@@ -216,8 +214,7 @@ fun SelectionActionIconButton(
     tint: Color = MaterialTheme.colorScheme.primary
 ) {
     IconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(36.dp)) {
-        Icon(
-            imageVector = icon,
+        MiniMeIcon(imageVector = icon,
             contentDescription = contentDescription,
             tint = if (enabled) tint else tint.copy(alpha = 0.38f),
             modifier = Modifier.size(18.dp)

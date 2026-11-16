@@ -67,6 +67,7 @@ import com.minime.code.feature.settings.data.repository.DownloadedImageRecord
 import com.minime.code.feature.settings.data.repository.effectiveVersion
 import com.minime.code.feature.settings.presentation.ContainerImageDownloadUiState
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import java.io.File
 import kotlinx.coroutines.launch
 
@@ -349,8 +350,7 @@ private fun DownloadImageRow(
                         modifier = Modifier.size(22.dp)
                     )
                 } else {
-                    Icon(
-                        imageVector = MiniMeIcons.HardDrive,
+                    MiniMeIcon(imageVector = MiniMeIcons.HardDrive,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(22.dp)
@@ -418,8 +418,7 @@ private fun DownloadImageRow(
             }
 
             // 右侧箭头
-            Icon(
-                imageVector = MiniMeIcons.ChevronRight,
+            MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(22.dp)
@@ -482,8 +481,7 @@ private fun ImageDetailSheet(
                             modifier = Modifier.size(24.dp)
                         )
                     } else {
-                        Icon(
-                            imageVector = MiniMeIcons.HardDrive,
+                        MiniMeIcon(imageVector = MiniMeIcons.HardDrive,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(24.dp)

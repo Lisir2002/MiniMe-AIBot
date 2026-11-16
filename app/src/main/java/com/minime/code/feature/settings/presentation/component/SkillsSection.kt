@@ -45,6 +45,7 @@ import com.minime.code.core.ui.SwipeToDeleteRow
 import com.minime.code.feature.agent.domain.skill.SkillScope
 import com.minime.code.feature.settings.presentation.SkillUiEntry
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * 技能二级页：与「工具授权」一致的折叠分组列表——「当前项目 / 全局」两组各自可折叠，
@@ -99,8 +100,7 @@ internal fun SkillsSection(
                         .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(Radius.lg)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        MiniMeIcons.Book,
+                    MiniMeIcon(MiniMeIcons.Book,
                         contentDescription = null,
                         modifier = Modifier.size(28.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -295,8 +295,7 @@ private fun SkillRow(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = MiniMeIcons.Book,
+                MiniMeIcon(imageVector = MiniMeIcons.Book,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
@@ -335,8 +334,7 @@ private fun SkillRow(
 
             Spacer(modifier = Modifier.width(Spacing.sm))
 
-            Icon(
-                imageVector = MiniMeIcons.ChevronRight,
+            MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)

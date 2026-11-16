@@ -78,6 +78,7 @@ import com.termux.terminal.TerminalColors
 import com.termux.terminal.TextStyle
 import com.termux.view.TerminalView
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -131,8 +132,7 @@ fun TerminalScreen(
                         onClick = onNavigateBack,
                         modifier = Modifier.size(40.dp)
                     ) {
-                        Icon(
-                            if (embedded) MiniMeIcons.X else MiniMeIcons.ArrowLeft,
+                        MiniMeIcon(if (embedded) MiniMeIcons.X else MiniMeIcons.ArrowLeft,
                             contentDescription = stringResource(
                                 if (embedded) R.string.common_close else R.string.common_back
                             )
@@ -148,8 +148,7 @@ fun TerminalScreen(
                         onClick = { showToolsSheet = true },
                         modifier = Modifier.size(40.dp)
                     ) {
-                        Icon(
-                            MiniMeIcons.Settings,
+                        MiniMeIcon(MiniMeIcons.Settings,
                             contentDescription = stringResource(R.string.terminal_settings_title)
                         )
                     }
@@ -291,8 +290,7 @@ private fun TabBar(
                         color = MaterialTheme.colorScheme.primary
                     )
                 } else {
-                    Icon(
-                        MiniMeIcons.Plus,
+                    MiniMeIcon(MiniMeIcons.Plus,
                         contentDescription = stringResource(R.string.common_new_tab),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp)
@@ -374,8 +372,7 @@ private fun TabChip(
                 .clickable(onClick = onClose),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                MiniMeIcons.X,
+            MiniMeIcon(MiniMeIcons.X,
                 contentDescription = stringResource(R.string.terminal_close_tab),
                 tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 modifier = Modifier.size(13.dp)

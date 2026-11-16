@@ -47,6 +47,7 @@ import com.minime.code.feature.settings.data.repository.ProxyConfig
 import com.minime.code.feature.settings.domain.model.ProxyType
 import com.minime.code.feature.settings.presentation.SettingsViewModel.ProxyTestUiState
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /** 默认测试目标：返回 204 的连通性端点，不依赖响应体格式。 */
 private const val DEFAULT_TEST_URL = "https://www.google.com"
@@ -153,8 +154,7 @@ internal fun ProxySection(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     singleLine = true,
                     trailingIcon = {
-                        Icon(
-                            imageVector = if (passwordVisible) MiniMeIcons.Eye else MiniMeIcons.EyeOff,
+                        MiniMeIcon(imageVector = if (passwordVisible) MiniMeIcons.Eye else MiniMeIcons.EyeOff,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
@@ -299,8 +299,7 @@ private fun ProxyTypeSelectionSheet(
                             modifier = Modifier.weight(1f)
                         )
                         if (isSelected) {
-                            Icon(
-                                imageVector = MiniMeIcons.Check,
+                            MiniMeIcon(imageVector = MiniMeIcons.Check,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary

@@ -1,5 +1,7 @@
 package com.minime.code.feature.settings.presentation.component
 
+import com.minime.code.core.ui.MiniMeIcon
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,8 +50,7 @@ internal fun SettingsEmptyState(
                     .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(Radius.lg)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = icon,
+                MiniMeIcon(imageVector = icon,
                     contentDescription = null,
                     modifier = Modifier.size(28.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant

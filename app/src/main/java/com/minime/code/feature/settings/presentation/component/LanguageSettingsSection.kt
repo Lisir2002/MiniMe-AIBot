@@ -24,6 +24,7 @@ import com.minime.code.R
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.util.LanguageRegistry
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * 语言选择 BottomSheet 弹窗：参考会话长按菜单样式。
@@ -84,8 +85,7 @@ internal fun LanguageSelectionSheet(
                         modifier = Modifier.weight(1f)
                     )
                     if (followSystemSelected) {
-                        Icon(
-                            imageVector = MiniMeIcons.Check,
+                        MiniMeIcon(imageVector = MiniMeIcons.Check,
                             contentDescription = null,
                             modifier = Modifier.size(20.dp),
                             tint = MaterialTheme.colorScheme.primary
@@ -118,8 +118,7 @@ internal fun LanguageSelectionSheet(
                             modifier = Modifier.weight(1f)
                         )
                         if (selected) {
-                            Icon(
-                                imageVector = MiniMeIcons.Check,
+                            MiniMeIcon(imageVector = MiniMeIcons.Check,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary

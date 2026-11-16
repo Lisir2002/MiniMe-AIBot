@@ -42,6 +42,7 @@ import com.minime.code.feature.agent.domain.skill.SkillScope
 import com.minime.code.feature.settings.presentation.SkillSaveState
 import com.minime.code.feature.settings.presentation.SkillUiEntry
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * 技能新建/编辑页：自带顶栏（与 [SubAgentEditorScreen] 一致，不能嵌进设置页的 Scaffold）。
@@ -95,7 +96,7 @@ internal fun SkillEditorScreen(
                 ),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {

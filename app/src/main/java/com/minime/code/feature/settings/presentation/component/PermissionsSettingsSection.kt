@@ -42,6 +42,7 @@ import com.minime.code.core.ui.SwipeToDeleteRow
 import com.minime.code.feature.agent.domain.permission.PermissionDecision
 import com.minime.code.feature.agent.domain.permission.PermissionRule
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.coroutines.delay
 
 /**
@@ -212,8 +213,7 @@ internal fun RuleRow(
                 .padding(start = Spacing.lg, end = Spacing.xs, top = 11.dp, bottom = 11.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = if (allowed) MiniMeIcons.CheckCircle else MiniMeIcons.XCircle,
+            MiniMeIcon(imageVector = if (allowed) MiniMeIcons.CheckCircle else MiniMeIcons.XCircle,
                 contentDescription = null,
                 tint = iconTint,
                 modifier = Modifier.size(18.dp)
@@ -245,8 +245,7 @@ internal fun RuleRow(
             }
             if (onPromote != null) {
                 IconButton(onClick = onPromote) {
-                    Icon(
-                        imageVector = MiniMeIcons.Plus,
+                    MiniMeIcon(imageVector = MiniMeIcons.Plus,
                         contentDescription = stringResource(R.string.perm_promote_to_global),
                         tint = iconTint,
                         modifier = Modifier.size(18.dp)

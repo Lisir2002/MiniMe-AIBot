@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import androidx.compose.ui.res.stringResource
 import com.minime.code.R
 
@@ -92,8 +93,7 @@ internal fun McpStdioFields(
                             onClick = { args.removeAt(index) },
                             modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(
-                                MiniMeIcons.Trash2,
+                            MiniMeIcon(MiniMeIcons.Trash2,
                                 contentDescription = stringResource(R.string.common_delete),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(16.dp)
@@ -116,8 +116,7 @@ internal fun McpStdioFields(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    MiniMeIcons.Plus,
+                MiniMeIcon(MiniMeIcons.Plus,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -184,8 +183,7 @@ internal fun McpStdioFields(
                             onClick = { env.removeAt(index) },
                             modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(
-                                MiniMeIcons.Trash2,
+                            MiniMeIcon(MiniMeIcons.Trash2,
                                 contentDescription = stringResource(R.string.common_delete),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(16.dp)
@@ -208,8 +206,7 @@ internal fun McpStdioFields(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    MiniMeIcons.Plus,
+                MiniMeIcon(MiniMeIcons.Plus,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant

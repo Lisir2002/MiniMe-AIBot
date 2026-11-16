@@ -37,6 +37,7 @@ import com.minime.code.core.ui.AppSwitch
 import com.minime.code.core.ui.AppTextField
 import com.minime.code.feature.settings.data.repository.StartupSessionMode
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * 偏好设置：集中放置不属于单个提供商配置、也不针对某个专用模型的全局偏好。
@@ -459,8 +460,7 @@ private fun StartupSessionSheet(
                         )
                     }
                     if (isSelected) {
-                        Icon(
-                            imageVector = MiniMeIcons.Check,
+                        MiniMeIcon(imageVector = MiniMeIcons.Check,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)

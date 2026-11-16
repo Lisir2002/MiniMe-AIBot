@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import com.minime.code.R
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -303,8 +304,7 @@ internal fun ChatCopyAction(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
     ) {
-        Icon(
-            imageVector = if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
+        MiniMeIcon(imageVector = if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(12.dp)

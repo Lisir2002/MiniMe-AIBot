@@ -54,6 +54,7 @@ import com.minime.code.core.ui.rememberSheetFlingFix
 import com.minime.code.feature.backup.domain.remote.BackupTarget
 import com.minime.code.feature.backup.domain.remote.BackupTargetType
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * 网络备份目标的新建/编辑底部弹窗：按类型（WebDAV / S3）切换字段，支持连通性测试与保存。
@@ -184,7 +185,7 @@ fun BackupTargetSheet(
                             trailingIcon = {
                                 val image = if (passwordVisible) MiniMeIcons.Eye else MiniMeIcons.EyeOff
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                    Icon(image, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    MiniMeIcon(image, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             },
                             modifier = Modifier.fillMaxWidth()
@@ -217,7 +218,7 @@ fun BackupTargetSheet(
                             trailingIcon = {
                                 val image = if (secretVisible) MiniMeIcons.Eye else MiniMeIcons.EyeOff
                                 IconButton(onClick = { secretVisible = !secretVisible }) {
-                                    Icon(image, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    MiniMeIcon(image, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             },
                             modifier = Modifier.fillMaxWidth()
@@ -276,7 +277,7 @@ fun BackupTargetSheet(
                     modifier = Modifier.fillMaxWidth().height(44.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                    MiniMeIcon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(if (initial != null) R.string.common_save else R.string.common_add),

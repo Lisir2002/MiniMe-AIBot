@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.minime.code.R
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * 下载源选择底部弹窗：列出目录 JSON 里定义的所有源（官方/华为云/阿里云/腾讯云等），
@@ -81,8 +82,7 @@ internal fun SourceSelectionSheet(
                             modifier = Modifier.weight(1f)
                         )
                         if (isSelected) {
-                            Icon(
-                                imageVector = MiniMeIcons.Check,
+                            MiniMeIcon(imageVector = MiniMeIcons.Check,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )

@@ -205,8 +205,7 @@ fun ImageViewerHost(
                     .systemBarsPadding()
                     .padding(Spacing.sm)
             ) {
-                Icon(
-                    imageVector = MiniMeIcons.X,
+                MiniMeIcon(imageVector = MiniMeIcons.X,
                     contentDescription = stringResource(R.string.common_close),
                     tint = Color.White
                 )
@@ -222,8 +221,7 @@ private fun LoadFailedPlaceholder(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
-        Icon(
-            imageVector = MiniMeIcons.Image,
+        MiniMeIcon(imageVector = MiniMeIcons.Image,
             contentDescription = null,
             tint = Color.White.copy(alpha = 0.6f),
             modifier = Modifier.size(40.dp)

@@ -69,6 +69,7 @@ import com.minime.code.feature.workspace.domain.model.RemoteProtocol
 import com.minime.code.feature.workspace.domain.remote.RemoteAuth
 import com.minime.code.R
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /** 弹窗内统一输入框：使用全局 AppTextField 组件。 */
 @Composable
@@ -186,7 +187,7 @@ private fun SheetSaveButton(
                 .height(44.dp),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+            MiniMeIcon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Text(text, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         }
@@ -363,7 +364,7 @@ fun AddRemoteConnectionDialog(
                             trailingIcon = {
                                 val image = if (passwordVisible) MiniMeIcons.Eye else MiniMeIcons.EyeOff
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                    Icon(image, stringResource(R.string.remote_toggle_password), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    MiniMeIcon(image, stringResource(R.string.remote_toggle_password), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         )
@@ -545,7 +546,7 @@ fun AddRemoteMountDialog(
                             onClick = { showBrowser = true },
                             enabled = selectedConnectionId.isNotEmpty()
                         ) {
-                            Icon(MiniMeIcons.Folder, contentDescription = stringResource(R.string.remote_browse_dir), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            MiniMeIcon(MiniMeIcons.Folder, contentDescription = stringResource(R.string.remote_browse_dir), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
 
@@ -683,7 +684,7 @@ fun RemoteDirectoryBrowserDialog(
                                     val parent = currentPath.trimEnd('/').substringBeforeLast('/')
                                     currentPath = if (parent.isEmpty()) "/" else "$parent/"
                                 }) {
-                                    Icon(MiniMeIcons.Folder, contentDescription = null)
+                                    MiniMeIcon(MiniMeIcons.Folder, contentDescription = null)
                                     Spacer(Modifier.width(8.dp))
                                     Text(stringResource(R.string.remote_parent_dir))
                                 }
@@ -693,7 +694,7 @@ fun RemoteDirectoryBrowserDialog(
                             TextButton(onClick = {
                                 currentPath = if (currentPath == "/") "/$dir/" else "$currentPath$dir/"
                             }) {
-                                Icon(MiniMeIcons.Folder, contentDescription = null)
+                                MiniMeIcon(MiniMeIcons.Folder, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
                                 Text(dir)
                             }

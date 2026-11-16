@@ -57,6 +57,7 @@ import com.minime.code.feature.settings.presentation.component.settingsLightMode
 import com.minime.code.feature.settings.presentation.component.settingsPageBackground
 import com.minime.code.R
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /** SSH 密钥设置独立页面：底部双 tab——「密钥」管理登录私钥库，「指纹」展示已保存的主机指纹。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -126,13 +127,13 @@ fun HostKeysScreen(
                 title = { Text(stringResource(R.string.ssh_host_key_settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     if (pagerState.currentPage == 0) {
                         IconButton(onClick = { showAddKeySheet = true }) {
-                            Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.ssh_login_key_add))
+                            MiniMeIcon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.ssh_login_key_add))
                         }
                     }
                 }
@@ -215,8 +216,7 @@ fun HostKeysScreen(
                                                 )
                                             }
                                             Spacer(modifier = Modifier.width(Spacing.xs))
-                                            Icon(
-                                                imageVector = MiniMeIcons.ChevronRight,
+                                            MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
                                                 contentDescription = null,
                                                 tint = MaterialTheme.semanticColors.subtleText,
                                                 modifier = Modifier.width(18.dp)
@@ -326,8 +326,7 @@ private fun LoginKeyRow(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = MiniMeIcons.Key,
+                MiniMeIcon(imageVector = MiniMeIcons.Key,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(22.dp)
@@ -351,8 +350,7 @@ private fun LoginKeyRow(
                 )
             }
             Spacer(modifier = Modifier.width(Spacing.xs))
-            Icon(
-                imageVector = MiniMeIcons.ChevronRight,
+            MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)

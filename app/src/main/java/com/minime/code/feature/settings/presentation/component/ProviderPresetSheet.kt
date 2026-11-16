@@ -38,6 +38,7 @@ import com.minime.code.core.theme.Spacing
 import com.minime.code.feature.settings.data.local.ProviderPreset
 import com.minime.code.feature.settings.data.local.ProviderPresetLibrary
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * 新增提供商底部弹层：展示自定义提供商与内置官方 provider 列表（来自 api.official.json）。
@@ -217,8 +218,7 @@ internal fun ProviderPresetSheet(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
-                                            androidx.compose.material3.Icon(
-                                                MiniMeIcons.ExternalLink,
+                                            androidx.compose.material3.Icon(MiniMeIcons.ExternalLink,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(12.dp),
                                                 tint = MaterialTheme.colorScheme.primary

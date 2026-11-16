@@ -53,6 +53,7 @@ import com.minime.code.feature.settings.data.repository.DEFAULT_DOWNLOAD_MIRROR
 import com.minime.code.feature.settings.data.repository.UpdateChannel
 import com.minime.code.feature.settings.data.repository.isValidDownloadMirror
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * 关于页：顶部应用信息、版本号（点击手动检查更新）、自动检查更新开关、更新通道、
@@ -336,8 +337,7 @@ private fun UpdateChannelSheet(
                             )
                         }
                         if (selected) {
-                            Icon(
-                                imageVector = MiniMeIcons.Check,
+                            MiniMeIcon(imageVector = MiniMeIcons.Check,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary
@@ -408,8 +408,7 @@ private fun MirrorSourceDialog(
                                 modifier = Modifier.weight(1f)
                             )
                             if (selected) {
-                                Icon(
-                                    imageVector = MiniMeIcons.Check,
+                                MiniMeIcon(imageVector = MiniMeIcons.Check,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp),
                                     tint = MaterialTheme.colorScheme.primary

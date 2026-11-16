@@ -99,6 +99,7 @@ import com.minime.code.feature.settings.domain.model.modelMetadataKey
 import com.minime.code.feature.workspace.domain.WorkspacePathMapper
 import com.minime.code.feature.workspace.presentation.WorkspaceViewModel
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -2078,8 +2079,7 @@ private fun ScrollToBottomButton(
             .clickable(onClick = onClick)
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = MiniMeIcons.ArrowDown,
+            MiniMeIcon(imageVector = MiniMeIcons.ArrowDown,
                 contentDescription = stringResource(R.string.common_scroll_to_bottom),
                 tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(20.dp)

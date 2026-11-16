@@ -74,6 +74,7 @@ import com.minime.code.feature.settings.presentation.component.SettingsGroupHead
 import com.minime.code.feature.settings.presentation.component.SettingsRow
 import com.minime.code.feature.settings.presentation.component.settingsPageBackground
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -162,7 +163,7 @@ internal fun BackupScreen(
                 title = { Text(stringResource(R.string.settings_backup)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
+                        MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
@@ -171,7 +172,7 @@ internal fun BackupScreen(
                             editingTarget = null
                             showTargetSheet = true
                         }) {
-                            Icon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.backup_net_add_target))
+                            MiniMeIcon(MiniMeIcons.Plus, contentDescription = stringResource(R.string.backup_net_add_target))
                         }
                     }
                 }
@@ -635,8 +636,7 @@ private fun BackupTargetCard(
                     )
                 }
                 IconButton(onClick = onEdit) {
-                    Icon(
-                        imageVector = MiniMeIcons.ChevronRight,
+                    MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
                         contentDescription = stringResource(R.string.common_edit),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
@@ -694,8 +694,7 @@ private fun TargetIconBox(type: BackupTargetType) {
             .size(40.dp)
             .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
     ) {
-        Icon(
-            imageVector = icon,
+        MiniMeIcon(imageVector = icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(22.dp).align(Alignment.Center)
@@ -724,8 +723,7 @@ private fun WorkspaceBackupHint() {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm)
     ) {
-        Icon(
-            imageVector = MiniMeIcons.AlertCircle,
+        MiniMeIcon(imageVector = MiniMeIcons.AlertCircle,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(14.dp)

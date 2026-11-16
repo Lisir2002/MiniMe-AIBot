@@ -76,6 +76,7 @@ import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.core.common.Fill
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -360,8 +361,7 @@ private fun TokenStatsFilterBar(
                     )
                 },
                 trailingIcon = {
-                    Icon(
-                        imageVector = MiniMeIcons.ChevronDown,
+                    MiniMeIcon(imageVector = MiniMeIcons.ChevronDown,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
@@ -390,7 +390,7 @@ private fun TokenStatsFilterBar(
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.settings_token_stats_filter_all_providers)) },
                     trailingIcon = if (selectedProviderId == null) {
-                        { Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        { MiniMeIcon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                     } else null,
                     onClick = {
                         onSelectProvider(null)
@@ -401,7 +401,7 @@ private fun TokenStatsFilterBar(
                     DropdownMenuItem(
                         text = { Text(name) },
                         trailingIcon = if (selectedProviderId == id) {
-                            { Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                            { MiniMeIcon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         } else null,
                         onClick = {
                             onSelectProvider(id)
@@ -430,8 +430,7 @@ private fun TokenStatsFilterBar(
                     )
                 },
                 trailingIcon = {
-                    Icon(
-                        imageVector = MiniMeIcons.ChevronDown,
+                    MiniMeIcon(imageVector = MiniMeIcons.ChevronDown,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
@@ -460,7 +459,7 @@ private fun TokenStatsFilterBar(
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.settings_token_stats_filter_all_models)) },
                     trailingIcon = if (selectedModel == null) {
-                        { Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        { MiniMeIcon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                     } else null,
                     onClick = {
                         onSelectModel(null)
@@ -471,7 +470,7 @@ private fun TokenStatsFilterBar(
                     DropdownMenuItem(
                         text = { Text(modelName) },
                         trailingIcon = if (selectedModel == modelName) {
-                            { Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                            { MiniMeIcon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         } else null,
                         onClick = {
                             onSelectModel(modelName)
@@ -489,8 +488,7 @@ private fun TokenStatsFilterBar(
                 onClick = onClearFilters,
                 label = { Text(stringResource(R.string.settings_token_stats_filter_clear), fontSize = 13.sp) },
                 trailingIcon = {
-                    Icon(
-                        imageVector = MiniMeIcons.X,
+                    MiniMeIcon(imageVector = MiniMeIcons.X,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )

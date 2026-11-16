@@ -31,6 +31,7 @@ import com.minime.code.core.ui.AppSwitch
 import com.minime.code.feature.editor.data.MAX_EDITOR_FONT_SIZE_SP
 import com.minime.code.feature.editor.data.MIN_EDITOR_FONT_SIZE_SP
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlin.math.roundToInt
 
 /**
@@ -56,8 +57,7 @@ fun EditorSettingsScreen(
                 ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(
-                            MiniMeIcons.ArrowLeft,
+                        MiniMeIcon(MiniMeIcons.ArrowLeft,
                             contentDescription = stringResource(R.string.common_back)
                         )
                     }

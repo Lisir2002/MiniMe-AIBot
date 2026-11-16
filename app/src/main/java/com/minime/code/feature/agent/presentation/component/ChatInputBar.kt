@@ -115,6 +115,7 @@ import com.minime.code.feature.workspace.presentation.WorkspaceViewModel
 import com.minime.code.feature.workspace.presentation.component.WorkspaceIconButton
 import com.minime.code.core.ui.ExpandableChevronIcon
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.coroutines.launch
 
 /**
@@ -526,8 +527,7 @@ internal fun ChatInputBar(
                             onClick = { showFullScreenInput = true },
                             modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(
-                                MiniMeIcons.Maximize,
+                            MiniMeIcon(MiniMeIcons.Maximize,
                                 contentDescription = stringResource(R.string.chat_input_expand),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)
@@ -727,8 +727,7 @@ private fun FullScreenInputDialog(
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = onDismiss) {
-                        Icon(
-                            MiniMeIcons.Minimize,
+                        MiniMeIcon(MiniMeIcons.Minimize,
                             contentDescription = stringResource(R.string.common_collapse_action),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -774,7 +773,7 @@ internal fun UploadIconButton(
         enabled = enabled,
         modifier = Modifier.size(36.dp)
     ) {
-        Icon(
+        MiniMeIcon(
             icon,
             contentDescription = contentDescription,
             tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
@@ -850,15 +849,13 @@ internal fun SendButton(
             contentAlignment = Alignment.Center
         ) {
             if (showStop) {
-                Icon(
-                    MiniMeIcons.Square,
+                MiniMeIcon(MiniMeIcons.Square,
                     contentDescription = stringResource(R.string.chat_stop),
                     tint = iconTint,
                     modifier = Modifier.size(18.dp)
                 )
             } else {
-                Icon(
-                    MiniMeIcons.ArrowUp,
+                MiniMeIcon(MiniMeIcons.ArrowUp,
                     contentDescription = stringResource(R.string.chat_send),
                     tint = iconTint,
                     modifier = Modifier.size(18.dp)
@@ -915,8 +912,7 @@ internal fun ToolPermissionPanel(
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = MiniMeIcons.Shield,
+                    MiniMeIcon(imageVector = MiniMeIcons.Shield,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(15.dp)
@@ -1097,8 +1093,7 @@ private fun ErrorBubble(message: String) {
                     .clickable { expanded = !expanded },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    MiniMeIcons.AlertCircle,
+                MiniMeIcon(MiniMeIcons.AlertCircle,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(16.dp)
@@ -1117,8 +1112,7 @@ private fun ErrorBubble(message: String) {
                         copied = true
                     }
                 }) {
-                    Icon(
-                        if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
+                    MiniMeIcon(if (copied) MiniMeIcons.Check else MiniMeIcons.Copy,
                         contentDescription = if (copied) stringResource(R.string.chat_copied) else stringResource(R.string.chat_copy),
                         tint = if (copied) MaterialTheme.colorScheme.primary else Brand.IconGray,
                         modifier = Modifier.size(16.dp)
@@ -1309,8 +1303,7 @@ private fun GoalBannerRow(
                     .background(accent.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = MiniMeIcons.Target,
+                MiniMeIcon(imageVector = MiniMeIcons.Target,
                     contentDescription = null,
                     tint = accent,
                     modifier = Modifier.size(15.dp)
@@ -1336,8 +1329,7 @@ private fun GoalBannerRow(
                     onClick = { onSetPaused(goal.status == GoalStatus.ACTIVE) },
                     modifier = Modifier.size(30.dp)
                 ) {
-                    Icon(
-                        imageVector = if (goal.status == GoalStatus.ACTIVE) MiniMeIcons.Pause else MiniMeIcons.Play,
+                    MiniMeIcon(imageVector = if (goal.status == GoalStatus.ACTIVE) MiniMeIcons.Pause else MiniMeIcons.Play,
                         contentDescription = stringResource(
                             if (goal.status == GoalStatus.ACTIVE) R.string.chat_goal_pause else R.string.chat_goal_resume
                         ),
@@ -1347,8 +1339,7 @@ private fun GoalBannerRow(
                 }
             }
             IconButton(onClick = onClear, modifier = Modifier.size(30.dp)) {
-                Icon(
-                    imageVector = MiniMeIcons.X,
+                MiniMeIcon(imageVector = MiniMeIcons.X,
                     contentDescription = stringResource(R.string.chat_goal_clear),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)

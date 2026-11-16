@@ -97,6 +97,7 @@ import com.minime.code.feature.settings.presentation.ContainerResetUiState
 import com.minime.code.feature.workspace.domain.model.RemoteConnection
 import com.minime.code.feature.workspace.domain.model.RemoteProtocol
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -412,8 +413,7 @@ private fun ContainerRow(
                                 .align(Alignment.Center)
                         )
                     } else {
-                        Icon(
-                            imageVector = if (profile.mode == ExecutionMode.REMOTE_SSH) MiniMeIcons.Server else MiniMeIcons.HardDrive,
+                        MiniMeIcon(imageVector = if (profile.mode == ExecutionMode.REMOTE_SSH) MiniMeIcons.Server else MiniMeIcons.HardDrive,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
@@ -476,8 +476,7 @@ private fun ContainerRow(
 
             // 编辑入口（所有容器）：行尾铅笔，点击进入编辑弹窗（行主体点击是切换）
             IconButton(onClick = onEdit) {
-                Icon(
-                    imageVector = MiniMeIcons.Edit3,
+                MiniMeIcon(imageVector = MiniMeIcons.Edit3,
                     contentDescription = stringResource(R.string.common_edit),
                     tint = MaterialTheme.semanticColors.subtleText,
                     modifier = Modifier.size(18.dp)
@@ -622,8 +621,7 @@ private fun ProfileEditSheet(
                         onClick = onReset,
                         modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(
-                            MiniMeIcons.RefreshCw,
+                        MiniMeIcon(MiniMeIcons.RefreshCw,
                             contentDescription = stringResource(R.string.container_reset),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -711,8 +709,7 @@ private fun ProfileEditSheet(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Icon(
-                                        MiniMeIcons.HardDrive,
+                                    MiniMeIcon(MiniMeIcons.HardDrive,
                                         contentDescription = null,
                                         modifier = Modifier.size(14.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -861,7 +858,7 @@ private fun ProfileEditSheet(
                     .height(44.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                MiniMeIcon(MiniMeIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     stringResource(
@@ -926,8 +923,7 @@ private fun StringListEditor(
                             onClick = { items.removeAt(index) },
                             modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(
-                                MiniMeIcons.Trash2,
+                            MiniMeIcon(MiniMeIcons.Trash2,
                                 contentDescription = stringResource(R.string.common_delete),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(16.dp)
@@ -949,8 +945,7 @@ private fun StringListEditor(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    MiniMeIcons.Plus,
+                MiniMeIcon(MiniMeIcons.Plus,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1017,8 +1012,7 @@ private fun MountListEditor(
                             onClick = { items.removeAt(index) },
                             modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(
-                                MiniMeIcons.Trash2,
+                            MiniMeIcon(MiniMeIcons.Trash2,
                                 contentDescription = stringResource(R.string.common_delete),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(16.dp)
@@ -1040,8 +1034,7 @@ private fun MountListEditor(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    MiniMeIcons.Plus,
+                MiniMeIcon(MiniMeIcons.Plus,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1112,8 +1105,7 @@ private fun PairListEditor(
                             onClick = { items.removeAt(index) },
                             modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(
-                                MiniMeIcons.Trash2,
+                            MiniMeIcon(MiniMeIcons.Trash2,
                                 contentDescription = stringResource(R.string.common_delete),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(16.dp)
@@ -1135,8 +1127,7 @@ private fun PairListEditor(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    MiniMeIcons.Plus,
+                MiniMeIcon(MiniMeIcons.Plus,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant

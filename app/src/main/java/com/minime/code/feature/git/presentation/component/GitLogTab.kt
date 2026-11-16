@@ -72,6 +72,7 @@ import com.minime.code.feature.git.domain.model.GitGraphRef
 import com.minime.code.feature.git.domain.model.GraphCommit
 import com.minime.code.feature.git.domain.model.GraphEdge
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.ui.graphics.RectangleShape
@@ -149,12 +150,12 @@ internal fun LogTab(
                 onValueChange = { searchQuery = it },
                 label = stringResource(R.string.git_search_commits_hint),
                 leadingIcon = {
-                    Icon(MiniMeIcons.Search, contentDescription = null, modifier = Modifier.size(16.dp))
+                    MiniMeIcon(MiniMeIcons.Search, contentDescription = null, modifier = Modifier.size(16.dp))
                 },
                 trailingIcon = if (searchQuery.isNotEmpty()) {
                     {
                         IconButton(onClick = { searchQuery = "" }) {
-                            Icon(MiniMeIcons.X, contentDescription = null, modifier = Modifier.size(16.dp))
+                            MiniMeIcon(MiniMeIcons.X, contentDescription = null, modifier = Modifier.size(16.dp))
                         }
                     }
                 } else null,
@@ -316,8 +317,7 @@ private fun GraphCommitRow(
                     Spacer(Modifier.height(Spacing.xs))
                 }
                 Row(verticalAlignment = Alignment.Top) {
-                    Icon(
-                        imageVector = MiniMeIcons.ChevronRight,
+                    MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
                         contentDescription = stringResource(R.string.common_expand),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -541,8 +541,7 @@ private fun RefPills(refs: List<GitGraphRef>) {
                     modifier = Modifier.padding(horizontal = Spacing.sm, vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = if (ref.isRemote) MiniMeIcons.Cloud else if (ref.isBranch) MiniMeIcons.GitBranch else MiniMeIcons.Tag,
+                    MiniMeIcon(imageVector = if (ref.isRemote) MiniMeIcons.Cloud else if (ref.isBranch) MiniMeIcons.GitBranch else MiniMeIcons.Tag,
                         contentDescription = null,
                         tint = fg,
                         modifier = Modifier.size(11.dp)
@@ -893,7 +892,7 @@ private fun CommitDetailSheet(
                     shape = RoundedCornerShape(Radius.sm),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                 ) {
-                    Icon(MiniMeIcons.GitBranch, contentDescription = null, modifier = Modifier.size(13.dp))
+                    MiniMeIcon(MiniMeIcons.GitBranch, contentDescription = null, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(Spacing.xs))
                     Text(stringResource(R.string.git_tab_branches), style = MaterialTheme.typography.labelSmall)
                 }
@@ -903,7 +902,7 @@ private fun CommitDetailSheet(
                     shape = RoundedCornerShape(Radius.sm),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                 ) {
-                    Icon(MiniMeIcons.Tag, contentDescription = null, modifier = Modifier.size(13.dp))
+                    MiniMeIcon(MiniMeIcons.Tag, contentDescription = null, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(Spacing.xs))
                     Text(stringResource(R.string.git_tags), style = MaterialTheme.typography.labelSmall)
                 }
@@ -913,7 +912,7 @@ private fun CommitDetailSheet(
                     shape = RoundedCornerShape(Radius.sm),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                 ) {
-                    Icon(MiniMeIcons.RotateCcw, contentDescription = null, modifier = Modifier.size(13.dp))
+                    MiniMeIcon(MiniMeIcons.RotateCcw, contentDescription = null, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(Spacing.xs))
                     Text("Reset", style = MaterialTheme.typography.labelSmall)
                 }

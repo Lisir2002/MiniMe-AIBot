@@ -42,6 +42,7 @@ import com.minime.code.R
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.theme.semanticColors
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 
 /**
  * 设置页分组组件：浅灰背景 + 白色分组圆角卡片 + 组内缩进分隔线 + 黑色线条图标。
@@ -180,8 +181,7 @@ internal fun SettingsRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (icon != null) {
-            Icon(
-                imageVector = icon,
+            MiniMeIcon(imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(16.dp)
@@ -206,8 +206,7 @@ internal fun SettingsRow(
         trailing?.invoke(this)
         if (onClick != null && enabled) {
             Spacer(Modifier.width(Spacing.xs))
-            Icon(
-                imageVector = MiniMeIcons.ChevronRight,
+            MiniMeIcon(imageVector = MiniMeIcons.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)
@@ -250,8 +249,7 @@ internal fun ModelSearchField(
                 .padding(horizontal = Spacing.md),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                MiniMeIcons.Search,
+            MiniMeIcon(MiniMeIcons.Search,
                 contentDescription = null,
                 tint = MaterialTheme.semanticColors.subtleText,
                 modifier = Modifier.size(18.dp)

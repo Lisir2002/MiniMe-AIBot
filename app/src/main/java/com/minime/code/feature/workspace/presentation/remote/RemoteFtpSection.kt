@@ -46,6 +46,7 @@ import com.minime.code.feature.settings.presentation.component.SettingsGroupHead
 import com.minime.code.feature.settings.presentation.component.settingsLightMode
 import com.minime.code.R
 import com.minime.code.core.ui.MiniMeIcons
+import com.minime.code.core.ui.MiniMeIcon
 import kotlinx.coroutines.launch
 
 @Composable
@@ -88,8 +89,7 @@ fun WiFiFtpServerSection(
                     .padding(horizontal = Spacing.lg, vertical = 11.dp),
                 verticalAlignment = Alignment.Top
             ) {
-                Icon(
-                    MiniMeIcons.Info,
+                MiniMeIcon(MiniMeIcons.Info,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp).padding(top = 2.dp)
@@ -127,8 +127,7 @@ fun WiFiFtpServerSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                    Icon(
-                        MiniMeIcons.Share2,
+                    MiniMeIcon(MiniMeIcons.Share2,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
@@ -161,8 +160,7 @@ fun WiFiFtpServerSection(
                                     maxLines = 1
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Icon(
-                                    MiniMeIcons.Copy,
+                                MiniMeIcon(MiniMeIcons.Copy,
                                     contentDescription = stringResource(R.string.ftp_copy_address),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(12.dp)
