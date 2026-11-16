@@ -9,7 +9,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 
 /** Responses 响应体 `output` 数组的解析结果。 */
-internal data class ResponsesOutput(
+data class ResponsesOutput(
     val text: String = "",
     val reasoning: String = "",
     val toolCalls: List<ToolCall> = emptyList(),
@@ -20,7 +20,7 @@ internal data class ResponsesOutput(
 )
 
 /** Responses 的 token 用量。 */
-internal data class ResponsesUsage(
+data class ResponsesUsage(
     val inputTokens: Int = 0,
     val outputTokens: Int = 0,
     val cachedInputTokens: Int = 0,
@@ -34,7 +34,7 @@ internal data class ResponsesUsage(
  * 自带 `call_id` / `name` / `arguments`），不是 assistant 消息 content 里的一个 part。
  * 按旧写法去 message.content 里找会永远解析不到工具调用。
  */
-internal fun parseResponsesOutput(output: JsonArray?): ResponsesOutput {
+fun parseResponsesOutput(output: JsonArray?): ResponsesOutput {
     if (output == null) return ResponsesOutput()
     val text = StringBuilder()
     val reasoning = StringBuilder()
@@ -109,7 +109,7 @@ private fun mimeForImageFormat(format: String?): String = when (format?.lowercas
     else -> "image/png"
 }
 
-internal fun parseResponsesUsage(usage: JsonObject?): ResponsesUsage {
+fun parseResponsesUsage(usage: JsonObject?): ResponsesUsage {
     if (usage == null) return ResponsesUsage()
     return ResponsesUsage(
         inputTokens = usage.int("input_tokens"),
@@ -125,7 +125,7 @@ internal fun parseResponsesUsage(usage: JsonObject?): ResponsesUsage {
  * Agent 循环不会自动续写，表现为回答被无声截断。截断原因的取值各家不一：
  * OpenAI 官方文档示例给 `max_tokens`，DeepSeek / 部分兼容服务给 `max_output_tokens`。
  */
-internal fun responsesStopReason(status: String?, incompleteReason: String?, hasToolCalls: Boolean): String? = when {
+fun responsesStopReason(status: String?, incompleteReason: String?, hasToolCalls: Boolean): String? = when {
     status == "incomplete" && incompleteReason in TRUNCATION_REASONS -> "length"
     hasToolCalls -> "tool_calls"
     status == "completed" -> "stop"
@@ -135,7 +135,7 @@ internal fun responsesStopReason(status: String?, incompleteReason: String?, has
 private val TRUNCATION_REASONS = setOf("max_output_tokens", "max_tokens")
 
 /** 流式事件产生的增量文本，供上层推送给 UI。 */
-internal sealed class ResponsesDelta {
+sealed class ResponsesDelta {
     data class Text(val text: String) : ResponsesDelta()
     data class Reasoning(val text: String) : ResponsesDelta()
 
@@ -152,7 +152,7 @@ internal sealed class ResponsesDelta {
  * 终止事件（completed / incomplete）携带完整 response 对象，用于兜底补齐、取 usage 与 status；
  * failed 直接抛 [StreamApiException] 交给重试判定。
  */
-internal class ResponsesStreamAccumulator {
+class ResponsesStreamAccumulator {
     var receivedContent: Boolean = false
         private set
 

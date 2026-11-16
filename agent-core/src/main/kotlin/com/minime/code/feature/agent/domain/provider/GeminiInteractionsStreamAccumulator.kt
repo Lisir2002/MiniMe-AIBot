@@ -25,7 +25,7 @@ data class InteractionsOutput(
 )
 
 /** Interactions 的 token 用量。 */
-internal data class InteractionsUsage(
+data class InteractionsUsage(
     val inputTokens: Int = 0,
     val outputTokens: Int = 0,
     val cachedInputTokens: Int = 0
@@ -36,7 +36,7 @@ internal data class InteractionsUsage(
  * （官方示例里 `total_tokens = input + output + thought`）。思考按输出价计费，故两者相加
  * 才是真实输出量。
  */
-internal fun parseInteractionsUsage(usage: JsonObject?): InteractionsUsage {
+fun parseInteractionsUsage(usage: JsonObject?): InteractionsUsage {
     if (usage == null) return InteractionsUsage()
     return InteractionsUsage(
         inputTokens = usage.int("total_input_tokens"),
@@ -112,11 +112,11 @@ fun parseInteractionSteps(steps: JsonArray?): InteractionsOutput {
  * 其余状态原样透出：`requires_action` 表示有工具待执行，`failed` / `budget_exceeded` 命中
  * [AIResponse.ABORT_STOP_REASONS]，由上层向用户解释而非静默完成。
  */
-internal fun interactionStopReason(status: String?): String? =
+fun interactionStopReason(status: String?): String? =
     if (status == "incomplete") "length" else status
 
 /** 流式事件产生的增量文本，供上层推送给 UI。 */
-internal sealed class InteractionsDelta {
+sealed class InteractionsDelta {
     data class Text(val text: String) : InteractionsDelta()
     data class Reasoning(val text: String) : InteractionsDelta()
 
@@ -135,7 +135,7 @@ internal sealed class InteractionsDelta {
  * 所以结束判定看 interaction 的 status 是否已到终态（[TERMINAL_STATUSES]）；只等 completed
  * 会一路读到流尾被误判成断流。
  */
-internal class GeminiInteractionsStreamAccumulator {
+class GeminiInteractionsStreamAccumulator {
     var receivedContent: Boolean = false
         private set
 

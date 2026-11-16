@@ -242,7 +242,7 @@ object AILogger {
     }
 
     /** 供测试：把 body 按日志脱敏规则序列化为 JSON 文本（不写盘）。 */
-    internal fun redactToJson(body: Any?): String =
+    fun redactToJson(body: Any?): String =
         java.io.StringWriter().also { writeBody(it, body) }.toString()
 
     /** 递归遍历 JSON 树，把媒体 base64 就地替换为占位符（树由 [GsonBuilder] 新生成，可安全修改）。 */

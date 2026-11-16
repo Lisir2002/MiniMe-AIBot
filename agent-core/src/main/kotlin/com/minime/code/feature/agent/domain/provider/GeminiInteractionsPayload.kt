@@ -18,7 +18,7 @@ import com.google.gson.JsonParser
  * 与 generateContent 不同：不再套 `[{functionDeclarations: [...]}]` 那一层，每个工具就是
  * `tools` 数组里一个带 `type: "function"` 的对象。
  */
-internal fun buildInteractionsTools(tools: List<AgentTool>): List<Map<String, Any>>? =
+fun buildInteractionsTools(tools: List<AgentTool>): List<Map<String, Any>>? =
     tools.takeIf { it.isNotEmpty() }?.map { tool ->
         mapOf(
             "type" to "function",
@@ -44,7 +44,7 @@ internal fun buildInteractionsTools(tools: List<AgentTool>): List<Map<String, An
  * **同一轮的多个 `function_call` 先连续写完，再集中写 `function_result`**，与官方无状态
  * 示例（先 append 整批模型 step，再 append 结果）一致。
  */
-internal fun buildInteractionsInput(messages: List<AgentMessage>): List<Any> {
+fun buildInteractionsInput(messages: List<AgentMessage>): List<Any> {
     val steps = mutableListOf<Any>()
     val consumed = BooleanArray(messages.size)
     for (i in messages.indices) {
@@ -162,7 +162,7 @@ private fun AgentMessage.ToolResultMessage.toInteractionResult(): Any {
  * 让历史走常规重建，避开正文双写。`user_input` / `function_result` 是我们自己发过去的输入回显，
  * 会被这里过滤掉——留着下一轮就重复了。
  */
-internal fun snapshotInteractionSteps(steps: List<JsonObject>): String? {
+fun snapshotInteractionSteps(steps: List<JsonObject>): String? {
     val generated = steps.filter { it.stepType() !in ECHOED_STEP_TYPES }
     val needsSnapshot = generated.any {
         it.stepType() == InteractionStep.THOUGHT || it.stepType() == InteractionStep.FUNCTION_CALL
@@ -171,13 +171,13 @@ internal fun snapshotInteractionSteps(steps: List<JsonObject>): String? {
     return JsonArray().apply { generated.forEach { add(it) } }.toString()
 }
 
-internal fun snapshotInteractionSteps(steps: JsonArray?): String? {
+fun snapshotInteractionSteps(steps: JsonArray?): String? {
     if (steps == null) return null
     return snapshotInteractionSteps(steps.mapNotNull { it.takeIf { el -> el.isJsonObject }?.asJsonObject })
 }
 
 /** 快照 → step 列表；为空或损坏时返回 null，由调用方回退重建逻辑。 */
-internal fun decodeInteractionSteps(json: String): List<JsonObject>? {
+fun decodeInteractionSteps(json: String): List<JsonObject>? {
     if (json.isBlank()) return null
     return runCatching {
         JsonParser.parseString(json).asJsonArray

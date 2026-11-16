@@ -13,14 +13,14 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 
 /** 把模型给出的工具入参 JSON 字符串解析为 JsonObject；为空或非法时回退为空对象。 */
-internal fun parseToolArguments(raw: String): JsonObject {
+fun parseToolArguments(raw: String): JsonObject {
     val trimmed = raw.trim()
     if (trimmed.isEmpty()) return JsonObject(emptyMap())
     return runCatching { Json.parseToJsonElement(trimmed).jsonObject }.getOrElse { JsonObject(emptyMap()) }
 }
 
 /** 工具定义 → Responses 扁平 function 定义；无工具时返回 null（不发 `tools` 字段）。 */
-internal fun buildResponsesTools(tools: List<AgentTool>): List<ResponsesToolDefinition>? =
+fun buildResponsesTools(tools: List<AgentTool>): List<ResponsesToolDefinition>? =
     tools.takeIf { it.isNotEmpty() }?.map { tool ->
         ResponsesToolDefinition(
             name = tool.name,
@@ -58,7 +58,7 @@ internal fun buildResponsesTools(tools: List<AgentTool>): List<ResponsesToolDefi
  * - OpenAI 官方的 reasoning item 必须带 `id`/`summary` 与 `encrypted_content`，
  *   只有当存有合法有效密文时才予以回传；若缺失则直接略过，防止只有明文触发服务端 400 拒绝。
  */
-internal fun buildResponsesInput(
+fun buildResponsesInput(
     systemPrompt: String,
     systemRole: String,
     messages: List<AgentMessage>,
@@ -152,7 +152,7 @@ internal fun buildResponsesInput(
  * 严格按照 OpenCode / OpenAI 防御规则：只有当包含非空字符串 `encrypted_content` 时才被允许回传；
  * 否则返回 null，绝不发送残缺的 reasoning item 导致服务端抛出 400 错误。
  */
-internal fun decodeResponsesEncryptedReasoning(thinkingBlocksJson: String?): Map<String, Any?>? {
+fun decodeResponsesEncryptedReasoning(thinkingBlocksJson: String?): Map<String, Any?>? {
     if (thinkingBlocksJson.isNullOrBlank()) return null
     return runCatching {
         val obj = JsonParser.parseString(thinkingBlocksJson).asJsonObject
