@@ -34,6 +34,10 @@ dependencies {
 
     // 若 core 的 compileOnly javax.inject 在此需要（Adapter 构造无 @Inject 运行时依赖，通常不需要）
     runtimeOnly("javax.inject:javax.inject:1")
+
+    // 单元测试：决策持久化 / 待决策查询 / 终态清理
+    testImplementation(kotlin("test"))
+    testImplementation("junit:junit:4.13.2")
 }
 
 application {

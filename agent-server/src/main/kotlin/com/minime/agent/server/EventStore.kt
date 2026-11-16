@@ -76,6 +76,21 @@ class EventStore(dbPath: String) : AutoCloseable {
                     updated_at INTEGER NOT NULL
                 )
             """.trimIndent())
+            // 待审批决策持久化：仅靠内存 pendingDecisions，进程重启或 App 重连后无法判断
+            // 一个 pending_decision 事件是否已处理。落库后 App 可按 status=pending 重建审批卡片。
+            st.executeUpdate("""
+                CREATE TABLE IF NOT EXISTS decisions (
+                    decision_id TEXT PRIMARY KEY,
+                    session_id TEXT NOT NULL,
+                    task_id TEXT NOT NULL DEFAULT '',
+                    tool_name TEXT NOT NULL DEFAULT '',
+                    args_preview TEXT NOT NULL DEFAULT '',
+                    status TEXT NOT NULL,
+                    created_at INTEGER NOT NULL,
+                    updated_at INTEGER NOT NULL
+                )
+            """.trimIndent())
+            st.executeUpdate("CREATE INDEX IF NOT EXISTS idx_decisions_session_status ON decisions(session_id, status)")
         }
     }
 
@@ -110,6 +125,12 @@ class EventStore(dbPath: String) : AutoCloseable {
     fun setTaskStatus(taskId: String, status: String) {
         conn.prepareStatement("UPDATE tasks SET status=?, updated_at=? WHERE id=?").use { ps ->
             ps.setString(1, status); ps.setLong(2, System.currentTimeMillis()); ps.setString(3, taskId); ps.executeUpdate()
+        }
+        // 任务进入终态时清理该任务残留的 pending 决策，避免 App 重连后显示「幽灵审批卡片」
+        if (status == TaskStatus.COMPLETED || status == TaskStatus.FAILED) {
+            conn.prepareStatement("UPDATE decisions SET status='cancelled', updated_at=? WHERE task_id=? AND status='pending'").use { ps ->
+                ps.setLong(1, System.currentTimeMillis()); ps.setString(2, taskId); ps.executeUpdate()
+            }
         }
     }
 
@@ -243,16 +264,68 @@ class EventStore(dbPath: String) : AutoCloseable {
         return 0L
     }
 
-    fun registerPending(decisionId: String): kotlinx.coroutines.CompletableDeferred<Boolean> {
+    /** 注册一个待审批决策：内存放 deferred 供 AgentRunner await，同时落库供 App 重连恢复。 */
+    @Synchronized
+    fun registerPending(
+        decisionId: String,
+        sessionId: String,
+        taskId: String,
+        toolName: String,
+        argsPreview: String
+    ): kotlinx.coroutines.CompletableDeferred<Boolean> {
         val d = kotlinx.coroutines.CompletableDeferred<Boolean>()
         pendingDecisions[decisionId] = d
+        val now = System.currentTimeMillis()
+        conn.prepareStatement("""
+            INSERT OR REPLACE INTO decisions(decision_id,session_id,task_id,tool_name,args_preview,status,created_at,updated_at)
+            VALUES(?,?,?,?,?,?,?,?)
+        """.trimIndent()).use { ps ->
+            ps.setString(1, decisionId); ps.setString(2, sessionId); ps.setString(3, taskId)
+            ps.setString(4, toolName); ps.setString(5, argsPreview)
+            ps.setString(6, "pending"); ps.setLong(7, now); ps.setLong(8, now)
+            ps.executeUpdate()
+        }
         return d
     }
 
+    /**
+     * 决策完成：把库状态从 pending 改成终态，并唤醒内存 deferred（若在本进程内）。
+     * 以数据库状态为准——进程重启后内存 deferred 已丢失，但用户仍须能对恢复出来的审批卡片做决策。
+     * 仅当该决策确实处于 pending 时才算成功（重复提交返回 false）。
+     */
+    @Synchronized
     fun resolvePending(decisionId: String, approve: Boolean): Boolean {
-        val d = pendingDecisions.remove(decisionId) ?: return false
-        if (!d.isCompleted) d.complete(approve)
-        return true
+        val now = System.currentTimeMillis()
+        val changed = conn.prepareStatement("UPDATE decisions SET status=?, updated_at=? WHERE decision_id=? AND status='pending'").use { ps ->
+            ps.setString(1, if (approve) "approved" else "rejected")
+            ps.setLong(2, now); ps.setString(3, decisionId)
+            ps.executeUpdate() > 0
+        }
+        val d = pendingDecisions.remove(decisionId)
+        if (d != null && !d.isCompleted) d.complete(approve)
+        return changed
+    }
+
+    /** 该会话仍挂起的审批项（App 断线重连后重建审批卡片用）。 */
+    @Synchronized
+    fun pendingDecisionsFor(sessionId: String): List<PendingDecisionDto> {
+        val out = mutableListOf<PendingDecisionDto>()
+        conn.prepareStatement("""
+            SELECT decision_id,task_id,tool_name,args_preview,session_id
+            FROM decisions WHERE session_id=? AND status='pending' ORDER BY created_at ASC
+        """.trimIndent()).use { ps ->
+            ps.setString(1, sessionId)
+            ps.executeQuery().use { rs ->
+                while (rs.next()) out += PendingDecisionDto(
+                    decisionId = rs.getString("decision_id"),
+                    taskId = rs.getString("task_id"),
+                    toolName = rs.getString("tool_name"),
+                    argsPreview = rs.getString("args_preview"),
+                    sessionId = rs.getString("session_id")
+                )
+            }
+        }
+        return out
     }
 
     override fun close() { conn.close() }

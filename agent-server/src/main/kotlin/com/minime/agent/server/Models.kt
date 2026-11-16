@@ -44,7 +44,22 @@ data class EventsResponse(
     val events: List<StoredEvent>,
     /** 下次拉取的游标；无新事件时等于请求的 after。 */
     val nextSeq: Long,
-    val taskStatus: String = "running"
+    val taskStatus: String = "running",
+    /**
+     * 该会话当前仍挂起、尚未决策的审批项。App 重开/回前台时据此恢复审批卡片——
+     * pending_decision 事件本身是历史回放，不能判断"是否已处理"，必须单独持久化状态。
+     */
+    val pendingDecisions: List<PendingDecisionDto> = emptyList()
+)
+
+/** 仍等待用户审批的工具调用（服务端持久化状态，供 App 断线重连恢复）。 */
+@Serializable
+data class PendingDecisionDto(
+    val decisionId: String,
+    val taskId: String = "",
+    val toolName: String = "",
+    val argsPreview: String = "",
+    val sessionId: String = ""
 )
 
 @Serializable

@@ -73,7 +73,9 @@ fun Application.configureServer(store: EventStore, runner: AgentRunner, token: S
             val nextSeq = events.lastOrNull()?.seq ?: store.latestSeq(sessionId)
             // 直接读任务真实状态（历史事件里永久保留 pending_decision，不能用它反推，否则会卡在 waiting_approval）
             val status = store.latestTaskStatus(sessionId) ?: "idle"
-            call.respond(EventsResponse(events, nextSeq, status))
+            // 挂起的审批项：App 断线/删后台/熄屏期间云端可能已挂起等审批，重连后据此恢复审批卡片
+            val pending = store.pendingDecisionsFor(sessionId)
+            call.respond(EventsResponse(events, nextSeq, status, pending))
         }
 
         post("/decisions/{id}") {

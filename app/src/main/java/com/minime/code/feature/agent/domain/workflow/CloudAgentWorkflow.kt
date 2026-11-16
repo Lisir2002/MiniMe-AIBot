@@ -69,9 +69,17 @@ class CloudAgentWorkflow @Inject constructor(
         // 2) 取得/创建云端 sessionId（同一 App 会话复用）
         val cloudSessionId = ensureCloudSession(baseUrl, auth, appSessionId)
 
-        // 3) 记住拉取游标：从云端该会话当前最大 seq 之后开始，避免回放历史
-        val before = api.events(baseUrl, auth, cloudSessionId, 0L)
-        var cursor = before.nextSeq
+        // 3) 从持久化游标续接：进程被杀/熄屏期间云端照常产生的事件，重开后不会丢。
+        //    前台实时流与「启动/回前台补拉」共用同一游标，避免重复回放或遗漏。
+        var cursor = settings.getPollCursor(appSessionId, baseUrl)
+        // 首次拉时 cursor=0，服务端会把历史事件全部返回；但 assistant/tool 用确定性 id 落库幂等，
+        // 且 task_completed/failed 只改状态，故重放安全。为避免首次把旧事件当成本轮实时流 emit，
+        // 先进一次「静默补拉」把游标推进到当前最新，再从这里等本轮新事件。
+        if (cursor == 0L) {
+            val warmup = api.events(baseUrl, auth, cloudSessionId, 0L)
+            cursor = warmup.nextSeq
+            settings.setPollCursor(appSessionId, baseUrl, cursor)
+        }
 
         // 4) 提交提问
         api.submitMessage(baseUrl, auth, cloudSessionId, SubmitMessageReq(userRequest, cfg))
@@ -89,6 +97,8 @@ class CloudAgentWorkflow @Inject constructor(
                     K_TASK_FAILED -> terminated = true
                 }
             }
+            // 每轮推进持久化游标：即使此刻进程被杀，重开后也从这里续接，不丢事件
+            settings.setPollCursor(appSessionId, baseUrl, cursor)
             if (terminated) break
         }
         if (!terminated) {
@@ -103,11 +113,13 @@ class CloudAgentWorkflow @Inject constructor(
             content = e.text,
             reasoning = e.reasoning,
             thinkingBlocksJson = e.thinkingBlocksJson,
-            signature = e.signature
+            signature = e.signature,
+            messageId = e.assistantMessageId // 确定性 id：与补拉落库幂等
         )
         K_TOOL_STARTED -> AgentEvent.ToolCallStarted(e.toolCallId, e.toolName, e.toolArgs)
         K_TOOL_FINISHED -> AgentEvent.ToolCallFinished(
-            id = e.toolCallId, toolName = e.toolName, result = e.text, isError = e.isError
+            id = e.toolCallId, toolName = e.toolName, result = e.text, isError = e.isError,
+            argsPreview = e.toolArgs
         )
         K_PENDING_DECISION -> AgentEvent.PendingDecision(
             decisionId = e.toolCallId, toolName = e.toolName,

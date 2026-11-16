@@ -206,7 +206,9 @@ class AgentRunner(
                         toolArgs = compactArgs(call), toolCallId = decisionId
                     ))
                     store.setTaskStatus(taskId, TaskStatus.WAITING_APPROVAL)
-                    val deferred = store.registerPending(decisionId)
+                    val deferred = store.registerPending(
+                        decisionId, sessionId, taskId, call.name, compactArgs(call)
+                    )
                     val approved = deferred.await()
                     store.setTaskStatus(taskId, TaskStatus.RUNNING)
                     if (!approved) {

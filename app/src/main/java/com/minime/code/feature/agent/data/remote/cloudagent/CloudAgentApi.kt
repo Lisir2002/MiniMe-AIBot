@@ -90,7 +90,21 @@ data class ProviderConfigDto(
 
 data class SubmitMessageResp(val taskId: String, val accepted: Boolean = true)
 
-data class EventsResp(val events: List<StoredEventDto>, val nextSeq: Long, val taskStatus: String = "running")
+data class EventsResp(
+    val events: List<StoredEventDto>,
+    val nextSeq: Long,
+    val taskStatus: String = "running",
+    val pendingDecisions: List<PendingDecisionDto> = emptyList()
+)
+
+/** 云端仍挂起、等待用户审批的工具调用（App 断线/重开后据此恢复审批卡片）。 */
+data class PendingDecisionDto(
+    val decisionId: String,
+    val taskId: String = "",
+    val toolName: String = "",
+    val argsPreview: String = "",
+    val sessionId: String = ""
+)
 
 data class StoredEventDto(
     val seq: Long,
@@ -106,7 +120,15 @@ data class StoredEventDto(
     val thinkingBlocksJson: String = "",
     val signature: String = "",
     val timestamp: Long = 0L
-)
+) {
+    /**
+     * 确定性 messageId：前台实时流与「重开/回前台补拉」落库必须共用同一个 id，
+     * 否则 Room 的 REPLACE 无法幂等，补拉会给同一条助手回复插入重复消息。
+     * seq 是服务端全局自增主键，稳定且唯一。
+     */
+    val assistantMessageId: String get() = "cloud_a_$seq"
+    val toolMessageId: String get() = "tool_${toolCallId.ifEmpty { "seq_$seq" }}"
+}
 
 data class DecisionReq(val approve: Boolean, val remember: Boolean = false)
 data class OkResp(val ok: Boolean = true)

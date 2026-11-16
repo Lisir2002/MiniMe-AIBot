@@ -3,7 +3,9 @@ package com.minime.code.feature.settings.data.repository
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.minime.code.core.datastore.preferencesCorruptionHandler
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -66,5 +68,33 @@ class CloudAgentSettingsRepository @Inject constructor(
 
     suspend fun clearCloudSessionId(appSessionId: String, serverUrl: String) {
         context.cloudAgentDataStore.edit { it.remove(stringPreferencesKey(cloudSessionKey(appSessionId, serverUrl))) }
+        // 同步清理游标，避免该会话映射删除后残留
+        context.cloudAgentDataStore.edit { it.remove(longPreferencesKey(cursorKey(appSessionId, serverUrl))) }
+    }
+
+    // ---- 持久化拉取游标 ----------------------------------------------------
+    // 关键：游标必须从「上次拉到哪里」继续，而不是每次都从 0 回放。
+    // 进程被杀 / 熄屏期间-cloud 端产生的事件，重开后靠这个游标一次性增量补齐。
+
+    private fun cursorKey(appSessionId: String, serverUrl: String) =
+        "cloud_cursor_${serverUrl.hashCode()}_$appSessionId"
+
+    /** 该会话上次已拉取到的服务端事件 seq；0 表示从头拉。 */
+    suspend fun getPollCursor(appSessionId: String, serverUrl: String): Long =
+        context.cloudAgentDataStore.data.map { it[longPreferencesKey(cursorKey(appSessionId, serverUrl))] ?: 0L }.first()
+
+    suspend fun setPollCursor(appSessionId: String, serverUrl: String, seq: Long) {
+        context.cloudAgentDataStore.edit { it[longPreferencesKey(cursorKey(appSessionId, serverUrl))] = seq }
+    }
+
+    /** 列出本服务器下所有建立过映射的 appSessionId，供 App 启动/回前台时批量补拉。 */
+    suspend fun allCloudAppSessionIds(serverUrl: String): List<String> {
+        val prefix = "cloud_session_${serverUrl.hashCode()}_"
+        return context.cloudAgentDataStore.data.map { prefs ->
+            prefs.asMap().keys.mapNotNull { key ->
+                val name = key.name
+                name.takeIf { it.startsWith(prefix) }?.removePrefix(prefix)
+            }
+        }.first()
     }
 }

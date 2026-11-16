@@ -7,7 +7,9 @@ import android.os.PowerManager
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -143,6 +145,7 @@ import javax.inject.Inject
 class AIAgentViewModel @Inject constructor(
     private val agentWorkflow: AgentWorkflow,
     private val cloudAgentWorkflow: com.minime.code.feature.agent.domain.workflow.CloudAgentWorkflow,
+    private val cloudAgentCatchUp: com.minime.code.feature.agent.domain.workflow.CloudAgentCatchUp,
     private val toolRegistry: ToolRegistry,
     private val agentMessageDao: AgentMessageDao,
     private val chatSessionDao: ChatSessionDao,
@@ -946,7 +949,68 @@ class AIAgentViewModel @Inject constructor(
         _cloudPendingDecisions.value = _cloudPendingDecisions.value + (sessionId to event)
     }
 
-    /** 用户决策云端待审批工具：回传云端 → 云端续跑 → 清除本地卡片。 */
+    private fun pendingDtoToEvent(sessionId: String, dto: com.minime.code.feature.agent.data.remote.cloudagent.PendingDecisionDto) =
+        AgentEvent.PendingDecision(
+            decisionId = dto.decisionId,
+            toolName = dto.toolName,
+            argsPreview = dto.argsPreview,
+            sessionId = sessionId
+        )
+
+    /**
+     * 从云端增量补拉一个会话的积压事件（进程被杀/熄屏期间云端照常产生），幂等落库 + 恢复审批卡片。
+     * 在 App 冷启动、回前台、切换会话、提交审批后调用。不干扰仍在前台实时流的活跃任务状态。
+     */
+    private suspend fun syncCloudSession(appSessionId: String) {
+        if (appSessionId.isBlank()) return
+        val result = runCatching { cloudAgentCatchUp.syncSession(appSessionId) }.getOrNull() ?: return
+        // 恢复云端仍挂起、尚未处理的审批卡片（内存态在进程重建后是空的）
+        if (result.pendingDecisions.isNotEmpty()) {
+            val restored = result.pendingDecisions
+                .filter { it.decisionId.isNotBlank() }
+                .associate { dto -> appSessionId to pendingDtoToEvent(appSessionId, dto) }
+            _cloudPendingDecisions.value = _cloudPendingDecisions.value + restored
+        } else if (result.terminated || result.taskStatus.equals("completed", true) ||
+            result.taskStatus.equals("failed", true)
+        ) {
+            // 任务已终态且无待决：清掉残留卡片，避免展示已处理的审批
+            _cloudPendingDecisions.value = _cloudPendingDecisions.value - appSessionId
+        }
+        // 校正 UI 状态：补拉发现任务已终态，但本进程没有活跃 job 时，会话可能停在陈旧状态
+        val hasActiveJob = sessionJobs[appSessionId]?.isActive == true
+        if (!hasActiveJob && result.terminated) {
+            if (result.taskStatus.equals("failed", true)) {
+                setAgentState(appSessionId, AgentUIState.Error("云端任务失败"))
+            } else {
+                setAgentState(appSessionId, AgentUIState.Result(WorkflowStatus.SUCCESS))
+                _completedSessions.value = _completedSessions.value + appSessionId
+            }
+        }
+    }
+
+    /** 批量补拉所有建立过云端映射的会话（App 冷启动/回前台）。 */
+    private fun syncCloudAll() = viewModelScope.launch(Dispatchers.IO) {
+        val results = runCatching { cloudAgentCatchUp.syncAll() }.getOrDefault(emptyMap())
+        for ((sid, r) in results) {
+            if (r.pendingDecisions.isNotEmpty()) {
+                val restored = r.pendingDecisions
+                    .filter { it.decisionId.isNotBlank() }
+                    .associate { dto -> sid to pendingDtoToEvent(sid, dto) }
+                _cloudPendingDecisions.value = _cloudPendingDecisions.value + restored
+            }
+            val hasActiveJob = sessionJobs[sid]?.isActive == true
+            if (!hasActiveJob && r.terminated) {
+                if (r.taskStatus.equals("failed", true)) {
+                    setAgentState(sid, AgentUIState.Error("云端任务失败"))
+                } else {
+                    setAgentState(sid, AgentUIState.Result(WorkflowStatus.SUCCESS))
+                    _completedSessions.value = _completedSessions.value + sid
+                }
+            }
+        }
+    }
+
+    /** 用户决策云端待审批工具：回传云端 → 云端续跑 → 清除卡片并补拉续跑结果。 */
     fun decideCloudPending(sessionId: String, decisionId: String, approve: Boolean) = viewModelScope.launch {
         runCatching {
             cloudAgentWorkflow.decide(decisionId, approve)
@@ -954,6 +1018,23 @@ class AIAgentViewModel @Inject constructor(
             FileLogger.e(TAG, "回传云端审批失败: $decisionId", e)
         }
         _cloudPendingDecisions.value = _cloudPendingDecisions.value - sessionId
+        // 云端收到决策后续跑；前台实时流可能已随旧进程销毁，靠补拉把续跑结果拉回
+        withContext(Dispatchers.IO) {
+            for (i in 0 until 6) {
+                if (i > 0) kotlinx.coroutines.delay(1500)
+                val r = runCatching { cloudAgentCatchUp.syncSession(sessionId) }.getOrNull() ?: continue
+                if (r.pendingDecisions.isNotEmpty()) {
+                    _cloudPendingDecisions.value = _cloudPendingDecisions.value +
+                        (sessionId to pendingDtoToEvent(sessionId, r.pendingDecisions.first()))
+                    break
+                }
+                if (r.terminated) {
+                    setAgentState(sessionId, AgentUIState.Result(WorkflowStatus.SUCCESS))
+                    _completedSessions.value = _completedSessions.value + sessionId
+                    break
+                }
+            }
+        }
     }
 
     private val _llmCallEvents = MutableSharedFlow<LlmCallEvent>(extraBufferCapacity = 16)
@@ -1257,6 +1338,9 @@ class AIAgentViewModel @Inject constructor(
                 }
                 _currentSessionId.value = targetId
 
+                // 完全云端模式：冷启动确定当前会话后，立即补拉该会话的积压事件/待决策
+                launch(Dispatchers.IO) { syncCloudSession(targetId) }
+
                 // 异步回收多余的空会话（保留当前 targetId），在后台执行，不卡主线程与首帧渲染。
                 if (recent != null) {
                     launch(Dispatchers.IO) {
@@ -1396,6 +1480,16 @@ class AIAgentViewModel @Inject constructor(
                 }
             }
         }
+
+        // 完全云端 Agent：冷启动 + 每次回到前台都做一次增量补拉。
+        // 云端在 App 熄火/删后台期间照常执行，重开/亮屏后靠这里把积压事件、待审批卡片拉回来。
+        syncCloudAll()
+        ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) {
+                // App 从后台回到前台：补拉所有云端会话（幂等，可安全重复）
+                syncCloudAll()
+            }
+        })
     }
 
     /** 子代理开始运行：卡片立刻进入「运行中」，不必等工具结果回来。 */
@@ -2930,6 +3024,8 @@ class AIAgentViewModel @Inject constructor(
     fun selectSession(id: String) {
         if (_currentSessionId.value == id) return
         _currentSessionId.value = id
+        // 切到某会话时补拉该会话云端积压事件（幂等）
+        viewModelScope.launch(Dispatchers.IO) { syncCloudSession(id) }
     }
 
     fun deleteSessions(ids: Set<String>) = viewModelScope.launch {
