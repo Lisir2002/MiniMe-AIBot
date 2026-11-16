@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -130,7 +131,50 @@ fun CloudAgentSettingsScreen(
                 }
             }
 
-            // 服务器地址
+            // 服务器选择：复用「连接与同步」已保存的服务器（单一事实源）
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(Radius.md),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(Spacing.md)) {
+                    Text(
+                        stringResource(R.string.cloud_agent_server_section),
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        stringResource(R.string.cloud_agent_use_saved_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(Spacing.sm))
+                    if (state.serverChoices.isEmpty()) {
+                        Text(
+                            stringResource(R.string.cloud_agent_no_saved_server),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.semanticColors.warning
+                        )
+                    } else {
+                        state.serverChoices.forEach { choice ->
+                            val selected = choice.id == state.selectedConnectionId
+                            OutlinedButton(
+                                onClick = { viewModel.selectServer(choice) },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                                    contentColor = if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurface
+                                )
+                            ) {
+                                MiniMeIcon(MiniMeIcons.Server, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("${choice.name}  ·  ${choice.host}")
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 服务器地址（手填兜底：选择已保存连接会自动填入；也可手动改）
             OutlinedTextField(
                 value = state.serverUrl,
                 onValueChange = { viewModel.setServerUrl(it) },
@@ -184,6 +228,115 @@ fun CloudAgentSettingsScreen(
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
+                }
+            }
+
+            // 版本对比 + 一键部署/升级（复用已保存连接的 SSH 能力）
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(Radius.md),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(Spacing.md)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            stringResource(R.string.cloud_agent_version_section),
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(onClick = { viewModel.checkServerVersion() }, enabled = !state.version.checking) {
+                            Text(stringResource(R.string.cloud_agent_refresh_version))
+                        }
+                    }
+                    val v = state.version
+                    when {
+                        v.checking -> Text(
+                            stringResource(R.string.cloud_agent_version_checking),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        v.current == null -> Text(
+                            stringResource(R.string.cloud_agent_version_unknown),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.semanticColors.warning
+                        )
+                        else -> {
+                            Text(
+                                stringResource(R.string.cloud_agent_version_current, v.current!!),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                stringResource(R.string.cloud_agent_version_expected, v.expected),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            if (v.protocol != null && v.protocol!! >= 0) {
+                                Text(
+                                    stringResource(R.string.cloud_agent_version_protocol, v.protocol!!),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            val matched = v.current == v.expected || v.expected == "1.0.0"
+                            Text(
+                                stringResource(if (matched) R.string.cloud_agent_version_ok else R.string.cloud_agent_version_mismatch),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (matched) MaterialTheme.semanticColors.success else MaterialTheme.semanticColors.warning
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(Spacing.sm))
+                    OutlinedButton(
+                        onClick = { viewModel.deployOrUpgrade() },
+                        enabled = !state.deploying && state.selectedConnectionId != null,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (state.deploying) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.cloud_agent_deploying))
+                        } else {
+                            MiniMeIcon(MiniMeIcons.UploadCloud, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.cloud_agent_deploy))
+                        }
+                    }
+                    state.deployResult?.let { result ->
+                        Spacer(Modifier.height(Spacing.sm))
+                        when {
+                            result == "no_connection" -> Text(
+                                stringResource(R.string.cloud_agent_deploy_need_conn),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.semanticColors.warning
+                            )
+                            result.startsWith("ok") -> Text(
+                                stringResource(R.string.cloud_agent_deploy_ok, result.removePrefix("ok:")),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.semanticColors.success
+                            )
+                            result.startsWith("fail") -> Text(
+                                stringResource(R.string.cloud_agent_deploy_fail, result.removePrefix("fail:")),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                    if (state.deployLog.isNotBlank()) {
+                        Spacer(Modifier.height(Spacing.sm))
+                        Text(
+                            stringResource(R.string.cloud_agent_deploy_log),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            state.deployLog,
+                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 200.dp)
+                                .verticalScroll(rememberScrollState())
+                        )
+                    }
                 }
             }
 

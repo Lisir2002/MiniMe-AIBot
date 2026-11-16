@@ -44,6 +44,30 @@ application {
     mainClass.set("com.minime.agent.server.MainKt")
 }
 
+// 版本号由发布 tag 派生（与 App 一致）：CI 打 v1.0.0-rc10 tag 时 GITHUB_REF_NAME=v1.0.0-rc10 → 1.0.0-rc10。
+// 本地/CI 未设环境变量时退化为 dev（Java 进程仍可跑，App 会显示"开发版"）。
+// 生成到 resources，App 通过 /version 读取，支撑"当前/期望版本"对比与升级提示。
+val serverVersionProvider = providers.environmentVariable("GITHUB_REF_NAME")
+    .orElse(providers.gradleProperty("agentServerVersion"))
+    .map { it.removePrefix("v") }
+    .orElse("dev")
+
+// 用 Gradle 内置 WriteProperties（原生支持 configuration cache，避免自定义 doLast 捕获脚本实例）。
+val generateVersionResource by tasks.registering(WriteProperties::class) {
+    property("version", serverVersionProvider)
+    outputFile = layout.buildDirectory.file("generated/version-resources/agent-server-version.properties").get().asFile
+}
+
+sourceSets {
+    main {
+        resources.srcDir(layout.buildDirectory.dir("generated/version-resources"))
+    }
+}
+
+tasks.named("processResources") {
+    dependsOn(generateVersionResource)
+}
+
 // 打可执行 fat jar，便于 scp 到用户服务器后 java -jar 直接运行
 tasks.jar {
     manifest { attributes["Main-Class"] = "com.minime.agent.server.MainKt" }

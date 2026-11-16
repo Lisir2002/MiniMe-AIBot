@@ -32,7 +32,18 @@ fun Application.configureServer(store: EventStore, runner: AgentRunner, token: S
 
     routing {
         get("/health") {
-            call.respond(mapOf("status" to "ok", "service" to "minime-agent-server"))
+            call.respond(mapOf(
+                "status" to "ok",
+                "service" to "minime-agent-server",
+                "version" to ServerVersion.version,
+                "protocol" to ServerVersion.PROTOCOL.toString()
+            ))
+        }
+
+        // 版本查询：App 设置页读取后与期望版本对比，提示是否需要升级服务端。
+        // 注意：/version 与 /health 一样放在鉴权之前，便于未配置 token 也能读到版本。
+        get("/version") {
+            call.respond(VersionResponse(version = ServerVersion.version, protocol = ServerVersion.PROTOCOL))
         }
 
         // 可选的 Bearer token 鉴权（第一版：环境变量 MINIME_TOKEN 为空则不校验）

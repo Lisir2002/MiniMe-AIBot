@@ -2032,4 +2032,25 @@
     <string name="cloud_agent_approve">批准</string>
     <string name="cloud_agent_reject">拒绝</string>
     <string name="cloud_agent_waiting">等待你的决策，云端任务已挂起…</string>
+
+    <!-- 连接复用 + 版本系统 + 一键部署/升级 -->
+    <string name="cloud_agent_server_section">服务器（复用已保存连接）</string>
+    <string name="cloud_agent_select_server">选择已保存的服务器</string>
+    <string name="cloud_agent_no_saved_server">还没有已保存的服务器，请先在「连接与同步」添加</string>
+    <string name="cloud_agent_use_saved_hint">选择后自动填入 http://服务器IP:8080，无需手动输入</string>
+    <string name="cloud_agent_version_section">服务端版本</string>
+    <string name="cloud_agent_version_current">当前版本：%1$s</string>
+    <string name="cloud_agent_version_expected">App 期望：%1$s</string>
+    <string name="cloud_agent_version_unknown">未连接 / 无法读取</string>
+    <string name="cloud_agent_version_ok">版本匹配</string>
+    <string name="cloud_agent_version_mismatch">版本不一致，建议升级服务端</string>
+    <string name="cloud_agent_version_checking">正在检查…</string>
+    <string name="cloud_agent_version_protocol">协议版本：%1$d</string>
+    <string name="cloud_agent_deploy">一键部署 / 升级云端服务</string>
+    <string name="cloud_agent_deploying">正在部署，请稍候…</string>
+    <string name="cloud_agent_deploy_need_conn">请先选择一个已保存的服务器</string>
+    <string name="cloud_agent_deploy_ok">部署成功，服务端版本 %1$s</string>
+    <string name="cloud_agent_deploy_fail">部署失败：%1$s</string>
+    <string name="cloud_agent_deploy_log">部署日志</string>
+    <string name="cloud_agent_refresh_version">重新检查版本</string>
 </resources>

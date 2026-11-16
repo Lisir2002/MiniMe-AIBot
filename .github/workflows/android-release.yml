@@ -87,6 +87,11 @@ jobs:
       - name: Build arm64 Release APK
         run: ./gradlew :app:assembleArmsoloRelease --stacktrace
 
+      # 构建云端 agent-server fat jar（版本号由 GITHUB_REF_NAME 注入）。
+      # 作为 Release 资产发布，供 App「一键部署/升级云端 Agent」从 GitHub Release 下载到用户服务器。
+      - name: Build agent-server jar
+        run: ./gradlew :agent-server:jar --stacktrace
+
       # 产物重命名为「包名-架构-版本」格式，并保留 R8 混淆映射（mapping.txt）用于崩溃堆栈反混淆。
       - name: Rename APK & collect mapping
         run: |
@@ -104,6 +109,13 @@ jobs:
             gzip -c "app/build/outputs/mapping/armsoloRelease/mapping.txt" > "dist/minimecode-arm64-${ver}-mapping.txt.gz"
           else
             echo "::warning::missing mapping.txt（R8 混淆映射）"
+          fi
+          # 云端 agent-server jar：重命名为带版本名，供升级通道按 tag 精确定位下载。
+          if [[ -f "agent-server/build/libs/agent-server.jar" ]]; then
+            cp "agent-server/build/libs/agent-server.jar" "dist/agent-server-${ver}.jar"
+          else
+            echo "::error::missing agent-server.jar"
+            exit 1
           fi
           ls -lh dist/
 
@@ -172,5 +184,6 @@ jobs:
           files: |
             dist/minimecode-arm64-*.apk
             dist/minimecode-arm64-*mapping.txt.gz
+            dist/agent-server-*.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

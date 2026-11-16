@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.minime.code.feature.agent.domain.container.ContainerProfile
+import com.minime.code.feature.agent.domain.workflow.CloudAgentServerManager
 import com.minime.code.feature.agent.domain.container.RootfsSource
 import com.minime.code.feature.agent.domain.container.SshLoginKey
 import com.minime.code.feature.agent.domain.container.SshLoginKeyStore
@@ -40,7 +41,9 @@ class CloudProvisionViewModel @Inject constructor(
     private val containerSettingsRepository: ContainerSettingsRepository,
     private val executionModeRepository: ExecutionModeRepository,
     private val executionModeHolder: ExecutionModeHolder,
-    private val loginKeyStore: SshLoginKeyStore
+    private val loginKeyStore: SshLoginKeyStore,
+    private val serverManager: CloudAgentServerManager,
+    private val cloudAgentSettings: com.minime.code.feature.settings.data.repository.CloudAgentSettingsRepository
 ) : ViewModel() {
 
     val provisionState: StateFlow<CloudProvisionUiState> = provisioner.uiState
@@ -148,6 +151,22 @@ class CloudProvisionViewModel @Inject constructor(
             containerSettingsRepository.setActiveProfile(profile.id)
             executionModeRepository.setExecutionMode(ExecutionMode.REMOTE_SSH)
             executionModeHolder.setMode(ExecutionMode.REMOTE_SSH)
+
+            // 联动：推导并回填云端 Agent 地址（host 复用同一台服务器，端口固定 8080）。
+            cloudAgentSettings.setServerUrl("http://${params.host}:8080")
+
+            // 联动：后台顺带部署 agent-server（失败不影响向导完成；用户可在设置页重试/查看日志）。
+            val authStr = when (val a = params.auth) {
+                is RemoteAuth.Password -> a.password
+                is RemoteAuth.PrivateKey -> a.privateKeyPath
+            }
+            val deployConn = conn.copy(
+                password = if (params.auth is RemoteAuth.Password) authStr else "",
+                authType = if (params.auth is RemoteAuth.PrivateKey) "key" else "password",
+                authData = authStr
+            )
+            runCatching { serverManager.deployOrUpgrade(deployConn) { /* 向导阶段不逐行刷 UI */ } }
+
             _enabled.value = true
         }
     }

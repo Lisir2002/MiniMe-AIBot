@@ -164,6 +164,8 @@ android {
         compose = true
         // UserService 走 AIDL 跨进程接口（app/src/main/aidl），显式开启以免依赖 AGP 默认值。
         aidl = true
+        // 云端 Agent 部署/升级需要读取 App 版本名作为「期望服务端版本」，AGP 8 默认关闭，需显式开启。
+        buildConfig = true
     }
 
 

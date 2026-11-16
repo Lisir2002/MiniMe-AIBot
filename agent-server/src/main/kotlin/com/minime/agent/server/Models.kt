@@ -75,6 +75,14 @@ data class OkResponse(val ok: Boolean = true)
 @Serializable
 data class ErrorResponse(val error: String)
 
+/** 服务端版本信息：供 App 做「当前/期望版本」对比与协议兼容性判断。 */
+@Serializable
+data class VersionResponse(
+    val service: String = "minime-agent-server",
+    val version: String,
+    val protocol: Int
+)
+
 // ---------- 事件（落库并回传给 App）----------
 
 /**

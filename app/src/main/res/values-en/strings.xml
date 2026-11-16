@@ -2033,4 +2033,24 @@
     <string name="cloud_agent_approve">Approve</string>
     <string name="cloud_agent_reject">Reject</string>
     <string name="cloud_agent_waiting">Waiting for your decision, cloud task is paused…</string>
+
+    <string name="cloud_agent_server_section">Server (reuse saved connections)</string>
+    <string name="cloud_agent_select_server">Select a saved server</string>
+    <string name="cloud_agent_no_saved_server">No saved server yet. Add one in Connection &amp; Sync first.</string>
+    <string name="cloud_agent_use_saved_hint">Selecting fills in http://server-ip:8080 automatically</string>
+    <string name="cloud_agent_version_section">Server version</string>
+    <string name="cloud_agent_version_current">Current: %1$s</string>
+    <string name="cloud_agent_version_expected">App expects: %1$s</string>
+    <string name="cloud_agent_version_unknown">Not connected / unavailable</string>
+    <string name="cloud_agent_version_ok">Version matched</string>
+    <string name="cloud_agent_version_mismatch">Version differs, upgrade recommended</string>
+    <string name="cloud_agent_version_checking">Checking…</string>
+    <string name="cloud_agent_version_protocol">Protocol: %1$d</string>
+    <string name="cloud_agent_deploy">Deploy / upgrade cloud service</string>
+    <string name="cloud_agent_deploying">Deploying, please wait…</string>
+    <string name="cloud_agent_deploy_need_conn">Select a saved server first</string>
+    <string name="cloud_agent_deploy_ok">Deployed, server version %1$s</string>
+    <string name="cloud_agent_deploy_fail">Deployment failed: %1$s</string>
+    <string name="cloud_agent_deploy_log">Deployment log</string>
+    <string name="cloud_agent_refresh_version">Recheck version</string>
 </resources>
