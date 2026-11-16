@@ -142,6 +142,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AIAgentViewModel @Inject constructor(
     private val agentWorkflow: AgentWorkflow,
+    private val cloudAgentWorkflow: com.minime.code.feature.agent.domain.workflow.CloudAgentWorkflow,
     private val toolRegistry: ToolRegistry,
     private val agentMessageDao: AgentMessageDao,
     private val chatSessionDao: ChatSessionDao,
@@ -935,6 +936,25 @@ class AIAgentViewModel @Inject constructor(
     private val _compactionFailedSessions = MutableStateFlow<Set<String>>(emptySet())
     private val _contextUsages = MutableStateFlow<Map<String, AgentEvent.ContextUsage>>(emptyMap())
     val contextUsages: StateFlow<Map<String, AgentEvent.ContextUsage>> = _contextUsages.asStateFlow()
+
+    /** 完全云端模式：每个会话当前待审批的云端工具决策（null 表示无待决）。UI 据此展示审批卡片。 */
+    private val _cloudPendingDecisions = MutableStateFlow<Map<String, AgentEvent.PendingDecision>>(emptyMap())
+    val cloudPendingDecisions: StateFlow<Map<String, AgentEvent.PendingDecision>> = _cloudPendingDecisions.asStateFlow()
+
+    /** 收到云端待决策事件：记录到状态供 UI 展示审批卡片。 */
+    private fun setPendingCloudDecision(sessionId: String, event: AgentEvent.PendingDecision) {
+        _cloudPendingDecisions.value = _cloudPendingDecisions.value + (sessionId to event)
+    }
+
+    /** 用户决策云端待审批工具：回传云端 → 云端续跑 → 清除本地卡片。 */
+    fun decideCloudPending(sessionId: String, decisionId: String, approve: Boolean) = viewModelScope.launch {
+        runCatching {
+            cloudAgentWorkflow.decide(decisionId, approve)
+        }.onFailure { e ->
+            FileLogger.e(TAG, "回传云端审批失败: $decisionId", e)
+        }
+        _cloudPendingDecisions.value = _cloudPendingDecisions.value - sessionId
+    }
 
     private val _llmCallEvents = MutableSharedFlow<LlmCallEvent>(extraBufferCapacity = 16)
     /** 每次单次 LLM 请求返回事件（携带单次 Token 统计）。 */
@@ -2190,6 +2210,12 @@ class AIAgentViewModel @Inject constructor(
                     is AgentEvent.ModeChanged -> {
                         // 模式切换事件：PlanApprovalManager 已在 workflow 层面挂起等待用户批准
                         // 这里只更新 streamingText 显示
+                    }
+                    is AgentEvent.PendingDecision -> {
+                        // 完全云端模式：云端 Agent 挂起等审批。展示待决策卡片，
+                        // 用户决策后由 UI 调 CloudAgentClient.decide() 回传，云端续跑。
+                        turnHadActivity = true
+                        setPendingCloudDecision(sessionId, event)
                     }
                 }
             }
