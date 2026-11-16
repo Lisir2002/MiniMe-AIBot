@@ -382,7 +382,20 @@ class CloudProvisioner @Inject constructor(
     // ---- 命令生成 ----
 
     private fun commandFor(actionId: String, params: ProvisionParams): String {
-        val ws = shellQuote(params.workspacePath.replace("~", "\$HOME"))
+        // 工作区路径必须让远程 shell 展开 ~/$HOME 成绝对路径（docker -v 要求绝对宿主路径），
+        // 因此不能用单引号（会阻止展开）。改用双引号，并转义用户路径里会破坏双引号或造成
+        // 命令注入的字符：反斜杠、双引号、反引号；$ 仅保留我们主动注入的 ${HOME} 展开，
+        // 用户路径中原有的 $ 需转义以防意外变量展开。
+        // 用占位符避免 ~ 转换出的 $HOME 被后续的 $ 转义误伤：
+        // 1) 先把 ~ 换成不会出现的标记；2) 转义用户输入里的 \ " ` $；3) 把标记还原为 $HOME（唯一允许展开的变量）。
+        val homeMark = "\u0000HOME\u0000"
+        val ws = "\"" + params.workspacePath
+            .replace("~", homeMark)
+            .replace("\\", "\\\\")
+            .replace("`", "\\`")
+            .replace("\"", "\\\"")
+            .replace("$", "\\$")
+            .replace(homeMark, "${'$'}HOME") + "\""
         return when (actionId) {
             "prereq.dirs" -> "mkdir -p \"\$HOME/.minimecode\" $ws && echo '工具目录就绪'"
             "prereq.curl" -> "if command -v curl >/dev/null 2>&1; then echo 'curl 已存在'; elif command -v wget >/dev/null 2>&1; then echo 'wget 可用（curl 非必需）'; else echo '缺少 curl/wget，请手动安装'; fi"
