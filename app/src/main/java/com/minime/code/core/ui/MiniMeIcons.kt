@@ -3712,4 +3712,112 @@ object MiniMeIcons {
         }
         }.build()
     }
+
+    val Scissors: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Scissors",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+        path(
+            stroke = SolidColor(Color(0xFF000000)),
+            strokeLineWidth = 2f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round
+        ) {
+            moveTo(20f, 4f)
+            lineTo(8.12f, 15.88f)
+            moveTo(14.47f, 14.48f)
+            lineTo(20f, 20f)
+            moveTo(8.12f, 8.12f)
+            lineTo(12f, 12f)
+            moveTo(9f, 6f)
+            arcTo(3f, 3f, 0f, true, true, 3f, 6f)
+            arcTo(3f, 3f, 0f, true, true, 9f, 6f)
+            moveTo(9f, 18f)
+            arcTo(3f, 3f, 0f, true, true, 3f, 18f)
+            arcTo(3f, 3f, 0f, true, true, 9f, 18f)
+        }
+        }.build()
+    }
+
+    val Pin: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Pin",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+        path(
+            stroke = SolidColor(Color(0xFF000000)),
+            strokeLineWidth = 2f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round
+        ) {
+            moveTo(15f, 10f)
+            arcTo(3f, 3f, 0f, true, true, 9f, 10f)
+            arcTo(3f, 3f, 0f, true, true, 15f, 10f)
+            moveTo(21f, 10f)
+            curveTo(21f, 17f, 12f, 23f, 12f, 23f)
+            curveTo(6f, 19f, 3f, 14.67f, 3f, 10f)
+            curveTo(4.09f, 7.71f, 6.98f, 2.11f, 9.41f, 1.38f)
+        }
+        }.build()
+    }
+
+    val Undo: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Undo",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+        path(
+            stroke = SolidColor(Color(0xFF000000)),
+            strokeLineWidth = 2f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round
+        ) {
+            moveTo(9f, 14f)
+            lineTo(4f, 9f)
+            lineTo(9f, 4f)
+            moveTo(20f, 20f)
+            verticalLineTo(13f)
+            curveTo(18.11f, 15.41f, 12.37f, 16.49f, 15.39f, 16.95f)
+            curveTo(18.42f, 17.42f, 20.83f, 14.45f, 19.74f, 11.58f)
+            curveTo(18.66f, 8.72f, 14.89f, 8.09f, 12.93f, 10.44f)
+            horizontalLineTo(4f)
+        }
+        }.build()
+    }
+
+    val Redo: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Redo",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+        path(
+            stroke = SolidColor(Color(0xFF000000)),
+            strokeLineWidth = 2f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round
+        ) {
+            moveTo(15f, 14f)
+            lineTo(20f, 9f)
+            lineTo(15f, 4f)
+            moveTo(4f, 20f)
+            verticalLineTo(13f)
+            curveTo(4.35f, 12.68f, 6.07f, 9.46f, 6.51f, 9.29f)
+            horizontalLineTo(20f)
+        }
+        }.build()
+    }
+
 }

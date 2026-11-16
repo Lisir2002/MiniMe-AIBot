@@ -40,9 +40,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCut
-import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -1130,7 +1127,7 @@ private fun ClipboardIndicator(
         modifier = modifier.size(32.dp)
     ) {
         Icon(
-            imageVector = if (clipboard.isCut) Icons.Filled.ContentCut else MiniMeIcons.Copy,
+            imageVector = if (clipboard.isCut) MiniMeIcons.Scissors else MiniMeIcons.Copy,
             contentDescription = stringResource(
                 if (clipboard.isCut) R.string.file_browser_clipboard_cut
                 else R.string.file_browser_clipboard_copy
@@ -1208,7 +1205,7 @@ private fun FileTreeActionSheet(
                     onClick = onCopy
                 )
                 SheetActionRow(
-                    icon = Icons.Filled.ContentCut,
+                    icon = MiniMeIcons.Scissors,
                     label = stringResource(R.string.common_cut),
                     tint = MaterialTheme.colorScheme.onSurface,
                     onClick = onCut
@@ -1399,7 +1396,7 @@ private fun SessionActionSheet(
                     .padding(bottom = Spacing.md)
             )
             SheetActionRow(
-                icon = Icons.Outlined.PushPin,
+                icon = MiniMeIcons.Pin,
                 label = stringResource(if (session.isPinned) R.string.chat_unpin_session else R.string.chat_pin_session),
                 tint = MaterialTheme.colorScheme.onSurface,
                 onClick = {

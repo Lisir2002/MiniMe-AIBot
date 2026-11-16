@@ -37,9 +37,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Redo
-import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -259,7 +256,7 @@ fun CodeEditorScreen(
                             enabled = editable && canUndo
                         ) {
                             Icon(
-                                Icons.AutoMirrored.Filled.Undo,
+                                MiniMeIcons.Undo,
                                 contentDescription = stringResource(R.string.editor_undo)
                             )
                         }
@@ -268,7 +265,7 @@ fun CodeEditorScreen(
                             enabled = editable && canRedo
                         ) {
                             Icon(
-                                Icons.AutoMirrored.Filled.Redo,
+                                MiniMeIcons.Redo,
                                 contentDescription = stringResource(R.string.editor_redo)
                             )
                         }

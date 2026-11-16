@@ -21,15 +21,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import com.minime.code.core.ui.AdaptiveModalBottomSheet
+import com.minime.code.core.ui.MiniMeIcons
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -247,7 +245,7 @@ private fun TerminalFontSection(
         )
         TextButton(onClick = { importLauncher.launch(arrayOf("*/*")) }) {
             Icon(
-                imageVector = Icons.Outlined.FileUpload,
+                imageVector = MiniMeIcons.Upload,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp)
             )
@@ -286,7 +284,7 @@ private fun TerminalFontSection(
                 label = { Text(font.displayName) },
                 trailingIcon = {
                     Icon(
-                        imageVector = Icons.Outlined.Close,
+                        imageVector = MiniMeIcons.X,
                         contentDescription = stringResource(R.string.terminal_font_delete),
                         modifier = Modifier
                             .size(16.dp)

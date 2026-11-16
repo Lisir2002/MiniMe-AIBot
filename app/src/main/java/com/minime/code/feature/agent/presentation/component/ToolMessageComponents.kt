@@ -33,8 +33,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Construction
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -670,7 +668,7 @@ internal fun ToolCallGroupHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = Icons.Outlined.Construction,
+            imageVector = MiniMeIcons.Tool,
             contentDescription = null,
             tint = Brand.IconGray,
             modifier = Modifier.size(ChatStyle.rowIconSize)
