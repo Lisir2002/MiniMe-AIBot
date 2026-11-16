@@ -159,16 +159,8 @@ data class AgentUIMessage(
     val cachedInputTokens: Int = 0
 )
 
-@Immutable
-@Serializable
-data class AgentAttachment(
-    val fileName: String,
-    val containerPath: String,
-    val localPath: String,
-    val mimeType: String,
-    val sizeBytes: Long,
-    val isImage: Boolean
-)
+// AgentAttachment 已上移至 agent-core（com.minime.code.feature.agent.presentation.AgentAttachment），
+// 因 AgentEvent 协议层引用它、需被 JVM 服务端复用。此处保留同名 import 不需要——同包可见。
 
 enum class MessageRole {
     USER, ASSISTANT, TOOL

@@ -1,7 +1,5 @@
 package com.minime.code.core.util
 
-import android.content.Context
-import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
@@ -35,6 +33,14 @@ enum class LogLevel {
  */
 object FileLogger {
 
+    /**
+     * logcat 镜像输出宿：宿主启动时注入（Android 端接 android.util.Log，JVM 端可留空或接 stderr）。
+     * [level] 为 V/D/I/W/E；[throwable] 可空。
+     */
+    @Volatile
+    var logcatSink: (level: String, tag: String, message: String, throwable: Throwable?) -> Unit =
+        { _, _, _, _ -> }
+
     private const val TAG = "FileLogger"
     private const val MAX_AGE_DAYS = 7
     private const val MAX_FILE_BYTES = 5 * 1024 * 1024 // 单个日志文件上限 5MB（VERBOSE 下增长较快）
@@ -66,22 +72,19 @@ object FileLogger {
         if (minLevel != level) {
             minLevel = level
             // 等级变更本身用 logcat 记录，避免被新阈值过滤掉
-            Log.i(TAG, "日志等级切换为 $level")
+            logcatSink("I", TAG, "日志等级切换为 $level", null)
         }
     }
 
     private fun shouldLog(level: LogLevel): Boolean = level.ordinal >= minLevel.ordinal
 
-    /** 初始化日志目录。重复调用安全。 */
-    fun init(context: Context) {
+    /** 初始化日志目录。重复调用安全。[baseDir] 由宿主提供；[debuggable] 决定是否默认全量记录（Android 端传 FLAG_DEBUGGABLE）。 */
+    fun init(baseDir: File, debuggable: Boolean = false) {
         if (logDir != null) return
-        // 优先外部私有目录，便于用户用文件管理器查看；不可用时回退内部存储。
-        val base = context.getExternalFilesDir(null) ?: context.filesDir
-        val dir = File(base, "logs").apply { mkdirs() }
+        val dir = File(baseDir, "logs").apply { mkdirs() }
         logDir = dir
         // 默认等级按构建类型兜底：release 不开全量 VERBOSE（AI 高频工具日志会持续刷盘）。
         // 仅当从未设置过时生效——用户/持久化设置随后经 setMinLevel 覆盖，永远优先。
-        val debuggable = (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
         if (minLevel == LogLevel.VERBOSE) {
             minLevel = if (debuggable) LogLevel.VERBOSE else LogLevel.INFO
         }
@@ -91,23 +94,23 @@ object FileLogger {
 
     fun v(tag: String, message: String) {
         if (!shouldLog(LogLevel.VERBOSE)) return
-        Log.v(tag, message)
+        logcatSink("V", tag, message, null)
         write("VERBOSE", tag, message, null)
     }
 
     fun d(tag: String, message: String) {
         if (!shouldLog(LogLevel.DEBUG)) return
-        Log.d(tag, message)
+        logcatSink("D", tag, message, null)
         write("DEBUG", tag, message, null)
     }
 
     fun i(tag: String, message: String) {
         if (!shouldLog(LogLevel.INFO)) return
-        Log.i(tag, message)
+        logcatSink("I", tag, message, null)
         write("INFO", tag, message, null)
     }
 
-    internal fun memoryCheckpoint(
+    fun memoryCheckpoint(
         tag: String,
         stage: String,
         elapsedMs: Long? = null,
@@ -127,13 +130,13 @@ object FileLogger {
 
     fun w(tag: String, message: String, throwable: Throwable? = null) {
         if (!shouldLog(LogLevel.WARN)) return
-        Log.w(tag, message, throwable)
+        logcatSink("W", tag, message, throwable)
         write("WARN", tag, message, throwable)
     }
 
     fun e(tag: String, message: String, throwable: Throwable? = null) {
         if (!shouldLog(LogLevel.ERROR)) return
-        Log.e(tag, message, throwable)
+        logcatSink("E", tag, message, throwable)
         write("ERROR", tag, message, throwable)
     }
 
@@ -168,7 +171,7 @@ object FileLogger {
                     val size = file.length()
                     if (file.delete()) freed.addAndGet(size)
                 }
-            }.onFailure { Log.e(TAG, "清空日志失败", it) }
+            }.onFailure { logcatSink("E", TAG, "清空日志失败", it) }
             latch.countDown()
         }
         runCatching { latch.await(5, java.util.concurrent.TimeUnit.SECONDS) }
@@ -215,7 +218,7 @@ object FileLogger {
                     ioExecutor.schedule({ runCatching { flushWriter() } }, FLUSH_DELAY_MS, TimeUnit.MILLISECONDS)
                 }
             }.onFailure {
-                Log.e(TAG, "写入日志失败", it)
+                logcatSink("E", TAG, "写入日志失败", it)
             }
         }
     }

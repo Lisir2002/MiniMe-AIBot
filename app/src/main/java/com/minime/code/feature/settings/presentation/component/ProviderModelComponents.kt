@@ -608,7 +608,8 @@ private fun ModelMetadata?.hasVisibleTags(): Boolean {
     if (this == null) return false
     if (supportsVision || supportsTools) return true
     val input = inputTokens?.takeIf { it > 0 } ?: contextTokens.takeIf { it > 0 }
-    return input != null || (outputTokens != null && outputTokens > 0)
+    val out = outputTokens // 跨模块 public property 不可 smart cast，落到局部变量
+    return input != null || (out != null && out > 0)
 }
 
 private fun formatTokenLimit(tokens: Int): String =
