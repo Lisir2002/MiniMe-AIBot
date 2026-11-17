@@ -351,6 +351,7 @@
     <string name="notification_approval_label_permission">需要授权</string>
     <string name="notification_approval_label_question">需要回答</string>
     <string name="notification_approval_label_plan">等待计划审批</string>
+    <string name="notification_approval_label_cloud">云端等待授权</string>
     <string name="notification_approval_action_allow">允许</string>
     <string name="notification_approval_action_reject">拒绝</string>
     <string name="notification_approval_action_approve_plan">批准</string>
@@ -2053,4 +2054,29 @@
     <string name="cloud_agent_deploy_fail">部署失败：%1$s</string>
     <string name="cloud_agent_deploy_log">部署日志</string>
     <string name="cloud_agent_refresh_version">重新检查版本</string>
+
+    <!-- 部署前容器检测：核对专属 AIAgent 容器是否存在、版本是否最新 -->
+    <string name="cloud_agent_inspect_section">容器检测</string>
+    <string name="cloud_agent_inspect">检测容器</string>
+    <string name="cloud_agent_inspecting">正在检测服务器…</string>
+    <string name="cloud_agent_inspect_hint">部署前自动检测服务器上的专属 AIAgent 容器，核对版本后决定安装、升级或跳过。</string>
+    <string name="cloud_agent_inspect_absent">未检测到专属容器，将安装最新版本 %1$s</string>
+    <string name="cloud_agent_inspect_upgrade">已安装容器（版本 %1$s），最新版本 %2$s，建议升级</string>
+    <string name="cloud_agent_inspect_latest">已安装容器，且已是最新版本 %1$s，无需重装</string>
+    <string name="cloud_agent_inspect_unknown">无法确认容器状态，可尝试直接部署</string>
+    <string name="cloud_agent_inspect_need_conn">请先选择一个已保存的服务器再检测</string>
+    <string name="cloud_agent_deploy_install">安装 AIAgent 容器</string>
+    <string name="cloud_agent_deploy_upgrade">升级到最新版本</string>
+    <string name="cloud_agent_deploy_skip">已是最新版本，无需操作</string>
+
+    <!-- 运行与连接：合并「容器与镜像 / 连接与同步 / 完全云端」后的总入口 -->
+    <string name="runtime_connection_title">运行与连接</string>
+    <string name="runtime_connection_desc">管理代码在哪里运行：本机容器，或你自己的云服务器上的 AIAgent 容器。</string>
+    <string name="runtime_local_title">本机运行</string>
+    <string name="runtime_local_desc">在手机本地的容器中运行代码与工具，无需服务器。</string>
+    <string name="runtime_local_open">管理本地容器与镜像</string>
+    <string name="runtime_cloud_title">服务器与云端</string>
+    <string name="runtime_cloud_desc">连接你的云服务器，把它部署为完全云端 AIAgent，让任务在云端持续运行。</string>
+    <string name="runtime_cloud_open">管理服务器与云端 Agent</string>
+    <string name="runtime_cloud_badge">完全云端</string>
 </resources>

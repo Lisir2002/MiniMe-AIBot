@@ -351,6 +351,7 @@
     <string name="notification_approval_label_permission">Permission required</string>
     <string name="notification_approval_label_question">Answer required</string>
     <string name="notification_approval_label_plan">Plan approval</string>
+    <string name="notification_approval_label_cloud">Cloud permission required</string>
     <string name="notification_approval_action_allow">Allow</string>
     <string name="notification_approval_action_reject">Reject</string>
     <string name="notification_approval_action_approve_plan">Approve</string>
@@ -2053,4 +2054,29 @@
     <string name="cloud_agent_deploy_fail">Deployment failed: %1$s</string>
     <string name="cloud_agent_deploy_log">Deployment log</string>
     <string name="cloud_agent_refresh_version">Recheck version</string>
+
+    <!-- Pre-deploy container inspection -->
+    <string name="cloud_agent_inspect_section">Container inspection</string>
+    <string name="cloud_agent_inspect">Inspect container</string>
+    <string name="cloud_agent_inspecting">Inspecting server…</string>
+    <string name="cloud_agent_inspect_hint">Before deployment, detects the dedicated AIAgent container on the server and checks its version to decide whether to install, upgrade, or skip.</string>
+    <string name="cloud_agent_inspect_absent">No dedicated container found. Will install latest %1$s</string>
+    <string name="cloud_agent_inspect_upgrade">Container installed (v%1$s), latest is %2$s. Upgrade recommended.</string>
+    <string name="cloud_agent_inspect_latest">Container installed and already up to date (%1$s). No reinstall needed.</string>
+    <string name="cloud_agent_inspect_unknown">Cannot confirm container status. You can try deploying directly.</string>
+    <string name="cloud_agent_inspect_need_conn">Select a saved server first, then inspect</string>
+    <string name="cloud_agent_deploy_install">Install AIAgent container</string>
+    <string name="cloud_agent_deploy_upgrade">Upgrade to latest</string>
+    <string name="cloud_agent_deploy_skip">Already up to date, nothing to do</string>
+
+    <!-- Runtime & Connection: merged entry for container / connection-sync / full cloud -->
+    <string name="runtime_connection_title">Runtime &amp; Connection</string>
+    <string name="runtime_connection_desc">Choose where your code runs: a local container on this device, or an AIAgent container on your own cloud server.</string>
+    <string name="runtime_local_title">On this device</string>
+    <string name="runtime_local_desc">Run code and tools in a local container on your phone, no server required.</string>
+    <string name="runtime_local_open">Manage local containers &amp; images</string>
+    <string name="runtime_cloud_title">Servers &amp; Cloud</string>
+    <string name="runtime_cloud_desc">Connect your cloud server and deploy it as a full-cloud AIAgent, so tasks keep running in the cloud.</string>
+    <string name="runtime_cloud_open">Manage servers &amp; cloud Agent</string>
+    <string name="runtime_cloud_badge">Full cloud</string>
 </resources>

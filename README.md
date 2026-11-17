@@ -87,8 +87,8 @@ MiniMe-Code 是运行在 Android 上的通用 AI Coding Agent，把一套完整�
 |------|------|
 | 系统要求 | Android 8.0+（API 26），arm64-v8a / x86_64 |
 | 下载地址 | [GitHub Releases](https://github.com/Lisir2002/MiniMe-AIBot/releases/latest)：真机选 `armsolo`、模拟器选 `x86solo`、通用选 `universal` 包 |
-| 快速上手 | 「设置 → AI 供应商」配模型 →「容器与镜像」选本地或 SSH → 新建会话开始对话 |
-| 更新记录 | [Releases](https://github.com/Lisir2002/MiniMe-AIBot/releases)（历史版本与更新说明） |
+| 快速上手 | 「设置 → AI 供应商」配模型 →「运行与连接」选本机容器或云服务器 → 新建会话开始对话 |
+| 更新记录 | [Releases](https://github.com/Lisir2002/MiniMe-AIBot/releases)（每个 tag 附完整更新说明：按新功能/修复/重构分类，保留每条变更的根因与改动清单） |
 | 使用指南 | [在线文档](https://github.com/Lisir2002/MiniMe-AIBot)：快速上手、使用手册与进阶教程（与 App 内置文档同源） |
 
 ### 反馈与贡献

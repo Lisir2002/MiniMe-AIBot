@@ -1350,7 +1350,10 @@ private fun GoalBannerRow(
 }
 /**
  * 完全云端模式下的审批卡片：云端执行高风险工具前挂起任务，等待用户批准/拒绝。
- * 与 [PlanApprovalPanel] 同为悬浮层，但它们互斥出现（云端模式不产生 PlanApproval）。
+ *
+ * 与 [ToolPermissionPanel] 共用同一套视觉骨架与交互（圆形盾牌徽标 / 工具名徽标 / 会话归属 /
+ * 可复制可滚动的参数详情 / AgentActionButton / 滚动弱化），只是按钮按云端协议收敛为"拒绝 / 允许"两档。
+ * 这样本地与云端审批在 UI 上完全一致，用户无需适应两套卡片。
  */
 @Composable
 internal fun CloudApprovalPanel(
@@ -1358,95 +1361,154 @@ internal fun CloudApprovalPanel(
     argsPreview: String,
     onApprove: () -> Unit,
     onReject: () -> Unit,
-    forceCollapse: Boolean = false
+    forceCollapse: Boolean = false,
+    isScrolling: Boolean = false,
+    sessionTitle: String = ""
 ) {
     var expanded by remember { mutableStateOf(true) }
+    // 余额面板展开时同帧收起本面板，避免叠加（与本地授权卡一致）
     val effectiveExpanded = expanded && !forceCollapse
+
+    val panelAlpha by animateFloatAsState(
+        targetValue = if (isScrolling) 0.4f else 1f,
+        animationSpec = tween(durationMillis = 200),
+        label = "cloud-approval-panel-alpha"
+    )
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+            .padding(horizontal = Spacing.lg, vertical = Spacing.xs)
+            .graphicsLayer { alpha = panelAlpha },
         color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(Radius.md),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.semanticColors.warning)
     ) {
         Column(modifier = Modifier.padding(Spacing.md)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                MiniMeIcon(
-                    MiniMeIcons.Shield,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.semanticColors.warning
-                )
-                Spacer(Modifier.width(Spacing.sm))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        stringResource(com.minime.code.R.string.cloud_agent_approval_title),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        toolName,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.semanticColors.warning
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(Radius.sm))
+                    .clickable { expanded = !expanded },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.semanticColors.warning.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    MiniMeIcon(
+                        MiniMeIcons.Shield,
+                        contentDescription = null,
+                        tint = MaterialTheme.semanticColors.warning,
+                        modifier = Modifier.size(15.dp)
                     )
                 }
-                IconButton(onClick = { expanded = !expanded }) {
-                    MiniMeIcon(
-                        if (effectiveExpanded) MiniMeIcons.ChevronDown else MiniMeIcons.ChevronUp,
-                        contentDescription = null
+                Spacer(Modifier.width(Spacing.sm))
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Spacing.xs)
+                    ) {
+                        Text(
+                            text = stringResource(com.minime.code.R.string.cloud_agent_approval_title),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                        ) {
+                            Text(
+                                text = toolName,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                    if (sessionTitle.isNotBlank()) {
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = stringResource(R.string.chat_perm_session_label, sessionTitle),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                IconButton(
+                    onClick = { expanded = !expanded },
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    ExpandableChevronIcon(
+                        expanded = effectiveExpanded,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        size = 18.dp
                     )
                 }
             }
-            androidx.compose.animation.AnimatedVisibility(visible = effectiveExpanded) {
+
+            androidx.compose.animation.AnimatedVisibility(
+                visible = effectiveExpanded,
+                enter = fadeIn(tween(180)) + expandVertically(tween(220)),
+                exit = fadeOut(tween(140)) + shrinkVertically(tween(180))
+            ) {
                 Column {
                     if (argsPreview.isNotBlank()) {
                         Spacer(Modifier.height(Spacing.sm))
                         Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
                             shape = RoundedCornerShape(Radius.sm),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                            border = androidx.compose.foundation.BorderStroke(
+                                0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                            ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                argsPreview.take(600),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(Spacing.sm)
-                            )
+                            SelectionContainer {
+                                Text(
+                                    text = argsPreview,
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(max = 160.dp)
+                                        .verticalScroll(rememberScrollState())
+                                        .padding(horizontal = Spacing.sm, vertical = Spacing.xs)
+                                )
+                            }
                         }
                     }
-                    Spacer(Modifier.height(Spacing.sm))
+                    Spacer(Modifier.height(Spacing.xs))
                     Text(
-                        stringResource(com.minime.code.R.string.cloud_agent_waiting),
-                        style = MaterialTheme.typography.bodySmall,
+                        text = stringResource(com.minime.code.R.string.cloud_agent_waiting),
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(Spacing.sm))
                     Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Spacing.sm)) {
-                        Surface(
-                            shape = RoundedCornerShape(Radius.sm),
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.clickable { onApprove() }
-                        ) {
-                            Text(
-                                stringResource(com.minime.code.R.string.cloud_agent_approve),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                style = MaterialTheme.typography.labelLarge,
-                                modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.xs)
-                            )
-                        }
-                        Surface(
-                            shape = RoundedCornerShape(Radius.sm),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.clickable { onReject() }
-                        ) {
-                            Text(
-                                stringResource(com.minime.code.R.string.cloud_agent_reject),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.labelLarge,
-                                modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.xs)
-                            )
-                        }
+                        AgentActionButton(
+                            text = stringResource(com.minime.code.R.string.cloud_agent_reject),
+                            onClick = onReject,
+                            modifier = Modifier.weight(1f),
+                            tone = AgentActionTone.Danger
+                        )
+                        AgentActionButton(
+                            text = stringResource(com.minime.code.R.string.cloud_agent_approve),
+                            onClick = onApprove,
+                            modifier = Modifier.weight(1f),
+                            tone = AgentActionTone.Success
+                        )
                     }
                 }
             }

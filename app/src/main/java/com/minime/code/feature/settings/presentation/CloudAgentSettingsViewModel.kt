@@ -40,7 +40,10 @@ data class CloudAgentUiState(
     /** 部署/升级进度日志（为空表示未在部署）。 */
     val deployLog: String = "",
     val deploying: Boolean = false,
-    val deployResult: String? = null
+    val deployResult: String? = null,
+    /** 部署前容器探测结果（null 表示尚未探测）。 */
+    val inspection: CloudAgentServerManager.Inspection? = null,
+    val inspecting: Boolean = false
 )
 
 @HiltViewModel
@@ -102,14 +105,35 @@ class CloudAgentSettingsViewModel @Inject constructor(
         viewModelScope.launch { settings.setToken(token) }
     }
 
-    /** 选中已保存连接：自动推导 serverUrl 并回填，消除手填重复配置。 */
+    /** 选中已保存连接：自动推导 serverUrl 并回填，随后立即探测容器状态。 */
     fun selectServer(choice: CloudServerChoice) {
         _uiState.value = _uiState.value.copy(
             selectedConnectionId = choice.id,
             serverUrl = choice.serverUrl,
-            testResult = null
+            testResult = null,
+            inspection = null
         )
-        viewModelScope.launch { settings.setServerUrl(choice.serverUrl) }
+        viewModelScope.launch {
+            settings.setServerUrl(choice.serverUrl)
+            inspectContainer()
+        }
+    }
+
+    /**
+     * 选中连接后探测容器：不存在→建议安装；存在但版本旧→建议升级；已是最新→可跳过。
+     * 供 UI 展示「检测到服务器尚未安装 / 可升级 / 已是最新」并提示下一步。
+     */
+    fun inspectContainer() = viewModelScope.launch {
+        val choice = _uiState.value.serverChoices.firstOrNull { it.id == _uiState.value.selectedConnectionId }
+        if (choice == null) {
+            _uiState.value = _uiState.value.copy(inspection = null)
+            return@launch
+        }
+        val conn = connectionsSnapshot.firstOrNull { it.id == choice.id }
+        if (conn == null) return@launch
+        _uiState.value = _uiState.value.copy(inspecting = true)
+        val result = serverManager.inspect(conn).getOrNull()
+        _uiState.value = _uiState.value.copy(inspection = result, inspecting = false)
     }
 
     fun clearTestResult() { _uiState.value = _uiState.value.copy(testResult = null) }
@@ -177,7 +201,10 @@ class CloudAgentSettingsViewModel @Inject constructor(
             deployResult = if (result.ok) "ok:${result.version}" else "fail:${result.message}",
             serverUrl = if (result.ok) "http://${choice.host}:8080" else _uiState.value.serverUrl
         )
-        if (result.ok) checkServerVersion()
+        if (result.ok) {
+            checkServerVersion()
+            inspectContainer()
+        }
     }
 
     fun clearDeployResult() { _uiState.value = _uiState.value.copy(deployResult = null) }

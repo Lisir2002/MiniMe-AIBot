@@ -126,4 +126,44 @@ class CloudAgentCatchUpTest {
         assertEquals("tool-call-9", result.pendingDecisions.first().decisionId)
         assertEquals("Bash", result.pendingDecisions.first().toolName)
     }
+
+    // ---- 云端任务"仍在运行"判定：删后台重开后据此重建运行态并启动跟随轮询 ----
+
+    private fun resultForStatus(status: String): CloudAgentCatchUp.Result {
+        var result: CloudAgentCatchUp.Result? = null
+        runTest {
+            val appSid = "app-session-running"
+            coEvery { settings.isEnabled() } returns true
+            coEvery { settings.serverUrl() } returns "http://example.com:8080"
+            coEvery { settings.getCloudSessionId(appSid, any()) } returns "cloud-1"
+            coEvery { settings.getPollCursor(appSid, any()) } returns 0L
+            val terminated = status == "completed" || status == "failed"
+            coEvery { api.events(any(), any(), "cloud-1", 0L) } returns EventsResp(
+                events = if (terminated) listOf(StoredEventDto(1, "cloud-1", "task_completed")) else emptyList(),
+                nextSeq = 1L, taskStatus = status
+            )
+            result = catchUp().syncSession(appSid)!!
+        }
+        return result!!
+    }
+
+    @Test
+    fun runningStatuses_areReportedRunning() {
+        // 这些状态下任务未终态：App 必须重建"执行中"并继续跟随，否则删后台后看起来像断了。
+        assertTrue(resultForStatus("running").running)
+        assertTrue(resultForStatus("queued").running)
+        assertTrue(resultForStatus("waiting_approval").running)
+    }
+
+    @Test
+    fun terminalStatuses_areNotRunning() {
+        org.junit.Assert.assertFalse(resultForStatus("completed").running)
+        org.junit.Assert.assertFalse(resultForStatus("failed").running)
+    }
+
+    @Test
+    fun idleStatus_isNotRunning() {
+        // 服务端无任务时返回 idle：不应误判为运行中而挂一个永不停的跟随协程。
+        org.junit.Assert.assertFalse(resultForStatus("idle").running)
+    }
 }

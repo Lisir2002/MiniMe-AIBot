@@ -74,6 +74,7 @@ import com.minime.code.feature.settings.data.repository.TitleModelSettingsReposi
 import com.minime.code.feature.settings.data.repository.SubagentTierSettingsRepository
 import com.minime.code.feature.settings.data.repository.ExecutionModeHolder
 import com.minime.code.feature.settings.data.repository.ExecutionModeRepository
+import com.minime.code.feature.settings.data.repository.CloudAgentSettingsRepository
 import com.minime.code.feature.settings.data.repository.GeneralSettingsRepository
 import com.minime.code.feature.settings.data.repository.AgentSoundSettingsRepository
 import com.minime.code.feature.settings.data.repository.KeepaliveSettingsRepository
@@ -391,6 +392,7 @@ class SettingsViewModel @Inject constructor(
     private val containerOsDetector: ContainerOsDetector,
     private val executionModeRepository: ExecutionModeRepository,
     private val executionModeHolder: ExecutionModeHolder,
+    private val cloudAgentSettingsRepository: CloudAgentSettingsRepository,
     private val remoteSshConnection: RemoteSshConnection,
     private val remoteRepository: RemoteRepository,
     private val llmCallRecordDao: LlmCallRecordDao,
@@ -772,6 +774,13 @@ class SettingsViewModel @Inject constructor(
 
     /** 当前执行模式（本地 PRoot / 远程 SSH），供 UI 判断是否显示远程连接指示器。 */
     val executionMode: StateFlow<ExecutionMode> = executionModeHolder.mode
+
+    /**
+     * 完全云端 Agent 是否开启。开启时 Agent 循环与工具都在云端容器执行，本地 SSH 连接与顶栏
+     * 的「SSH 未连接」指示无关——UI 据此隐藏本地 SSH 状态，避免误导用户以为云端断了。
+     */
+    val cloudAgentEnabled: StateFlow<Boolean> = cloudAgentSettingsRepository.enabledFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     /** 远程 SSH 连接状态，供 UI 显示指示器。 */
     val connectionState: StateFlow<ConnectionState> = remoteSshConnection.connectionState

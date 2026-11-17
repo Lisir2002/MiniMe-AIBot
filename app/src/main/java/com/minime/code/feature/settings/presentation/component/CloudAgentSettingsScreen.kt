@@ -45,43 +45,27 @@ import com.minime.code.core.ui.MiniMeIcon
 import com.minime.code.core.ui.MiniMeIcons
 import com.minime.code.feature.settings.presentation.CloudAgentSettingsViewModel
 
-/** 完全云端 Agent 设置页：模式开关 + 服务器地址 + 令牌 + 连接测试。 */
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * 完全云端 Agent 内容区：模式开关 + 服务器选择 + 容器检测/部署 + 版本。
+ *
+ * 抽成可嵌入的 Body，供「服务器与云端」合并页作为独立 tab 复用；
+ * [CloudAgentSettingsScreen] 是它带顶栏的薄壳（保留给可能的独立入口）。
+ */
 @Composable
-fun CloudAgentSettingsScreen(
-    viewModel: CloudAgentSettingsViewModel = hiltViewModel(),
-    onNavigateBack: () -> Unit = {}
+internal fun CloudAgentSettingsBody(
+    viewModel: CloudAgentSettingsViewModel,
+    modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val scroll = rememberScrollState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.cloud_agent_title)) },
-                navigationIcon = {
-                    TextButton(onClick = onNavigateBack) {
-                        MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = null)
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(android.R.string.cancel))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(scroll)
-                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md)
-        ) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(scroll)
+            .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+        verticalArrangement = Arrangement.spacedBy(Spacing.md)
+    ) {
             // 说明卡
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -174,25 +158,59 @@ fun CloudAgentSettingsScreen(
                 }
             }
 
-            // 服务器地址（手填兜底：选择已保存连接会自动填入；也可手动改）
-            OutlinedTextField(
-                value = state.serverUrl,
-                onValueChange = { viewModel.setServerUrl(it) },
-                label = { Text(stringResource(R.string.cloud_agent_server_url)) },
-                placeholder = { Text(stringResource(R.string.cloud_agent_server_url_hint)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+            // 容器检测：部署前探测专属 AIAgent 容器 + 版本核对（INSTALL/UPGRADE/UP_TO_DATE）
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(Radius.md),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(Spacing.md)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            stringResource(R.string.cloud_agent_inspect_section),
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(
+                            onClick = { viewModel.inspectContainer() },
+                            enabled = !state.inspecting && state.selectedConnectionId != null
+                        ) {
+                            if (state.inspecting) {
+                                CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                Spacer(Modifier.width(6.dp))
+                                Text(stringResource(R.string.cloud_agent_inspecting))
+                            } else {
+                                Text(stringResource(R.string.cloud_agent_inspect))
+                            }
+                        }
+                    }
+                    Text(
+                        stringResource(R.string.cloud_agent_inspect_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    val ins = state.inspection
+                    if (ins != null) {
+                        Spacer(Modifier.height(Spacing.sm))
+                        val (insText, insColor) = when (ins.action) {
+                            com.minime.code.feature.agent.domain.workflow.CloudAgentServerManager.Inspection.Action.INSTALL ->
+                                stringResource(R.string.cloud_agent_inspect_absent, ins.latestVersion ?: "?") to MaterialTheme.semanticColors.warning
+                            com.minime.code.feature.agent.domain.workflow.CloudAgentServerManager.Inspection.Action.UPGRADE ->
+                                stringResource(
+                                    R.string.cloud_agent_inspect_upgrade,
+                                    ins.currentVersion ?: "?", ins.latestVersion ?: "?"
+                                ) to MaterialTheme.semanticColors.warning
+                            com.minime.code.feature.agent.domain.workflow.CloudAgentServerManager.Inspection.Action.UP_TO_DATE ->
+                                stringResource(R.string.cloud_agent_inspect_latest, ins.currentVersion ?: "") to MaterialTheme.semanticColors.success
+                            com.minime.code.feature.agent.domain.workflow.CloudAgentServerManager.Inspection.Action.UNKNOWN ->
+                                stringResource(R.string.cloud_agent_inspect_unknown) to MaterialTheme.semanticColors.warning
+                        }
+                        Text(insText, style = MaterialTheme.typography.bodySmall, color = insColor)
+                    }
+                }
+            }
 
-            // 令牌
-            OutlinedTextField(
-                value = state.token,
-                onValueChange = { viewModel.setToken(it) },
-                label = { Text(stringResource(R.string.cloud_agent_token)) },
-                placeholder = { Text(stringResource(R.string.cloud_agent_token_hint)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+            // 服务器地址由上方「选择已保存服务器」自动推导（单一事实源），不再手填。
 
             // 测试连接
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -297,7 +315,16 @@ fun CloudAgentSettingsScreen(
                         } else {
                             MiniMeIcon(MiniMeIcons.UploadCloud, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.cloud_agent_deploy))
+                            val deployLabel = when (state.inspection?.action) {
+                                com.minime.code.feature.agent.domain.workflow.CloudAgentServerManager.Inspection.Action.INSTALL ->
+                                    R.string.cloud_agent_deploy_install
+                                com.minime.code.feature.agent.domain.workflow.CloudAgentServerManager.Inspection.Action.UPGRADE ->
+                                    R.string.cloud_agent_deploy_upgrade
+                                com.minime.code.feature.agent.domain.workflow.CloudAgentServerManager.Inspection.Action.UP_TO_DATE ->
+                                    R.string.cloud_agent_deploy_skip
+                                else -> R.string.cloud_agent_deploy
+                            }
+                            Text(stringResource(deployLabel))
                         }
                     }
                     state.deployResult?.let { result ->
@@ -347,6 +374,38 @@ fun CloudAgentSettingsScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
+    }
+}
+
+/** 完全云端 Agent 设置页（带顶栏的薄壳）。现在主要通过「服务器与云端」合并页进入。 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CloudAgentSettingsScreen(
+    viewModel: CloudAgentSettingsViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit = {}
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.cloud_agent_title)) },
+                navigationIcon = {
+                    TextButton(onClick = onNavigateBack) {
+                        MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = null)
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(android.R.string.cancel))
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { padding ->
+        CloudAgentSettingsBody(
+            viewModel = viewModel,
+            modifier = Modifier.padding(padding)
+        )
     }
 }

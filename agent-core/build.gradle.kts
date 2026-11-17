@@ -24,6 +24,9 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
 
+    // SnakeYAML：skill / memory 的 SKILL.md frontmatter 解析（与 app 端同版本）
+    api("org.yaml:snakeyaml:2.2")
+
     // @Inject 注解：保留源码原样，JVM 端与 Hilt 端都能编译
     compileOnly("javax.inject:javax.inject:1")
 }

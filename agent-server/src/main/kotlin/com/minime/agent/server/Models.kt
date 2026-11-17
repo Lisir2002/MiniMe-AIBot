@@ -28,7 +28,11 @@ data class ProviderConfigDto(
     val apiKey: String,
     /** 完整 base URL，例如 https://maas-api.cn-huabei-1.xf-yun.com/anthropic/v1 */
     val baseUrl: String,
-    /** 是否 baseUrl 已是完整端点（不再拼 v1/messages）。讯飞 Anthropic 兼容端点用 true。 */
+    /**
+     * 是否 baseUrl 已是完整端点（不再拼 /v1/messages）。默认 false 即可：
+     * 例如 https://maas-api.cn-huabei-1.xf-yun.com/anthropic/v1 会自动拼成 .../anthropic/v1/messages。
+     * 只有 baseUrl 已经写到 .../messages（完整端点）时才设为 true，否则会 404。
+     */
     val useFullUrl: Boolean = false,
     val model: String = "claude-3-5-sonnet-20241022"
 )

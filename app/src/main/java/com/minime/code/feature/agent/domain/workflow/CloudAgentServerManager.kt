@@ -48,8 +48,14 @@ class CloudAgentServerManager @Inject constructor(
         const val SERVER_PORT = 8080
         const val INSTALL_DIR = ".minimecode/agent-server"
         const val SERVICE_NAME = "minime-agent-server"
-        /** 基础镜像：服务器无需预装 JRE，挂载 jar 运行。与 agent-server/Dockerfile 的 FROM 一致。 */
-        const val JAVA_IMAGE = "eclipse-temurin:17-jre"
+        /**
+         * 合并基座镜像（Java + 完整工具链）：一期起替代薄 JRE 镜像。
+         * 推到 GitHub Container Registry（CI 用 GITHUB_TOKEN，无需额外账号）；国内 pull 失败时兜底 Release tar。
+         * 业务 jar 仍从 GitHub Release 下载后挂载（见 buildDownloadCommand），因此基座镜像低频更新。
+         */
+        const val BASE_IMAGE = "ghcr.io/lisir2002/minimecode-agent-server:base"
+        /** 兜底镜像 tar 的 Release asset 名（CI 随每次发版上传，供 docker pull 失败时 load）。 */
+        const val BASE_IMAGE_TAR = "agent-server-base.tar.gz"
     }
 
     private val gson = Gson()
@@ -66,6 +72,25 @@ class CloudAgentServerManager @Inject constructor(
 
     /** 服务端版本信息。 */
     data class ServerVersionInfo(val version: String, val protocol: Int)
+
+    /** 容器检测结果：部署前先探测服务器上的专属 AIAgent 容器状态。 */
+    data class Inspection(
+        val containerExists: Boolean,   // minime-agent-server 容器是否存在
+        val running: Boolean,           // 容器是否运行中
+        val currentVersion: String?,    // /version 读到的当前版本（null=读不到）
+        val latestVersion: String?,     // GitHub 最新版本（null=取不到）
+        val action: Action              // 建议动作
+    ) {
+        enum class Action {
+            INSTALL,        // 无容器 → 装最新版
+            UPGRADE,        // 有容器但版本旧/读不到 → 升级
+            UP_TO_DATE,     // 有容器且已是最新 → 跳过
+            UNKNOWN         // 连不上/取不到版本 → 由调用方决定是否强制部署
+        }
+
+        /** 是否已运行最新版本（无需任何部署动作）。 */
+        val isUpToDate: Boolean get() = action == Action.UP_TO_DATE
+    }
 
     private data class GitHubRelease(
         @SerializedName("tag_name") val tagName: String,
@@ -137,7 +162,66 @@ class CloudAgentServerManager @Inject constructor(
     }
 
     /**
+     * 部署前探测：SSH 到服务器检查专属 AIAgent 容器是否存在、是否运行、当前版本，
+     * 并从 GitHub 取最新版本，得出 [Inspection.action] 决策。
+     *
+     * 不修改服务器任何状态，可安全重复调用；连接/解析失败时返回 [Inspection.Action.UNKNOWN]，
+     * 由调用方决定是否继续强制部署。
+     */
+    suspend fun inspect(
+        conn: RemoteConnection,
+        onProgress: (String) -> Unit = {}
+    ): Result<Inspection> = withContext(Dispatchers.IO) {
+        var client: SSHClient? = null
+        try {
+            onProgress("读取最新服务端版本…\n")
+            val latest = latestRelease().getOrNull()?.version
+            onProgress("连接 ${conn.host}:${conn.port} 检测容器…\n")
+            client = connect(conn)
+            val r = exec(client, buildInspectCommand(), onProgress)
+            val containerLine = r.output.lineSequence()
+                .firstOrNull { it.startsWith("INSPECT_CONTAINER=") }
+                ?.removePrefix("INSPECT_CONTAINER=").orEmpty()
+            val versionJson = r.output.lineSequence()
+                .firstOrNull { it.startsWith("INSPECT_VERSION_JSON=") }
+                ?.removePrefix("INSPECT_VERSION_JSON=")?.takeIf { it.isNotBlank() }
+            val current = versionJson?.let { parseVersionFromJson(it) }
+
+            val inspection = decideInspection(
+                containerRaw = containerLine,
+                currentVersion = current,
+                latestVersion = latest
+            )
+            onProgress(
+                when (inspection.action) {
+                    Inspection.Action.INSTALL -> "检测结果：未发现专属容器，将安装最新版 ${latest ?: "?"}\n"
+                    Inspection.Action.UPGRADE -> "检测结果：当前 ${current ?: "未知"}，最新 ${latest ?: "?"}，需升级\n"
+                    Inspection.Action.UP_TO_DATE -> "检测结果：已是最新版本 ${current}\n"
+                    Inspection.Action.UNKNOWN -> "检测结果：无法确认容器/版本状态，将尝试部署\n"
+                }
+            )
+            Result.success(inspection)
+        } catch (e: Exception) {
+            Result.success(
+                Inspection(
+                    containerExists = false,
+                    running = false,
+                    currentVersion = null,
+                    latestVersion = null,
+                    action = Inspection.Action.UNKNOWN
+                )
+            )
+        } finally {
+            runCatching { client?.disconnect() }
+        }
+    }
+
+    /**
      * 在已保存连接上部署或升级 agent-server。
+     *
+     * 部署前先 [inspect]：容器已是最新且运行时直接跳过重装（幂等升级）；否则下载最新 jar
+     * 并原子替换重启。UNKNOWN（探测失败）时仍尝试部署，避免探测能力故障阻断正常升级。
+     *
      * @param onProgress 流式回显每一步日志（运行在 IO 线程）。
      */
     suspend fun deployOrUpgrade(
@@ -157,6 +241,25 @@ class CloudAgentServerManager @Inject constructor(
             client = connect(conn)
             val log = StringBuilder()
 
+            // 0) 部署前检测：已有最新容器且运行中则跳过重装（幂等，避免每次点都重启服务）
+            onProgress("检测服务器现有容器…\n")
+            val probe = exec(client, buildInspectCommand(), onProgress)
+            log.append(probe.output)
+            val containerLine = probe.output.lineSequence()
+                .firstOrNull { it.startsWith("INSPECT_CONTAINER=") }
+                ?.removePrefix("INSPECT_CONTAINER=").orEmpty()
+            val versionJson = probe.output.lineSequence()
+                .firstOrNull { it.startsWith("INSPECT_VERSION_JSON=") }
+                ?.removePrefix("INSPECT_VERSION_JSON=")?.takeIf { it.isNotBlank() }
+            val existing = decideInspection(containerLine, versionJson?.let { parseVersionFromJson(it) }, rel.version)
+            if (existing.action == Inspection.Action.UP_TO_DATE) {
+                onProgress("已是最新版本 ${existing.currentVersion}，无需重装。\n")
+                settings.setServerUrl("http://${conn.host}:$SERVER_PORT")
+                return@withContext Result.success(
+                    DeployResult(true, existing.currentVersion ?: rel.version, "已是最新版本，无需重装", log.toString())
+                )
+            }
+
             // 1) 下载 jar 到临时文件（失败不影响旧版）
             onProgress("下载 agent-server-${rel.version}.jar …\n")
             val downloadCmd = buildDownloadCommand(rel.jarUrl)
@@ -170,7 +273,7 @@ class CloudAgentServerManager @Inject constructor(
 
             // 2) 原子替换 jar + 写 systemd 服务（无 systemd 时降级 nohup）+ 启动
             onProgress("安装并启动服务…\n")
-            val installCmd = buildInstallCommand()
+            val installCmd = buildInstallCommand(rel.tag)
             val r2 = exec(client, installCmd, onProgress)
             log.append(r2.output)
             if (r2.exitCode != 0) {
@@ -282,22 +385,45 @@ class CloudAgentServerManager @Inject constructor(
         ).joinToString("\n")
     }
 
-    // 用 Docker 跑 agent-server：服务器通常没装 java，但既然已用 Docker 跑 ai-runtime，
-    // 复用 Docker + eclipse-temurin:17-jre 镜像挂载 jar 运行，无需宿主 JRE、隔离且自动重启。
-    private fun buildInstallCommand(): String = listOf(
-        "set -e",
-        "D=\"\$HOME/$INSTALL_DIR\"",
-        "WS=\"\$HOME/minimecode-workspace\"",
-        "mkdir -p \"\$D\" \"\$WS\"",
-        "if ! command -v docker >/dev/null 2>&1; then echo '未检测到 Docker，请先安装 Docker'; exit 1; fi",
-        "docker image inspect $JAVA_IMAGE >/dev/null 2>&1 || docker pull $JAVA_IMAGE",
-        "docker rm -f $SERVICE_NAME >/dev/null 2>&1 || true",
-        "docker run -d --name $SERVICE_NAME --restart unless-stopped -p $SERVER_PORT:$SERVER_PORT " +
-            "-v \"\$D:/data/agent-server\" -v \"\$WS:/workspace\" " +
-            "-e MINIME_DB=/data/agent-server/events.db -e MINIME_WORKSPACE=/workspace -e MINIME_PORT=$SERVER_PORT " +
-            "$JAVA_IMAGE java -jar /data/agent-server/agent-server.jar >/dev/null",
-        "echo \"service=docker container=$SERVICE_NAME\""
-    ).joinToString("\n")
+    /**
+     * 用合并基座镜像跑 agent-server（Java + 完整工具链）。
+     * 镜像获取策略（用户选定的 a 主 + b 兜底）：
+     *   1) 本地已有该镜像 → 直接用；
+     *   2) 否则 docker pull（ghcr.io，最快、分层增量）；
+     *   3) pull 失败（国内网络）→ 从 GitHub Release 下载镜像 tar + docker load 兜底。
+     * 业务 jar 由 [buildDownloadCommand] 单独从 Release 下载后挂载，故基座镜像低频更新。
+     */
+    private fun buildInstallCommand(releaseTag: String): String {
+        val tarUrl = "https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$releaseTag/$BASE_IMAGE_TAR"
+        val q = shellQuote(tarUrl)
+        return listOf(
+            "set -e",
+            "D=\"\$HOME/$INSTALL_DIR\"",
+            "WS=\"\$HOME/minimecode-workspace\"",
+            "mkdir -p \"\$D\" \"\$WS\"",
+            "if ! command -v docker >/dev/null 2>&1; then echo '未检测到 Docker，请先安装 Docker'; exit 1; fi",
+            // 基座镜像：本地 → pull → tar 兜底
+            "if ! docker image inspect $BASE_IMAGE >/dev/null 2>&1; then",
+            "  echo '拉取云端运行环境镜像（$BASE_IMAGE）…'",
+            "  if docker pull $BASE_IMAGE >/dev/null 2>&1; then",
+            "    echo '镜像拉取成功'",
+            "  else",
+            "    echo '镜像仓库不可达，改用 Release 镜像包兜底…'",
+            "    curl -fsSL --retry 3 --connect-timeout 15 $q -o \"\$D/base.tar.new\"",
+            "    test -s \"\$D/base.tar.new\" || { echo '镜像包下载失败'; exit 1; }",
+            "    mv -f \"\$D/base.tar.new\" \"\$D/base.tar\"",
+            "    docker load -i \"\$D/base.tar\" >/dev/null",
+            "    echo '镜像包载入成功'",
+            "  fi",
+            "fi",
+            "docker rm -f $SERVICE_NAME >/dev/null 2>&1 || true",
+            "docker run -d --name $SERVICE_NAME --restart unless-stopped -p $SERVER_PORT:$SERVER_PORT " +
+                "-v \"\$D:/data/agent-server\" -v \"\$WS:/workspace\" " +
+                "-e MINIME_DB=/data/agent-server/events.db -e MINIME_WORKSPACE=/workspace -e MINIME_PORT=$SERVER_PORT " +
+                "$BASE_IMAGE java -jar /data/agent-server/agent-server.jar >/dev/null",
+            "echo \"service=docker container=$SERVICE_NAME image=$BASE_IMAGE\""
+        ).joinToString("\n")
+    }
 
     private fun buildVerifyCommand(): String = listOf(
         "OK=0",
@@ -309,14 +435,70 @@ class CloudAgentServerManager @Inject constructor(
         "if [ \"\$OK\" = \"1\" ]; then echo 'health-ok'; else echo 'health-failed'; exit 1; fi"
     ).joinToString("\n")
 
+    /**
+     * 检测脚本：输出两类标记行供 App 解析——
+     *  INSPECT_CONTAINER=<name|EMPTY>  容器是否存在（docker ps -a 含已停止的）
+     *  INSPECT_VERSION_JSON=<json>     从容器内 /version 读到的版本（容器运行时才有）
+     * docker 不可用时两项都为空，交给 decideInspection 判为 UNKNOWN。
+     */
+    private fun buildInspectCommand(): String = listOf(
+        "if command -v docker >/dev/null 2>&1; then",
+        "  C=\$(docker ps -a --filter 'name=^/$SERVICE_NAME\$' --format '{{.Names}}' 2>/dev/null | head -n1)",
+        "  echo \"INSPECT_CONTAINER=\${C:-EMPTY}\"",
+        "  V=\$(curl -fsS --max-time 3 http://127.0.0.1:$SERVER_PORT/version 2>/dev/null || true)",
+        "  if [ -n \"\$V\" ]; then echo \"INSPECT_VERSION_JSON=\$V\"; fi",
+        "else",
+        "  echo 'INSPECT_CONTAINER=EMPTY'",
+        "fi"
+    ).joinToString("\n")
+
     private fun parseVersionFromOutput(output: String): String? {
         val line = output.lineSequence().firstOrNull { it.startsWith("VERSION_JSON=") } ?: return null
-        val json = line.removePrefix("VERSION_JSON=")
-        return runCatching {
-            val obj = gson.fromJson(json, Map::class.java) ?: emptyMap<String, Any?>()
-            obj["version"] as? String
-        }.getOrNull()
+        return parseVersionFromJson(line.removePrefix("VERSION_JSON="))
     }
 
+    internal fun parseVersionFromJson(json: String): String? = runCatching {
+        val obj = gson.fromJson(json, Map::class.java) ?: emptyMap<String, Any?>()
+        obj["version"] as? String
+    }.getOrNull()
+
     private fun shellQuote(s: String) = "'" + s.replace("'", "'\\''") + "'"
+}
+
+/**
+ * 纯决策函数（无副作用，供单测）：根据部署前探测到的容器名、当前版本、最新版本得出动作。
+ *
+ * @param containerRaw docker 输出的容器名；"EMPTY"/空白表示无容器
+ * @param currentVersion 容器内 /version 读到的版本；null 表示读不到（容器未运行/服务未就绪）
+ * @param latestVersion GitHub 最新版本；null 表示取不到（网络问题）
+ */
+internal fun decideInspection(
+    containerRaw: String?,
+    currentVersion: String?,
+    latestVersion: String?
+): CloudAgentServerManager.Inspection {
+    val hasContainer = !containerRaw.isNullOrBlank() && containerRaw.trim() != "EMPTY"
+    val running = currentVersion != null
+    return when {
+        latestVersion == null -> CloudAgentServerManager.Inspection(
+            hasContainer, running, currentVersion, null,
+            CloudAgentServerManager.Inspection.Action.UNKNOWN
+        )
+        !hasContainer -> CloudAgentServerManager.Inspection(
+            false, false, null, latestVersion,
+            CloudAgentServerManager.Inspection.Action.INSTALL
+        )
+        currentVersion == null -> CloudAgentServerManager.Inspection(
+            true, false, null, latestVersion,
+            CloudAgentServerManager.Inspection.Action.UPGRADE
+        )
+        currentVersion.trim().removePrefix("v") == latestVersion.trim().removePrefix("v") -> CloudAgentServerManager.Inspection(
+            true, true, currentVersion, latestVersion,
+            CloudAgentServerManager.Inspection.Action.UP_TO_DATE
+        )
+        else -> CloudAgentServerManager.Inspection(
+            true, true, currentVersion, latestVersion,
+            CloudAgentServerManager.Inspection.Action.UPGRADE
+        )
+    }
 }

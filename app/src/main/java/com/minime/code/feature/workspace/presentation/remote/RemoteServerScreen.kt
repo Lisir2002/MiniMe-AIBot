@@ -58,6 +58,8 @@ import com.minime.code.core.ui.FloatingTabBar
 import com.minime.code.core.ui.FloatingTabItem
 import com.minime.code.feature.settings.presentation.component.SettingsDivider
 import com.minime.code.feature.settings.presentation.component.SettingsGroup
+import com.minime.code.feature.settings.presentation.component.CloudAgentSettingsBody
+import com.minime.code.feature.settings.presentation.CloudAgentSettingsViewModel
 import com.minime.code.feature.settings.presentation.component.settingsPageBackground
 import com.minime.code.feature.workspace.domain.model.RemoteConnection
 import com.minime.code.feature.workspace.domain.model.RemoteMount
@@ -72,13 +74,16 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 @Composable
 fun RemoteServerScreen(
     viewModel: RemoteServerViewModel = hiltViewModel(),
+    initialTab: Int = 0,
     onNavigateBack: () -> Unit = {}
 ) {
     val coroutineScope = rememberCoroutineScope()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // 「服务器与云端」合并页：第 4 个 tab 承载完全云端 Agent（与服务器共享同一份连接数据）。
+    val cloudViewModel: CloudAgentSettingsViewModel = hiltViewModel()
     // 长按拖拽排序的触感反馈（与「供应商」页一致：进入拖拽与松手各一次）
     val hapticFeedback = LocalHapticFeedback.current
-    val pagerState = rememberPagerState(initialPage = 0) { 3 }
+    val pagerState = rememberPagerState(initialPage = initialTab.coerceIn(0, 3)) { 4 }
     var showAddConnectionDialog by remember { mutableStateOf(false) }
     var showAddMountDialog by remember { mutableStateOf(false) }
     var showHostKeysScreen by remember { mutableStateOf(false) }
@@ -117,7 +122,7 @@ fun RemoteServerScreen(
                     containerColor = settingsPageBackground(),
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
-                title = { Text(stringResource(R.string.remote_workspace_title)) },
+                title = { Text(stringResource(R.string.runtime_cloud_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         MiniMeIcon(MiniMeIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
@@ -267,6 +272,7 @@ fun RemoteServerScreen(
                     }
                 }
                 2 -> WiFiFtpServerSection(viewModel, ftpScrollState)
+                3 -> CloudAgentSettingsBody(viewModel = cloudViewModel)
                 }
             }
 
@@ -275,7 +281,8 @@ fun RemoteServerScreen(
                 items = listOf(
                     FloatingTabItem(MiniMeIcons.Server, stringResource(R.string.remote_tab_connections)),
                     FloatingTabItem(MiniMeIcons.Folder, stringResource(R.string.remote_tab_mounts)),
-                    FloatingTabItem(MiniMeIcons.UploadCloud, stringResource(R.string.remote_tab_ftp))
+                    FloatingTabItem(MiniMeIcons.UploadCloud, stringResource(R.string.remote_tab_ftp)),
+                    FloatingTabItem(MiniMeIcons.Cloud, stringResource(R.string.runtime_cloud_badge))
                 ),
                 maskColor = settingsPageBackground(),
                 isScrolling = tabsScrolling,

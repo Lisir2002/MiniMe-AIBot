@@ -130,6 +130,8 @@ internal enum class SettingsSection(@param:StringRes val titleRes: Int) {
     SubAgentEditor(R.string.settings_subagents),
     Container(R.string.settings_container),
     ContainerDownloads(R.string.container_download_image),
+    /** 运行与连接：合并原「容器与镜像 / 连接与同步 / 完全云端」三入口的总枢纽。 */
+    RuntimeConnection(R.string.runtime_connection_title),
     CloudAgent(R.string.cloud_agent_title),
     Proxy(R.string.proxy_title),
     Log(R.string.settings_log),
@@ -232,6 +234,7 @@ fun SettingsScreen(
     val defaultContainerId by viewModel.defaultContainerId.collectAsStateWithLifecycle()
     val containerOsMap by viewModel.containerOsMap.collectAsStateWithLifecycle()
     val remoteConnections by viewModel.remoteConnections.collectAsStateWithLifecycle()
+    val cloudAgentEnabled by viewModel.cloudAgentEnabled.collectAsStateWithLifecycle()
     val tokenStats by viewModel.tokenStats.collectAsStateWithLifecycle()
     val updateCheckEnabled by viewModel.updateCheckEnabled.collectAsStateWithLifecycle()
     val updateCheckChannel by viewModel.updateCheckChannel.collectAsStateWithLifecycle()
@@ -266,6 +269,8 @@ fun SettingsScreen(
 
     var section by remember { mutableStateOf(SettingsSection.Menu) }
     var logReturnSection by remember { mutableStateOf(SettingsSection.Menu) }
+    // 进入「服务器与云端」时的初始 tab：完全云端已启用则直接落到云端 Agent tab。
+    var remoteInitialTab by remember { mutableStateOf(0) }
     // 各列表页的多选状态：顶栏「多选」开关在本页 Scaffold 里，所以状态必须提到这里统一持有。
     // 用普通 map（非 snapshot）新建容器，避免在组合期写快照状态；Compose 状态在 ListSelectionState 内部。
     val listSelections = remember { mutableMapOf<SettingsSection, ListSelectionState>() }
@@ -389,6 +394,10 @@ fun SettingsScreen(
         SettingsSection.SubAgentDetail -> SettingsSection.SubAgents
         SettingsSection.SubAgentEditor -> subAgentEditorReturn
         SettingsSection.ContainerDownloads -> SettingsSection.Container
+        // 容器页与服务器页现在从「运行与连接」枢纽进入，返回回到枢纽而非菜单。
+        SettingsSection.Container,
+        SettingsSection.RemoteServers,
+        SettingsSection.CloudAgent -> SettingsSection.RuntimeConnection
         else -> if (expanded) null else SettingsSection.Menu
     }
 
@@ -595,14 +604,27 @@ fun SettingsScreen(
                 )
             }
 
+            current == SettingsSection.RuntimeConnection ->
+                RuntimeConnectionScreen(
+                    cloudEnabled = cloudAgentEnabled,
+                    serverCount = remoteConnections.size,
+                    onOpenLocal = { section = SettingsSection.Container },
+                    onOpenCloud = {
+                        remoteInitialTab = if (cloudAgentEnabled) 3 else 0
+                        section = SettingsSection.RemoteServers
+                    },
+                    onNavigateBack = { section = SettingsSection.Menu }
+                )
+
             current == SettingsSection.RemoteServers ->
                 com.minime.code.feature.workspace.presentation.remote.RemoteServerScreen(
-                    onNavigateBack = { section = SettingsSection.Menu }
+                    initialTab = remoteInitialTab,
+                    onNavigateBack = { section = SettingsSection.RuntimeConnection }
                 )
 
             current == SettingsSection.CloudAgent ->
                 CloudAgentSettingsScreen(
-                    onNavigateBack = { section = SettingsSection.Menu }
+                    onNavigateBack = { section = SettingsSection.RuntimeConnection }
                 )
 
             current == SettingsSection.Backup ->
@@ -1164,6 +1186,7 @@ fun SettingsScreen(
                 SettingsSection.ProviderEditor -> {} // 已在上方 early return 处理
                 SettingsSection.SkillEditor -> {} // 已在上方 early return 处理
                 SettingsSection.SubAgentEditor -> {} // 已在上方 early return 处理
+                SettingsSection.RuntimeConnection -> {} // 已在上方 early return 处理
                 SettingsSection.RemoteServers -> {} // 已在上方 early return 处理
                 SettingsSection.CloudAgent -> {} // 已在上方 early return 处理
                 SettingsSection.Backup -> {} // 已在上方 early return 处理
@@ -1722,30 +1745,20 @@ internal fun SettingsMenu(
         }
 
         // ── 运行环境 ──
+        // 「容器与镜像 / 连接与同步 / 完全云端」合并为单一入口「运行与连接」；
+        // 「代理」按产品要求保持独立，不并入。
         SettingsGroupHeader(text = stringResource(R.string.settings_category_environment))
         SettingsGroup {
             SettingsRow(
-                icon = MiniMeIcons.HardDrive,
-                title = stringResource(SettingsSection.Container.titleRes),
-                onClick = { onOpen(SettingsSection.Container) }
-            )
-            SettingsDivider()
-            SettingsRow(
                 icon = MiniMeIcons.Globe,
-                title = stringResource(SettingsSection.Proxy.titleRes),
-                onClick = { onOpen(SettingsSection.Proxy) }
+                title = stringResource(SettingsSection.RuntimeConnection.titleRes),
+                onClick = { onOpen(SettingsSection.RuntimeConnection) }
             )
             SettingsDivider()
             SettingsRow(
                 icon = MiniMeIcons.Server,
-                title = stringResource(SettingsSection.RemoteServers.titleRes),
-                onClick = { onOpen(SettingsSection.RemoteServers) }
-            )
-            SettingsDivider()
-            SettingsRow(
-                icon = MiniMeIcons.Cloud,
-                title = stringResource(SettingsSection.CloudAgent.titleRes),
-                onClick = { onOpen(SettingsSection.CloudAgent) }
+                title = stringResource(SettingsSection.Proxy.titleRes),
+                onClick = { onOpen(SettingsSection.Proxy) }
             )
         }
 

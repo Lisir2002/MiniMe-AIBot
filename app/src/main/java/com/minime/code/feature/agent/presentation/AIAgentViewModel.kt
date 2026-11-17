@@ -189,6 +189,13 @@ class AIAgentViewModel @Inject constructor(
     private val sessionJobs = mutableMapOf<String, Job>()
 
     /**
+     * 完全云端模式：云端仍在运行、但本进程没有实时流 job 时，由补拉器启动的"跟随轮询"协程。
+     * 与 [sessionJobs] 分开管理——前者是 App 提交提问时的前台实时流，后者只是把云端进度拉回本地。
+     * 进程存活期间持续补拉直到任务终态；进程再次被杀也不影响云端，重开后由 syncAll 重建。
+     */
+    private val cloudFollowJobs = mutableMapOf<String, Job>()
+
+    /**
      * goal 自主循环的「连续空回合」计数：自动续跑回合若既无工具调用也无可见正文，
      * 连续达到阈值即置 BLOCKED，避免无限空转烧 token（借鉴 Codex 的空响应熔断）。
      */
@@ -960,54 +967,89 @@ class AIAgentViewModel @Inject constructor(
     /**
      * 从云端增量补拉一个会话的积压事件（进程被杀/熄屏期间云端照常产生），幂等落库 + 恢复审批卡片。
      * 在 App 冷启动、回前台、切换会话、提交审批后调用。不干扰仍在前台实时流的活跃任务状态。
+     *
+     * 关键：补拉不只是"补历史"——若发现云端任务仍在执行而本进程没有实时流 job（删后台/进程重建），
+     * 必须重建"执行中"运行态并启动 [startCloudFollow] 持续跟随，否则云端照跑、App 却显示空闲，
+     * 表现为"运行态/思考态反馈全没了"。
      */
     private suspend fun syncCloudSession(appSessionId: String) {
         if (appSessionId.isBlank()) return
         val result = runCatching { cloudAgentCatchUp.syncSession(appSessionId) }.getOrNull() ?: return
-        // 恢复云端仍挂起、尚未处理的审批卡片（内存态在进程重建后是空的）
-        if (result.pendingDecisions.isNotEmpty()) {
-            val restored = result.pendingDecisions
-                .filter { it.decisionId.isNotBlank() }
-                .associate { dto -> appSessionId to pendingDtoToEvent(appSessionId, dto) }
-            _cloudPendingDecisions.value = _cloudPendingDecisions.value + restored
-        } else if (result.terminated || result.taskStatus.equals("completed", true) ||
-            result.taskStatus.equals("failed", true)
-        ) {
-            // 任务已终态且无待决：清掉残留卡片，避免展示已处理的审批
-            _cloudPendingDecisions.value = _cloudPendingDecisions.value - appSessionId
-        }
-        // 校正 UI 状态：补拉发现任务已终态，但本进程没有活跃 job 时，会话可能停在陈旧状态
-        val hasActiveJob = sessionJobs[appSessionId]?.isActive == true
-        if (!hasActiveJob && result.terminated) {
-            if (result.taskStatus.equals("failed", true)) {
-                setAgentState(appSessionId, AgentUIState.Error("云端任务失败"))
-            } else {
-                setAgentState(appSessionId, AgentUIState.Result(WorkflowStatus.SUCCESS))
-                _completedSessions.value = _completedSessions.value + appSessionId
-            }
-        }
+        applyCloudSyncResult(appSessionId, result)
     }
 
     /** 批量补拉所有建立过云端映射的会话（App 冷启动/回前台）。 */
     private fun syncCloudAll() = viewModelScope.launch(Dispatchers.IO) {
         val results = runCatching { cloudAgentCatchUp.syncAll() }.getOrDefault(emptyMap())
         for ((sid, r) in results) {
-            if (r.pendingDecisions.isNotEmpty()) {
-                val restored = r.pendingDecisions
-                    .filter { it.decisionId.isNotBlank() }
-                    .associate { dto -> sid to pendingDtoToEvent(sid, dto) }
-                _cloudPendingDecisions.value = _cloudPendingDecisions.value + restored
+            applyCloudSyncResult(sid, r)
+        }
+    }
+
+    /**
+     * 把一次补拉结果映射到 UI 状态与运行态。供 [syncCloudSession]/[syncCloudAll]/跟随协程共用，
+     * 保证"历史落库 + 审批卡片 + 运行态恢复 + 终态校正"四处逻辑完全一致。
+     */
+    private fun applyCloudSyncResult(
+        appSessionId: String,
+        r: com.minime.code.feature.agent.domain.workflow.CloudAgentCatchUp.Result
+    ) {
+        // 1) 恢复云端仍挂起、尚未处理的审批卡片（内存态在进程重建后是空的）
+        if (r.pendingDecisions.isNotEmpty()) {
+            val restored = r.pendingDecisions
+                .filter { it.decisionId.isNotBlank() }
+                .associate { dto -> appSessionId to pendingDtoToEvent(appSessionId, dto) }
+            _cloudPendingDecisions.value = _cloudPendingDecisions.value + restored
+        } else if (r.terminated || r.taskStatus.equals("completed", true) || r.taskStatus.equals("failed", true)) {
+            // 任务已终态且无待决：清掉残留卡片，避免展示已处理的审批
+            _cloudPendingDecisions.value = _cloudPendingDecisions.value - appSessionId
+        }
+
+        // 2) 前台实时流 job 存在时由它独占状态更新，补拉只落库，不插手运行态。
+        val hasActiveJob = sessionJobs[appSessionId]?.isActive == true
+        if (hasActiveJob) return
+
+        // 3) 任务已终态：校正陈旧状态、停掉可能存在的跟随协程。
+        if (r.terminated || r.taskStatus.equals("completed", true) || r.taskStatus.equals("failed", true)) {
+            cloudFollowJobs.remove(appSessionId)?.cancel()
+            if (r.taskStatus.equals("failed", true)) {
+                setAgentState(appSessionId, AgentUIState.Error("云端任务失败"))
+            } else {
+                setAgentState(appSessionId, AgentUIState.Result(WorkflowStatus.SUCCESS))
+                _completedSessions.value = _completedSessions.value + appSessionId
             }
-            val hasActiveJob = sessionJobs[sid]?.isActive == true
-            if (!hasActiveJob && r.terminated) {
-                if (r.taskStatus.equals("failed", true)) {
-                    setAgentState(sid, AgentUIState.Error("云端任务失败"))
-                } else {
-                    setAgentState(sid, AgentUIState.Result(WorkflowStatus.SUCCESS))
-                    _completedSessions.value = _completedSessions.value + sid
+            return
+        }
+
+        // 4) 云端仍在运行/排队：恢复"执行中"运行态，并启动跟随协程持续补拉。
+        //    等待审批（waiting_approval）由审批卡片表达，不显示转圈，故不置 Streaming。
+        if (r.running && !r.taskStatus.equals("waiting_approval", true)) {
+            setAgentState(appSessionId, AgentUIState.Streaming)
+        }
+        if (r.running) startCloudFollow(appSessionId)
+    }
+
+    /**
+     * 启动云端跟随协程：进程存活期间按间隔增量补拉单个会话，直到任务终态。
+     * 幂等——同一会话只保留一个跟随 job；与前台实时流 job 互斥（有实时流时不启动）。
+     */
+    private fun startCloudFollow(appSessionId: String) {
+        if (cloudFollowJobs[appSessionId]?.isActive == true) return
+        if (sessionJobs[appSessionId]?.isActive == true) return
+        val job = viewModelScope.launch(Dispatchers.IO) {
+            while (isActive) {
+                delay(CLOUD_FOLLOW_INTERVAL_MS)
+                val r = runCatching { cloudAgentCatchUp.syncSession(appSessionId) }.getOrNull() ?: continue
+                applyCloudSyncResult(appSessionId, r)
+                if (r.terminated || r.taskStatus.equals("completed", true) || r.taskStatus.equals("failed", true) ||
+                    !r.running
+                ) {
+                    break
                 }
             }
+            cloudFollowJobs.remove(appSessionId)
         }
+        cloudFollowJobs[appSessionId] = job
     }
 
     /** 用户决策云端待审批工具：回传云端 → 云端续跑 → 清除卡片并补拉续跑结果。 */
@@ -1163,16 +1205,19 @@ class AIAgentViewModel @Inject constructor(
 
     val pendingPlanApproval: StateFlow<PlanApprovalRequest?> = planApprovalManager.pendingApproval
 
-    /** 当前正阻塞等待用户审批的会话 id 集合（工具授权 / 提问 / 退出计划审批）。 */
+    /** 当前正阻塞等待用户审批的会话 id 集合（工具授权 / 提问 / 计划审批 / 云端决策）。 */
     val approvalSessionIds: StateFlow<Set<String>> = combine(
         awaitingPermissionSessionIds,
         askUserQuestionManager.pendingQuestion,
-        planApprovalManager.pendingApproval
-    ) { awaiting, question, plan ->
+        planApprovalManager.pendingApproval,
+        _cloudPendingDecisions
+    ) { awaiting, question, plan, cloudDecisions ->
         buildSet {
             addAll(awaiting)
             question?.sessionId?.takeIf { it.isNotBlank() }?.let { add(it) }
             plan?.sessionId?.takeIf { it.isNotBlank() }?.let { add(it) }
+            // 完全云端审批同样点亮侧边栏"等待审批"指示灯，与本地审批一体调度。
+            addAll(cloudDecisions.keys)
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
@@ -1183,11 +1228,11 @@ class AIAgentViewModel @Inject constructor(
     /** 是否有正在运行、可被打断的 agent 任务。 */
     val isRunning: Boolean get() {
         val sid = _currentSessionId.value ?: return false
-        return sessionJobs[sid]?.isActive == true
+        return sessionJobs[sid]?.isActive == true || cloudFollowJobs[sid]?.isActive == true
     }
 
     fun hasRunningSessionsInCurrentWorkspace(): Boolean {
-        if (sessions.value.any { sessionJobs[it.id]?.isActive == true }) return true
+        if (sessions.value.any { sessionJobs[it.id]?.isActive == true || cloudFollowJobs[it.id]?.isActive == true }) return true
         // 子代理会话不在 sessions（只含根会话）里：漏掉它们会在父代理这一轮结束时
         // 提前释放唤醒锁与前台服务，仍在跑的子代理会被系统挂起。
         return subSessionsByParent.value.values.any { subs ->
@@ -1290,6 +1335,9 @@ class AIAgentViewModel @Inject constructor(
         /** wakeLock 超时保险：构建、装依赖类工具动辄十几分钟，给足 60 分钟；任务正常结束会主动释放。 */
         const val KEEPALIVE_TIMEOUT_MS = 60 * 60 * 1000L
 
+        /** 完全云端跟随协程的补拉间隔：与实时流的 POLL_INTERVAL 同量级，兼顾及时性与省电。 */
+        const val CLOUD_FOLLOW_INTERVAL_MS = 1500L
+
         /** WakeLock 续期提前量：在超时前这么早重新 acquire，避免任务中途丢锁。 */
         private const val WAKE_LOCK_RENEW_MARGIN_MS = 10 * 60 * 1000L
         /** 从后台任务通知文本中提取 <title> 内容，供系统通知正文展示。 */
@@ -1383,8 +1431,9 @@ class AIAgentViewModel @Inject constructor(
                 awaitingPermissionSessionIds,
                 askUserQuestionManager.pendingQuestion,
                 planApprovalManager.pendingApproval,
-                toolPermissionManager.pendingRequest
-            ) { awaiting, question, plan, permission ->
+                toolPermissionManager.pendingRequest,
+                _cloudPendingDecisions
+            ) { awaiting, question, plan, permission, cloudDecisions ->
                 val labels = LinkedHashMap<String, Triple<Int, ApprovalKind, String?>>()
                 awaiting.forEach {
                     labels[it] = Triple(R.string.notification_approval_label_permission, ApprovalKind.PERMISSION,
@@ -1395,6 +1444,13 @@ class AIAgentViewModel @Inject constructor(
                 }
                 plan?.sessionId?.takeIf { it.isNotBlank() }?.let {
                     labels.putIfAbsent(it, Triple(R.string.notification_approval_label_plan, ApprovalKind.PLAN, plan.id))
+                }
+                // 完全云端审批接入同一通知总线：云端任务挂起等审批时，后台同样弹通知。
+                cloudDecisions.forEach { (sid, decision) ->
+                    labels.putIfAbsent(
+                        sid,
+                        Triple(R.string.notification_approval_label_cloud, ApprovalKind.CLOUD, decision.decisionId)
+                    )
                 }
                 labels
             }.collect { labels ->
@@ -1949,6 +2005,8 @@ class AIAgentViewModel @Inject constructor(
             }
         }
 
+        // 新提问启动前台实时流：取消可能存在的云端跟随协程，避免两个协程同时补拉同一游标。
+        cloudFollowJobs.remove(sessionId)?.cancel()
         coroutineContext[Job]?.let { sessionJobs[sessionId] = it }
         FileLogger.d(TAG, "stream start: sid=$sessionId prevState=${_agentStates.value[sessionId]} isAutoTrigger=$isAutoTrigger")
         setAgentState(sessionId, AgentUIState.Streaming)
@@ -2587,6 +2645,8 @@ class AIAgentViewModel @Inject constructor(
         _queuedRequests.value = _queuedRequests.value - sessionId
         sessionJobs[sessionId]?.cancel()
         sessionJobs.remove(sessionId)
+        cloudFollowJobs[sessionId]?.cancel()
+        cloudFollowJobs.remove(sessionId)
         _agentStates.value = _agentStates.value - sessionId
         _streamingTexts.value = _streamingTexts.value - sessionId
         setStreamingReasoning(sessionId, null)

@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write   # 创建 Release 与上传资产需要写权限
+      packages: write   # 推送合并基座镜像到 ghcr.io 需要写权限
 
     steps:
       - name: Checkout
@@ -92,6 +93,20 @@ jobs:
       - name: Build agent-server jar
         run: ./gradlew :agent-server:jar --stacktrace
 
+      # 构建合并基座镜像（Java + 完整工具链），推到 ghcr.io（docker pull 主通道），
+      # 同时导出 tar 作为 Release 资产（国内 pull 失败时 docker load 兜底）。
+      # 镜像 tag 固定为 :base（低频更新），jar 仍外挂走 Release，故每次发版重推内容基本不变、层缓存命中很快。
+      - name: Build & push unified agent-server image (ghcr.io)
+        run: |
+          set -e
+          IMAGE="ghcr.io/lisir2002/minimecode-agent-server:base"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker build -t "$IMAGE" -f docker/agent-server/Dockerfile .
+          docker push "$IMAGE"
+          # 导出镜像 tar 供 Release 兜底（gzip 压缩减小体积）
+          mkdir -p dist
+          docker save "$IMAGE" | gzip -c > "dist/agent-server-base.tar.gz"
+
       # 产物重命名为「包名-架构-版本」格式，并保留 R8 混淆映射（mapping.txt）用于崩溃堆栈反混淆。
       - name: Rename APK & collect mapping
         run: |
@@ -140,39 +155,23 @@ jobs:
             echo "正式版，不标记 pre-release"
           fi
 
-      # 本仓库在 main 上直接 commit，不走 PR 流程，generate_release_notes 列不出直接提交，
-      # 故手动用 git log 生成 changelog。
+      # 本仓库在 main 上直接 commit，不走 PR 流程，GitHub 的 generate_release_notes 列不出直接提交。
+      # 用脚本解析 conventional commits，按类型分类并保留每条完整正文（根因/改动清单），
+      # 生成结构化、可追溯的 Release 说明，而不是一串只有标题的平铺短句。
       - name: Generate changelog from git log
         id: changelog
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           cur_tag="${GITHUB_REF_NAME}"
-          if [[ "$cur_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            prev_tag=$(git tag --sort=-creatordate | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+$" | grep -vE "^${cur_tag}$" | head -1)
-          else
-            prev_tag=$(git tag --sort=-creatordate | grep -vE "^${cur_tag}$" | head -1)
-          fi
-          if [[ -z "$prev_tag" ]]; then
-            log=$(git log --oneline --no-decorate -30)
-          else
-            log=$(git log --oneline --no-decorate "${prev_tag}..HEAD")
-          fi
+          echo "generating release notes for ${cur_tag}"
+          # prev_tag 完全交给脚本推断：正式版对比上一正式版（汇总整个 rc 周期），
+          # 预发布版对比最近一个 tag。CI 不传入，避免覆盖脚本的分支逻辑。
           delimiter="EOF_$(date +%s)"
-          echo "body<<${delimiter}" >> "$GITHUB_OUTPUT"
-          echo "## What's Changed" >> "$GITHUB_OUTPUT"
-          echo "" >> "$GITHUB_OUTPUT"
-          if [[ -z "$log" ]]; then
-            echo "- 无新增提交（与上次发布同一提交）" >> "$GITHUB_OUTPUT"
-          else
-            echo "$log" | while IFS= read -r line; do
-              sha=$(echo "$line" | cut -d' ' -f1)
-              msg=$(echo "$line" | cut -d' ' -f2-)
-              echo "- ${msg} (${sha})" >> "$GITHUB_OUTPUT"
-            done
-          fi
-          echo "" >> "$GITHUB_OUTPUT"
-          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${prev_tag}...${cur_tag}" >> "$GITHUB_OUTPUT"
-          echo "${delimiter}" >> "$GITHUB_OUTPUT"
+          {
+            echo "body<<${delimiter}"
+            python3 scripts/gen_release_notes.py "${cur_tag}"
+            echo "${delimiter}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release & Upload assets
         uses: softprops/action-gh-release@v2
@@ -185,5 +184,6 @@ jobs:
             dist/minimecode-arm64-*.apk
             dist/minimecode-arm64-*mapping.txt.gz
             dist/agent-server-*.jar
+            dist/agent-server-base.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

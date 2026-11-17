@@ -3,6 +3,11 @@ package com.minime.agent.server
 import com.google.gson.Gson
 import com.google.gson.JsonPrimitive
 import com.minime.code.feature.agent.data.remote.anthropic.AnthropicApi
+import com.minime.agent.server.modules.ServerLoadSkillTool
+import com.minime.agent.server.modules.ServerMemoryRepository
+import com.minime.agent.server.modules.ServerMemoryTool
+import com.minime.agent.server.modules.ServerPromptBuilder
+import com.minime.agent.server.modules.ServerSkillRepository
 import com.minime.code.feature.agent.domain.model.AgentContext
 import com.minime.code.feature.agent.domain.model.AgentMessage
 import com.minime.code.feature.agent.domain.provider.AIProvider
@@ -40,7 +45,14 @@ import java.util.concurrent.TimeUnit
 class AgentRunner(
     private val store: EventStore,
     private val workspaceRoot: String,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    // 云端的 skill/memory/prompt 能力（完全独立）。默认值让 Main 无需改动即可构造；
+    // 也可注入自定义实例（单测用临时目录隔离）。
+    private val skillRepository: ServerSkillRepository = ServerSkillRepository(
+        com.minime.agent.server.modules.LocalFileAccessProvider()
+    ),
+    private val memoryRepository: ServerMemoryRepository = ServerMemoryRepository(),
+    private val promptBuilder: ServerPromptBuilder = ServerPromptBuilder(skillRepository, memoryRepository)
 ) {
     private val log = LoggerFactory.getLogger(AgentRunner::class.java)
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
@@ -135,7 +147,20 @@ class AgentRunner(
         provider.logSessionId = sessionId
 
         val messages = initialMessages
-        val tools: List<AgentTool> = listOf(BashTool(workspaceRoot))
+        // 云端工具集：Bash + 技能加载 + 长期记忆（后两者数据完全独立于 App，存在容器内）
+        val tools: List<AgentTool> = listOf(
+            BashTool(workspaceRoot),
+            ServerLoadSkillTool(skillRepository),
+            ServerMemoryTool(memoryRepository)
+        )
+        // 一期不需要完整 AgentContext 能力；工具只用 projectRoot 等少量字段，给合理默认即可。
+        val agentContext = AgentContext(
+            currentFile = null,
+            selectedCode = null,
+            projectRoot = workspaceRoot,
+            language = null,
+            sessionId = sessionId
+        )
 
         val maxIterations = 30
         var iteration = startIteration
@@ -146,7 +171,7 @@ class AgentRunner(
             val resumeCalls = if (last is AgentMessage.AssistantMessage && last.toolCalls.isNotEmpty()) last.toolCalls else null
             if (resumeCalls == null) {
                 val response = provider.complete(
-                    systemPrompt = SYSTEM_PROMPT,
+                    systemPrompt = promptBuilder.build(),
                     messages = messages,
                     tools = tools
                 )
@@ -188,7 +213,7 @@ class AgentRunner(
                 if (tool == null) {
                     val err = "未知工具: ${call.name}"
                     store.append(NewEvent(sessionId, EventKind.TOOL_CALL_FINISHED, taskId, text = err, toolName = call.name, toolCallId = call.id, isError = true))
-                    messages += AgentMessage.ToolResultMessage(toolName = call.name, result = err)
+                    messages += AgentMessage.ToolResultMessage(id = call.id, toolName = call.name, result = err)
                     continue
                 }
 
@@ -214,12 +239,12 @@ class AgentRunner(
                     if (!approved) {
                         val rejected = "用户拒绝了 ${call.name} 调用"
                         store.append(NewEvent(sessionId, EventKind.TOOL_CALL_FINISHED, taskId, text = rejected, toolName = call.name, toolCallId = call.id, isError = true))
-                        messages += AgentMessage.ToolResultMessage(toolName = call.name, result = rejected)
+                        messages += AgentMessage.ToolResultMessage(id = call.id, toolName = call.name, result = rejected)
                         continue
                     }
                 }
 
-                val result = tool.execute(call.arguments)
+                val result = tool.executeWithContext(call.arguments, agentContext)
                 val resultText = when (result) {
                     is ToolResult.Success -> result.data.toString()
                     is ToolResult.Error -> result.message
@@ -231,7 +256,7 @@ class AgentRunner(
                     isError = result is ToolResult.Error
                 ))
                 messages += AgentMessage.ToolResultMessage(
-                    toolName = call.name, result = resultText,
+                    id = call.id, toolName = call.name, result = resultText,
                     modelResult = resultText
                 )
             }
@@ -272,10 +297,6 @@ class AgentRunner(
         }
     }
 
-    companion object {
-        const val SYSTEM_PROMPT = "You are a helpful AI coding assistant running in a cloud workspace. " +
-            "Use the Bash tool to inspect and modify the project. Be concise and precise."
-    }
 }
 
 /**

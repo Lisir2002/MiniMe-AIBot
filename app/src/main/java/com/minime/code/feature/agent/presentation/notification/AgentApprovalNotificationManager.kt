@@ -37,7 +37,7 @@ class AgentApprovalNotificationManager @Inject constructor(
     private val settings: ApprovalNotificationSettingsRepository
 ) {
     /** 待审批项的类型，决定通知上挂哪组按钮。 */
-    enum class ApprovalKind { PERMISSION, QUESTION, PLAN }
+    enum class ApprovalKind { PERMISSION, QUESTION, PLAN, CLOUD }
 
     /** 一个等待用户审批的会话在通知里的展示信息。 */
     data class PendingApproval(
@@ -123,6 +123,13 @@ class AgentApprovalNotificationManager @Inject constructor(
                     builder.addAction(0, context.getString(R.string.notification_approval_action_approve_plan), actionIntent(ApprovalKind.PLAN, PlanApprovalChoice.APPROVE.name, requestId, 13))
                     builder.addAction(0, context.getString(R.string.notification_approval_action_reject), actionIntent(ApprovalKind.PLAN, PlanApprovalChoice.REFINE.name, requestId, 14))
                 }
+                ApprovalKind.CLOUD -> {
+                    // 云端决策：requestId 是 decisionId，sessionId 用于回传后补拉该会话续跑结果。
+                    builder.addAction(0, context.getString(R.string.notification_approval_action_reject),
+                        actionIntent(ApprovalKind.CLOUD, "reject", requestId, 15, single.sessionId))
+                    builder.addAction(0, context.getString(R.string.notification_approval_action_allow),
+                        actionIntent(ApprovalKind.CLOUD, "approve", requestId, 16, single.sessionId))
+                }
                 ApprovalKind.QUESTION -> Unit
             }
         }
@@ -133,7 +140,13 @@ class AgentApprovalNotificationManager @Inject constructor(
      * PendingIntent 的等价判断忽略 extras，故 data 必须包含请求 id 和选择，
      * 避免新通知更新旧按钮，使旧通知意外批准后来的请求。
      */
-    private fun actionIntent(kind: ApprovalKind, choice: String, requestId: String, requestCode: Int): PendingIntent {
+    private fun actionIntent(
+        kind: ApprovalKind,
+        choice: String,
+        requestId: String,
+        requestCode: Int,
+        sessionId: String = ""
+    ): PendingIntent {
         val intent = Intent(context, AgentApprovalActionReceiver::class.java).apply {
             action = AgentApprovalActionReceiver.ACTION
             data = Uri.Builder().scheme("minimecode").authority("approval")
@@ -141,6 +154,7 @@ class AgentApprovalNotificationManager @Inject constructor(
             putExtra(AgentApprovalActionReceiver.EXTRA_REQUEST_ID, requestId)
             putExtra(AgentApprovalActionReceiver.EXTRA_KIND, kind.name)
             putExtra(AgentApprovalActionReceiver.EXTRA_CHOICE, choice)
+            putExtra(AgentApprovalActionReceiver.EXTRA_SESSION_ID, sessionId)
         }
         return PendingIntent.getBroadcast(
             context,

@@ -7,8 +7,13 @@ import com.minime.code.feature.agent.domain.permission.PermissionChoice
 import com.minime.code.feature.agent.domain.tool.ToolPermissionManager
 import com.minime.code.feature.agent.domain.tool.mode.PlanApprovalChoice
 import com.minime.code.feature.agent.domain.tool.mode.PlanApprovalManager
+import com.minime.code.feature.agent.domain.workflow.CloudAgentWorkflow
 import com.minime.code.feature.agent.presentation.notification.AgentApprovalNotificationManager.ApprovalKind
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -25,12 +30,34 @@ class AgentApprovalActionReceiver : BroadcastReceiver() {
     @Inject
     lateinit var planApprovalManager: PlanApprovalManager
 
+    @Inject
+    lateinit var cloudAgentWorkflow: CloudAgentWorkflow
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION) return
         val kind = intent.getStringExtra(EXTRA_KIND)?.let { value -> ApprovalKind.entries.find { it.name == value } } ?: return
         val choice = intent.getStringExtra(EXTRA_CHOICE) ?: return
         val requestId = intent.getStringExtra(EXTRA_REQUEST_ID) ?: return
         when (kind) {
+            ApprovalKind.CLOUD -> {
+                // 云端决策是网络请求（POST /decisions），在 IO 协程里执行；requestId 即 decisionId。
+                // 回传后云端续跑，App 下次回前台由 CloudAgentCatchUp 补拉结果（无需在此持有 ViewModel）。
+                val approve = choice == "approve"
+                if (choice != "approve" && choice != "reject") return
+                val pendingResult = goAsync()
+                scope.launch {
+                    try {
+                        cloudAgentWorkflow.decide(decisionId = requestId, approve = approve)
+                    } catch (e: Exception) {
+                        // 网络失败时用户仍可在 App 内重试；通知快捷操作不阻塞崩溃。
+                    } finally {
+                        pendingResult.finish()
+                    }
+                }
+                return
+            }
             ApprovalKind.PERMISSION -> {
                 val permissionChoice = PermissionChoice.entries.find { it.name == choice } ?: return
                 if (permissionChoice != PermissionChoice.ONCE && permissionChoice != PermissionChoice.REJECT) return
@@ -49,5 +76,6 @@ class AgentApprovalActionReceiver : BroadcastReceiver() {
         const val EXTRA_REQUEST_ID = "extra_request_id"
         const val EXTRA_KIND = "extra_kind"
         const val EXTRA_CHOICE = "extra_choice"
+        const val EXTRA_SESSION_ID = "extra_session_id"
     }
 }

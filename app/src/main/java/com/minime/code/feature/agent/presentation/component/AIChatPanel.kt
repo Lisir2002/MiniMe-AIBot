@@ -1463,7 +1463,10 @@ fun AIChatPanel(
 
     val executionMode = settingsViewModel?.executionMode?.collectAsStateWithLifecycle()?.value
     val connectionState = settingsViewModel?.connectionState?.collectAsStateWithLifecycle()?.value
-    val isRemote = executionMode == com.minime.code.feature.settings.data.repository.ExecutionMode.REMOTE_SSH
+    val cloudAgentEnabled = settingsViewModel?.cloudAgentEnabled?.collectAsStateWithLifecycle()?.value == true
+    // 完全云端模式下 Agent 循环与工具都在云端跑，本地 SSH 连接状态与任务无关。
+    // 顶栏不再显示「SSH：未连接」——那只是本地工具执行环境的连接，会误导用户以为云端断了。
+    val isRemote = !cloudAgentEnabled && executionMode == com.minime.code.feature.settings.data.repository.ExecutionMode.REMOTE_SSH
 
     val markdownImageTransformer = remember(viewModel.fileAccess) {
         MarkdownImageTransformer(viewModel.fileAccess)
@@ -1590,7 +1593,7 @@ fun AIChatPanel(
                 onNavigateToBrowser = onNavigateToBrowser,
                 currentMode = currentMode,
                 onToggleMode = { viewModel.setSessionMode(it) },
-                connectionState = connectionState?.takeIf { isRemote },
+                connectionState = null, // 顶栏不再显示本地 SSH 状态：远程工具执行模式已移除，云端模式由「服务器与云端」管理
                 showMenuButton = showMenuButton,
                 terminalActive = terminalActive,
                 gitActive = gitActive,
@@ -1616,11 +1619,9 @@ fun AIChatPanel(
             Column(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.weight(1f)) {
                 if (!messagesReady) {
-                    // 远程模式连接未就绪时显示连接状态占位，避免空白或旧工作区记录闪烁
-                    if (isRemote && connectionState != null && connectionState != com.minime.code.feature.agent.domain.container.ConnectionState.CONNECTED) {
-                        RemoteConnectingPlaceholder(state = connectionState)
-                    } else if (showMessagesLoading) {
-                        // 本地模式读库偏慢时的占位：以前这里什么都不画，切会话会先闪一下空白。
+                    // 读库偏慢时的占位：以前这里什么都不画，切会话会先闪一下空白。
+                    // （远程连接占位已移除：远程工具执行模式不再存在。）
+                    if (showMessagesLoading) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             androidx.compose.material3.CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
@@ -1668,13 +1669,15 @@ fun AIChatPanel(
                         // 忙碌状态指示器：在没有正文/思考流式输出、未在压缩、未被权限弹窗或询问挂起时展示。
                         // 工具正在执行或模型正在准备工具时，文案会由 thinkingLabel 动态呈现为对应场景（如「正在读取文件」）；
                         // 既无流式又无具体工具时兜底显示「正在思考」。
+                        // 云端审批挂起等同本地授权：不显示"正在思考"转圈，避免与审批卡片语义冲突。
+                        val awaitingUserInput = pendingPermission != null || pendingQuestion != null || cloudDecision != null
                         val showToolPreparation = shouldShowToolPreparation(
                             preparingTool = preparingTool,
                             isBusy = isBusy,
                             isCompacting = isCompacting,
-                            awaitingUserInput = pendingPermission != null || pendingQuestion != null,
+                            awaitingUserInput = awaitingUserInput,
                         )
-                        val showThinking = !showReasoning && !showStreaming && !isCompacting && isBusy && pendingPermission == null && pendingQuestion == null
+                        val showThinking = !showReasoning && !showStreaming && !isCompacting && isBusy && !awaitingUserInput
                         val showRetrying = retryState != null && isBusy && !isCompacting && !showStreaming && !showReasoning
                         val showKeySwitched = keySwitchState != null && isBusy && !isCompacting && !showStreaming && !showReasoning
                         val tailKind = when {
@@ -1824,7 +1827,9 @@ fun AIChatPanel(
                         argsPreview = d.argsPreview,
                         onApprove = { viewModel.decideCloudPending(d.sessionId, d.decisionId, true) },
                         onReject = { viewModel.decideCloudPending(d.sessionId, d.decisionId, false) },
-                        forceCollapse = dashboardCollapseActive
+                        forceCollapse = dashboardCollapseActive,
+                        isScrolling = listState.isScrollInProgress,
+                        sessionTitle = sessionTitle
                     )
                 }
             }
@@ -1877,7 +1882,7 @@ fun AIChatPanel(
                 todoItems = currentTodoItems,
                 sessionId = currentSessionId.orEmpty(),
                 onTodoExpandedChange = { todoExpanded = it },
-                forceCollapseDashboard = pendingPermission != null || pendingQuestion != null || planApproval != null || imeVisible,
+                forceCollapseDashboard = pendingPermission != null || pendingQuestion != null || planApproval != null || cloudDecision != null || imeVisible,
                 onDashboardExpandedChange = { dashboardExpanded = it },
                 onRefreshDashboard = {
                     activeProvider?.let {

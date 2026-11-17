@@ -45,7 +45,14 @@ class CloudAgentCatchUp @Inject constructor(
         val pendingDecisions: List<PendingDecisionDto>,
         val taskStatus: String,
         val terminated: Boolean
-    )
+    ) {
+        /**
+         * 云端任务当前是否仍在运行。删后台/熄屏期间任务在服务端独立协程照常推进，
+         * 重开补拉时若任务未终态，App 必须重建「执行中」运行态并继续跟随，否则界面看起来像断了。
+         * waiting_approval 也算"未终态"，但它应展示审批卡片而非转圈，故单独由 pendingDecisions 驱动。
+         */
+        val running: Boolean get() = !terminated && taskStatus.lowercase() in RUNNING_STATUSES
+    }
 
     /** 若当前未启用云端模式或会话未建立云端映射，返回 null（调用方直接跳过）。 */
     suspend fun syncSession(appSessionId: String): Result? {
@@ -134,6 +141,9 @@ class CloudAgentCatchUp @Inject constructor(
     }
 
     private companion object {
+        /** 云端任务"未终态"的状态集合：这些状态下任务仍可能推进，App 需重建运行态继续跟随。 */
+        val RUNNING_STATUSES = setOf("queued", "running", "waiting_approval")
+
         const val K_ASSISTANT_TEXT = "assistant_text"
         const val K_TOOL_STARTED = "tool_call_started"
         const val K_TOOL_FINISHED = "tool_call_finished"

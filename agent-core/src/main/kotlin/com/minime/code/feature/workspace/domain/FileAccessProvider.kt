@@ -172,7 +172,7 @@ interface FileAccessProvider {
  * 前缀写进指纹本身（而不是只存裸 hex），将来若换算法（如 blake3），旧记录与新记录
  * 天然不可比，会退化成「未知版本」而不是**错误地判定为相等**——这是并发校验里更安全的失败方向。
  */
-internal fun sha256Fingerprint(bytes: ByteArray): String {
+fun sha256Fingerprint(bytes: ByteArray): String {
     val digest = java.security.MessageDigest.getInstance("SHA-256").digest(bytes)
     return buildString(digest.size * 2 + 7) {
         append("sha256:")

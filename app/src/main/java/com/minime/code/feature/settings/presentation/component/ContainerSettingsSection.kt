@@ -631,18 +631,9 @@ private fun ProfileEditSheet(
                 }
             }
 
-            // 本地镜像 / 远程 SSH 切换：与侧边栏共用同一份滑块分段控件。
-            // 仅添加时可选；编辑时锁定——模式一旦创建不可改（本地切远程会丢本地 rootfs），换模式只能新建。
-            val modes = listOf(ExecutionMode.LOCAL_PROOT, ExecutionMode.REMOTE_SSH)
-            SegmentedTabs(
-                selected = modes.indexOf(mode).coerceAtLeast(0),
-                labels = listOf(
-                    stringResource(R.string.container_local_image),
-                    stringResource(R.string.container_remote_ssh)
-                ),
-                onSelect = { mode = modes[it] },
-                enabled = initial == null
-            )
+            // "远程 SSH 工具执行"模式已移除：服务器现在只作为完全云端 Agent 宿主，
+            // 统一由「运行与连接 → 服务器与云端」管理。新建容器固定为本地镜像模式。
+            // （既有远程 profile 仍可编辑，避免破坏存量数据；但新建时 mode 恒为本地。）
 
             // 中间可滚动表单区域：通过 weight(1f) 撑满剩余高度，杜绝左右 tab 切换时高度跳动
             Box(
