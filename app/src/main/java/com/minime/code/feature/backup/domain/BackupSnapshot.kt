@@ -206,6 +206,8 @@ data class ChatSessionDto(
     val providerId: String? = null,
     val model: String? = null,
     val isPinned: Boolean = false,
+    /** 会话绑定的云端执行目标（远程连接 id）；null=本机。 */
+    val cloudConnectionId: String? = null,
     /** 子代理会话的父会话 id；丢了它恢复后子会话会变成一堆根会话。 */
     val parentId: String? = null,
     val subagentType: String? = null

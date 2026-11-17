@@ -72,10 +72,20 @@ class EventStore(dbPath: String) : AutoCloseable {
                     status TEXT NOT NULL,
                     provider_json TEXT NOT NULL DEFAULT '',
                     checkpoint_json TEXT NOT NULL DEFAULT '',
+                    trust_level TEXT NOT NULL DEFAULT 'basic',
                     created_at INTEGER NOT NULL,
                     updated_at INTEGER NOT NULL
                 )
             """.trimIndent())
+            // 兼容已有库：老版本 tasks 表没有 trust_level 列
+            runCatching {
+                val cols = st.executeQuery("PRAGMA table_info(tasks)").use { rs ->
+                    val names = mutableListOf<String>()
+                    while (rs.next()) names += rs.getString("name")
+                    names
+                }
+                if (!cols.contains("trust_level")) st.executeUpdate("ALTER TABLE tasks ADD COLUMN trust_level TEXT NOT NULL DEFAULT 'basic'")
+            }
             // 待审批决策持久化：仅靠内存 pendingDecisions，进程重启或 App 重连后无法判断
             // 一个 pending_decision 事件是否已处理。落库后 App 可按 status=pending 重建审批卡片。
             st.executeUpdate("""
@@ -111,12 +121,13 @@ class EventStore(dbPath: String) : AutoCloseable {
     }
 
     @Synchronized
-    fun createTask(sessionId: String, provider: ProviderConfigDto): String {
+    fun createTask(sessionId: String, provider: ProviderConfigDto, trustLevel: String = "basic"): String {
         val id = UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
-        conn.prepareStatement("INSERT INTO tasks(id,session_id,status,provider_json,created_at,updated_at) VALUES(?,?,?,?,?,?)").use { ps ->
+        conn.prepareStatement("INSERT INTO tasks(id,session_id,status,provider_json,trust_level,created_at,updated_at) VALUES(?,?,?,?,?,?,?)").use { ps ->
             ps.setString(1, id); ps.setString(2, sessionId); ps.setString(3, TaskStatus.QUEUED)
-            ps.setString(4, json.encodeToString(provider)); ps.setLong(5, now); ps.setLong(6, now); ps.executeUpdate()
+            ps.setString(4, json.encodeToString(provider)); ps.setString(5, trustLevel)
+            ps.setLong(6, now); ps.setLong(7, now); ps.executeUpdate()
         }
         return id
     }
@@ -158,6 +169,16 @@ class EventStore(dbPath: String) : AutoCloseable {
             }
         }
         return result
+    }
+
+    /** 取任务的信任档位（续跑时也要按提交时的档位裁决审批）。 */
+    @Synchronized
+    fun getTaskTrustLevel(taskId: String): String {
+        conn.prepareStatement("SELECT trust_level FROM tasks WHERE id=?").use { ps ->
+            ps.setString(1, taskId); ps.executeQuery().use { rs ->
+                return if (rs.next()) (rs.getString(1) ?: "basic") else "basic"
+            }
+        }
     }
 
     @Synchronized

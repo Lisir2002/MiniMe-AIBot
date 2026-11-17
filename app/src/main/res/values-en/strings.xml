@@ -514,6 +514,19 @@
     <string name="chat_no_remote_connection">Not connected to remote server</string>
     <string name="chat_placeholder">How can I help you?</string>
     <string name="chat_input_hint">Describe what you need, and I\'ll help you write, modify, or explain code</string>
+    <string name="runtime_card_title">Runtime &amp; permissions</string>
+    <string name="runtime_card_env_label">Runtime</string>
+    <string name="runtime_card_env_local">On this device</string>
+    <string name="runtime_card_env_cloud">Fully cloud</string>
+    <string name="runtime_card_trust_label">Tool approval</string>
+    <string name="runtime_card_trust_full">Full trust</string>
+    <string name="runtime_card_trust_basic">Basic trust</string>
+    <string name="runtime_card_trust_strict">Strict</string>
+    <string name="runtime_card_cloud_hint">Cloud tasks keep running on the server even after the screen is off or the app is closed</string>
+    <string name="runtime_card_refresh">Refresh server list</string>
+    <string name="runtime_card_target_version">Server %1$s</string>
+    <string name="runtime_card_add_server">Add cloud server</string>
+    <string name="runtime_card_manage_servers">Manage cloud servers</string>
 
     <!-- Agent Status -->
     <string name="agent_stopped_by_user">Stopped by user</string>
@@ -1468,6 +1481,15 @@
     <string name="perm_entire_tool">Entire tool</string>
     <string name="perm_deny">Deny</string>
     <string name="perm_promote_to_global">Promote to global</string>
+    <string name="perm_trust_group">Tool trust level</string>
+    <string name="perm_trust_full_title">Full trust</string>
+    <string name="perm_trust_full_desc">Run every tool silently without approval (including high-risk operations; switching requires confirmation)</string>
+    <string name="perm_trust_basic_title">Basic trust (recommended)</string>
+    <string name="perm_trust_basic_desc">Read-only and safe operations run automatically; only writes, commands and external tools ask for approval. Choices can be remembered per workspace</string>
+    <string name="perm_trust_strict_title">Strict approval</string>
+    <string name="perm_trust_strict_desc">Every tool (including read-only) asks for approval. Choices can be remembered per workspace</string>
+    <string name="perm_trust_full_confirm_title">Switch to full trust?</string>
+    <string name="perm_trust_full_confirm_message">Full trust runs every tool silently, including high-risk operations such as deletes and commands, without asking. Only enable it when you fully trust the current workspace and model.</string>
     <string name="perm_safety_group">Safety</string>
     <string name="perm_disable_safety_interception">Disable safety interception</string>
     <string name="perm_disable_safety_interception_desc">When on, AUTO mode stops blocking catastrophic deletes and Shizuku prompts</string>

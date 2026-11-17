@@ -3,6 +3,7 @@ package com.minime.code.feature.agent.domain.permission
 import android.content.Context
 import com.minime.code.R
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.minime.code.feature.agent.domain.model.TrustLevel
 import com.minime.code.feature.agent.domain.tool.AgentTool
 import com.minime.code.feature.agent.domain.tool.ToolCapability
 import com.minime.code.feature.settings.data.repository.ToolSafetySettingsRepository
@@ -125,12 +126,35 @@ class ToolPermissionPolicyEngine @Inject constructor(
         val askTitle: String? = null
     )
 
-    suspend fun evaluate(tool: AgentTool?, toolName: String, args: Map<String, JsonElement>, mode: com.minime.code.feature.agent.domain.model.AgentMode): EvalResult {
+    suspend fun evaluate(
+        tool: AgentTool?,
+        toolName: String,
+        args: Map<String, JsonElement>,
+        mode: com.minime.code.feature.agent.domain.model.AgentMode,
+        trustLevel: TrustLevel = TrustLevel.BASIC
+    ): EvalResult {
         val capabilities = tool?.effectiveCapabilities(args).orEmpty()
+
+        // 0) PLAN 模式「规划态不执行危险工具」是产品硬约束，优先级高于任何信任档位：
+        //    即便用户切到完全信任，PLAN 下写/执行/外部工具仍被拒绝。
         if (mode == com.minime.code.feature.agent.domain.model.AgentMode.PLAN && isDangerousTool(toolName, args, capabilities)) {
             return EvalResult(Verdict.DENY, emptyList(), denyReason = appContext.getString(R.string.tool_plan_mode_denied))
         }
 
+        // 1) 完全信任：所有工具静默放行（含灾难性操作——用户切换档位时已确认安全提示）。
+        //    这是唯一绕过内置灾难 rm 防护的档位；PLAN 硬约束已在上面先行拦截。
+        if (trustLevel == TrustLevel.FULL) {
+            return EvalResult(Verdict.ALLOW, emptyList())
+        }
+
+        // 2) 严格审批：所有工具调用都弹窗，含只读工具与内置安全白名单命令；
+        //    但显式配置的分级 DENY 规则仍优先（安全底线），且保留「始终允许」记忆能力。
+        //    Shizuku、子代理删除等「不可记忆」工具在此档仍不可记忆（由 evaluateGeneric/evaluateShell 决定）。
+        if (trustLevel == TrustLevel.STRICT) {
+            return evaluateStrict(tool, toolName, args, capabilities)
+        }
+
+        // 3) 基本信任（默认）：沿用原有分档逻辑（AUTO 模式放行 / 白名单 / 记忆 / ASK）。
         if (mode == com.minime.code.feature.agent.domain.model.AgentMode.AUTO) {
             // AUTO 模式放行所有权限；灾难性 rm 防护（根目录/系统目录删除）默认保留，
             // 可在「工具授权」设置中关闭（禁用安全拦截）。遭遇拦截时仍可凭 elevate 参数提权重试。
@@ -190,6 +214,81 @@ class ToolPermissionPolicyEngine @Inject constructor(
             evaluateGeneric(rules, capabilities)
         }
     }
+
+    /**
+     * 严格审批档：一律弹窗，但尊重用户显式配置的 DENY 规则（安全底线仍生效）。
+     * 与 BASIC 的区别是：不放行 READ_AGENT_CONFIG、不套用内置安全白名单、不因 AUTO_APPROVE 策略自动通过；
+     * 与 BASIC 相同的是：仍提供「始终允许」可记忆模式（shell 按命令前缀、其他按整工具），仍遵守不可记忆工具的限制。
+     */
+    private suspend fun evaluateStrict(
+        tool: AgentTool?,
+        toolName: String,
+        args: Map<String, JsonElement>,
+        capabilities: Set<ToolCapability>
+    ): EvalResult {
+        val rules = rulesRepo.loadEffectiveForCurrentProject().filter { it.toolName == toolName }
+        val deny = rules.filter { it.decision == PermissionDecision.DENY }
+
+        if (isShellTool(toolName, args)) {
+            val command = ((args["command"] ?: args["input"]) as? JsonPrimitive)?.content
+                ?: return EvalResult(Verdict.ASK, emptyList())
+            val analysis = ShellCommandParser.analyze(command)
+            // 显式 DENY 命中任一命令段 → 拒绝（与 BASIC 一致的安全底线）。
+            val denied = deny.firstOrNull { rule ->
+                analysis.segments.any { seg -> ShellCommandParser.matches(rule.pattern, seg) }
+            }
+            if (denied != null) {
+                val segment = analysis.segments.first { ShellCommandParser.matches(denied.pattern, it) }
+                return EvalResult(
+                    Verdict.DENY, emptyList(),
+                    denyReason = appContext.getString(
+                        R.string.tool_command_rule_denied_detail,
+                        denied.toCompact(),
+                        segment.joinToString(" ")
+                    )
+                )
+            }
+            // 不可静态判定的命令：ASK 且不可记忆（沿用 BASIC 的保守策略）。
+            if (!analysis.analyzable) {
+                return EvalResult(
+                    Verdict.ASK, emptyList(),
+                    rememberDisabledReason = appContext.getString(
+                        R.string.tool_command_unanalyzable_reason,
+                        analysis.blockers.joinToString("、")
+                    )
+                )
+            }
+            // 高风险删除（递归/通配/强制）不可记忆，仅单次放行。
+            val hasRmUnrememberable = analysis.segments.any { seg ->
+                val rmInfo = ShellCommandParser.parseRmInfo(seg)
+                rmInfo.isRm && (rmInfo.targetPaths.isEmpty() || rmInfo.isRecursive || rmInfo.isWildcard)
+            }
+            if (hasRmUnrememberable) {
+                return EvalResult(
+                    Verdict.ASK, emptyList(),
+                    rememberDisabledReason = "高风险删除操作（递归/通配/强制批量删除），为确保数据安全不可记忆，仅可单次放行"
+                )
+            }
+            val rememberable = analysis.segments.mapNotNull { ShellCommandParser.rememberablePrefix(it) }.distinct()
+            return EvalResult(Verdict.ASK, rememberable)
+        }
+
+        // 非 shell 工具：显式整工具 DENY 优先，否则一律 ASK。
+        if (deny.any { it.pattern == PermissionRule.WHOLE_TOOL }) {
+            return EvalResult(Verdict.DENY, emptyList(), denyReason = appContext.getString(R.string.tool_permission_rule_denied))
+        }
+        if (capabilities.any { it in NON_REMEMBERABLE_CAPABILITIES } || toolName == TASK_TOOL && isTaskDelete(args)) {
+            return EvalResult(
+                Verdict.ASK, emptyList(),
+                rememberDisabledReason = "该工具会修改 Agent 配置、容器环境、子代理会话或调用外部动态工具，仅支持单次放行"
+            )
+        }
+        return EvalResult(Verdict.ASK, listOf(PermissionRule.WHOLE_TOOL))
+    }
+
+    /** 子代理工具是否为删除动作（严格档下不可记忆）。 */
+    private fun isTaskDelete(args: Map<String, JsonElement>): Boolean =
+        (args["action"] as? JsonPrimitive)?.content?.trim()?.lowercase() == TASK_DELETE_ACTION
 
     private fun isDangerousTool(toolName: String, args: Map<String, JsonElement>, capabilities: Set<ToolCapability>): Boolean {
         val dangerousCapabilities = setOf(

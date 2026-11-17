@@ -69,8 +69,9 @@ fun Application.configureServer(store: EventStore, runner: AgentRunner, token: S
                 call.respond(HttpStatusCode.NotFound, ErrorResponse("session not found")); return@post
             }
             val req = call.receive<SubmitMessageRequest>()
-            val taskId = store.createTask(sessionId, req.provider)
-            runner.submit(sessionId, taskId, req.content, req.provider)
+            val trustLevel = req.trustLevel.ifBlank { "basic" }
+            val taskId = store.createTask(sessionId, req.provider, trustLevel)
+            runner.submit(sessionId, taskId, req.content, req.provider, trustLevel)
             call.respond(HttpStatusCode.Accepted, SubmitMessageResponse(taskId))
         }
 

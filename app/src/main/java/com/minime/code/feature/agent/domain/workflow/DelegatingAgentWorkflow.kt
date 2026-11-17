@@ -19,7 +19,8 @@ import javax.inject.Singleton
 class DelegatingAgentWorkflow @Inject constructor(
     @param:Named("local") private val local: AgentWorkflow,
     private val cloud: CloudAgentWorkflow,
-    private val settings: CloudAgentSettingsRepository
+    private val settings: CloudAgentSettingsRepository,
+    private val targetResolver: CloudTargetResolver
 ) : AgentWorkflow {
 
     override fun executeEvents(
@@ -27,7 +28,9 @@ class DelegatingAgentWorkflow @Inject constructor(
         context: AgentContext,
         tools: List<AgentTool>
     ): Flow<AgentEvent> = channelFlow {
-        val useCloud = settings.isEnabled()
+        // 路由按会话的执行目标决定：绑定了云服务器→云端，否则本机。
+        // 同一 App 的不同会话可同时处在不同后端，互不干扰。
+        val useCloud = targetResolver.isCloudSession(context.sessionId)
         val source = if (useCloud) {
             cloud.executeEvents(userRequest, context, tools)
         } else {
@@ -37,11 +40,12 @@ class DelegatingAgentWorkflow @Inject constructor(
     }
 
     override suspend fun compactSession(sessionId: String, onEvent: suspend (AgentEvent) -> Unit): Boolean =
-        if (settings.isEnabled()) cloud.compactSession(sessionId, onEvent)
+        if (targetResolver.isCloudSession(sessionId)) cloud.compactSession(sessionId, onEvent)
         else local.compactSession(sessionId, onEvent)
 
     override suspend fun generateTitle(sessionId: String, request: String): String? =
-        if (settings.isEnabled()) cloud.generateTitle(sessionId, request) else local.generateTitle(sessionId, request)
+        if (targetResolver.isCloudSession(sessionId)) cloud.generateTitle(sessionId, request)
+        else local.generateTitle(sessionId, request)
 
     override suspend fun generateCommitMessage(diff: String): String? =
         if (settings.isEnabled()) cloud.generateCommitMessage(diff) else local.generateCommitMessage(diff)

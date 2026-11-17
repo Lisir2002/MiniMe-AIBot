@@ -3,6 +3,7 @@ package com.minime.code.feature.agent.domain.permission
 import android.content.Context
 import com.minime.code.R
 import com.minime.code.feature.agent.domain.model.AgentMode
+import com.minime.code.feature.agent.domain.model.TrustLevel
 import com.minime.code.feature.agent.domain.tool.AgentTool
 import com.minime.code.feature.agent.domain.tool.ToolCapability
 import com.minime.code.feature.settings.data.repository.ToolSafetySettingsRepository
@@ -556,6 +557,76 @@ class ToolPermissionPolicyEngineTest {
         assertTrue(r.rememberablePatterns.isEmpty())
         assertEquals("resource:${R.string.tool_command_unanalyzable_reason}", r.rememberDisabledReason)
         assertEquals(listOf("命令替换 \$(...)"), formatArgs)
+    }
+
+    // ── 信任档位：完全/基本/严格 三档分流 ──────────────────────────
+
+    @Test
+    fun trustFull_allowsEverythingIncludingCatastrophicRm() = runTest {
+        val e = engine()
+        // 完全信任：连灾难性 rm 也静默放行（用户切换档位时已确认安全提示）。
+        val r = e.evaluate(
+            tool(ToolCapability.EXECUTE_COMMANDS), "Bash", bash("rm -rf /"),
+            AgentMode.BUILD, TrustLevel.FULL
+        )
+        assertEquals(ToolPermissionPolicyEngine.Verdict.ALLOW, r.verdict)
+    }
+
+    @Test
+    fun trustFull_stillRespectsPlanHardConstraint() = runTest {
+        val e = engine()
+        // PLAN 模式的产品约束优先于完全信任：规划态不执行危险工具。
+        val r = e.evaluate(
+            tool(ToolCapability.WRITE_WORKSPACE), "writeFile", emptyMap(),
+            AgentMode.PLAN, TrustLevel.FULL
+        )
+        assertEquals(ToolPermissionPolicyEngine.Verdict.DENY, r.verdict)
+    }
+
+    @Test
+    fun trustStrict_asksEvenReadOnlyAndSafeWhitelist() = runTest {
+        val e = engine()
+        // 严格档：只读工具也要弹窗。
+        val read = e.evaluate(
+            tool(ToolCapability.READ_WORKSPACE), "readFile", emptyMap(),
+            AgentMode.BUILD, TrustLevel.STRICT
+        )
+        assertEquals(ToolPermissionPolicyEngine.Verdict.ASK, read.verdict)
+        assertTrue(read.rememberablePatterns.isNotEmpty()) // 可记住
+        // 严格档：内置安全白名单命令（ls）也要弹窗。
+        val safeCmd = e.evaluate(
+            tool(ToolCapability.EXECUTE_COMMANDS), "Bash", bash("ls"),
+            AgentMode.BUILD, TrustLevel.STRICT
+        )
+        assertEquals(ToolPermissionPolicyEngine.Verdict.ASK, safeCmd.verdict)
+    }
+
+    @Test
+    fun trustStrict_respectsExplicitDeny() = runTest {
+        val e = engine(PermissionRule("Bash", "rm", PermissionDecision.DENY))
+        val r = e.evaluate(
+            tool(ToolCapability.EXECUTE_COMMANDS), "Bash", bash("rm -rf /tmp/build"),
+            AgentMode.BUILD, TrustLevel.STRICT
+        )
+        assertEquals(ToolPermissionPolicyEngine.Verdict.DENY, r.verdict)
+    }
+
+    @Test
+    fun trustBasic_readOnlyAutoApproveViaShortCircuit() = runTest {
+        val e = engine()
+        // 基本信任（默认）：READ_AGENT_CONFIG 类（loadSkill/memory）在引擎层自动放行。
+        val configRead = e.evaluate(
+            tool(ToolCapability.READ_AGENT_CONFIG), "loadSkill", emptyMap(),
+            AgentMode.BUILD, TrustLevel.BASIC
+        )
+        assertEquals(ToolPermissionPolicyEngine.Verdict.ALLOW, configRead.verdict)
+        // READ_WORKSPACE 类（readFile）引擎层返回 ASK，由 workflow 的 AUTO_APPROVE 短路放行；
+        // 严格档下同一工具则真正弹窗（见 trustStrict_asksEvenReadOnlyAndSafeWhitelist）。
+        val wsRead = e.evaluate(
+            tool(ToolCapability.READ_WORKSPACE), "readFile", emptyMap(),
+            AgentMode.BUILD, TrustLevel.BASIC
+        )
+        assertEquals(ToolPermissionPolicyEngine.Verdict.ASK, wsRead.verdict)
     }
 
     // ── remember：去重后逐条落库 ────────────────────────────────────

@@ -19,7 +19,9 @@ data class CreateSessionResponse(
 data class SubmitMessageRequest(
     val content: String,
     /** 该会话使用的模型配置（第一版：type 固定 anthropic/openai/gemini，取其一）。 */
-    val provider: ProviderConfigDto
+    val provider: ProviderConfigDto,
+    /** 工具审批信任档位（full/basic/strict），缺省 basic。随任务持久化，供异步审批裁决。 */
+    val trustLevel: String = "basic"
 )
 
 @Serializable

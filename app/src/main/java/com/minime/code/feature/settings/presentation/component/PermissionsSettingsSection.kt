@@ -39,6 +39,7 @@ import com.minime.code.R
 import com.minime.code.core.theme.Spacing
 import com.minime.code.core.ui.AppSwitch
 import com.minime.code.core.ui.SwipeToDeleteRow
+import com.minime.code.feature.agent.domain.model.TrustLevel
 import com.minime.code.feature.agent.domain.permission.PermissionDecision
 import com.minime.code.feature.agent.domain.permission.PermissionRule
 import com.minime.code.core.ui.MiniMeIcons
@@ -56,6 +57,8 @@ internal fun PermissionsSection(
     projectRules: List<PermissionRule>,
     globalRules: List<PermissionRule>,
     disableSafetyInterception: Boolean,
+    trustLevel: TrustLevel,
+    onTrustLevelChange: (TrustLevel) -> Unit,
     onToggleSafetyInterception: (Boolean) -> Unit,
     onDeleteProject: (PermissionRule) -> Unit,
     onPromote: (PermissionRule) -> Unit,
@@ -63,8 +66,9 @@ internal fun PermissionsSection(
 ) {
     var projectExpanded by rememberSaveable { mutableStateOf(true) }
     var globalExpanded by rememberSaveable { mutableStateOf(true) }
-    // 开启「禁用安全拦截」前先弹强制确认框（确认按钮 5 秒倒计时）；关闭无需确认。
+    // 开启「禁用安全拦截」/切到「完全信任」前先弹强制确认框（确认按钮 5 秒倒计时）；其余无需确认。
     var showSafetyConfirm by remember { mutableStateOf(false) }
+    var pendingFullTrust by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -74,6 +78,39 @@ internal fun PermissionsSection(
             .padding(bottom = Spacing.xl),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
+        SettingsGroupHeader(text = stringResource(R.string.perm_trust_group))
+        SettingsGroup {
+            TrustLevel.entries.forEachIndexed { index, level ->
+                if (index > 0) SettingsDivider()
+                val (title, desc) = when (level) {
+                    TrustLevel.FULL -> R.string.perm_trust_full_title to R.string.perm_trust_full_desc
+                    TrustLevel.BASIC -> R.string.perm_trust_basic_title to R.string.perm_trust_basic_desc
+                    TrustLevel.STRICT -> R.string.perm_trust_strict_title to R.string.perm_trust_strict_desc
+                }
+                SettingsRow(
+                    icon = when (level) {
+                        TrustLevel.FULL -> MiniMeIcons.Shield
+                        TrustLevel.BASIC -> MiniMeIcons.CheckCircle
+                        TrustLevel.STRICT -> MiniMeIcons.Lock
+                    },
+                    title = stringResource(title),
+                    subtitle = stringResource(desc),
+                    trailing = {
+                        androidx.compose.material3.RadioButton(
+                            selected = trustLevel == level,
+                            onClick = {
+                                if (level == TrustLevel.FULL && trustLevel != TrustLevel.FULL) {
+                                    pendingFullTrust = true
+                                } else {
+                                    onTrustLevelChange(level)
+                                }
+                            }
+                        )
+                    }
+                )
+            }
+        }
+
         SettingsGroupHeader(text = stringResource(R.string.perm_safety_group))
         SettingsGroup {
             SettingsRow(
@@ -145,6 +182,8 @@ internal fun PermissionsSection(
 
     if (showSafetyConfirm) {
         SafetyConfirmDialog(
+            title = stringResource(R.string.perm_safety_confirm_title),
+            message = stringResource(R.string.perm_safety_confirm_message),
             onConfirm = {
                 onToggleSafetyInterception(true)
                 showSafetyConfirm = false
@@ -152,14 +191,28 @@ internal fun PermissionsSection(
             onDismiss = { showSafetyConfirm = false }
         )
     }
+
+    if (pendingFullTrust) {
+        SafetyConfirmDialog(
+            title = stringResource(R.string.perm_trust_full_confirm_title),
+            message = stringResource(R.string.perm_trust_full_confirm_message),
+            onConfirm = {
+                onTrustLevelChange(TrustLevel.FULL)
+                pendingFullTrust = false
+            },
+            onDismiss = { pendingFullTrust = false }
+        )
+    }
 }
 
 /** 「禁用安全拦截」确认框的倒计时秒数。 */
 private const val SAFETY_CONFIRM_COUNTDOWN_SECONDS = 5
 
-/** 开启「禁用安全拦截」前的强制确认框：确认按钮带 5 秒倒计时，倒计时结束前不可点。 */
+/** 高危切换前的强制确认框：确认按钮带 5 秒倒计时，倒计时结束前不可点。 */
 @Composable
 private fun SafetyConfirmDialog(
+    title: String,
+    message: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -172,8 +225,8 @@ private fun SafetyConfirmDialog(
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.perm_safety_confirm_title)) },
-        text = { Text(stringResource(R.string.perm_safety_confirm_message)) },
+        title = { Text(title) },
+        text = { Text(message) },
         confirmButton = {
             TextButton(
                 onClick = onConfirm,

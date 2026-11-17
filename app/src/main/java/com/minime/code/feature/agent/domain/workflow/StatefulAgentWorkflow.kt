@@ -44,9 +44,11 @@ import com.minime.code.feature.agent.domain.tool.modelToolResultText
 import com.minime.code.feature.agent.domain.tool.toTransportString
 import com.minime.code.feature.agent.presentation.AgentAttachment
 import com.minime.code.feature.settings.data.remote.ModelMetadataService
+import com.minime.code.feature.agent.domain.model.TrustLevel
 import com.minime.code.feature.settings.data.repository.CompactionModelSettingsRepository
 import com.minime.code.feature.settings.data.repository.DefaultModelSettingsRepository
 import com.minime.code.feature.settings.data.repository.GeneralSettingsRepository
+import com.minime.code.feature.settings.data.repository.TrustLevelRepository
 import com.minime.code.feature.settings.data.repository.ProviderKeyRotator
 import com.minime.code.feature.settings.data.repository.TitleModelSettingsRepository
 import com.minime.code.feature.settings.domain.model.AIProviderConfig
@@ -105,6 +107,7 @@ class StatefulAgentWorkflow @Inject constructor(
     private val promptProvider: SystemPromptProvider,
     private val permissionManager: ToolPermissionManager,
     private val policyEngine: ToolPermissionPolicyEngine,
+    private val trustLevelRepository: TrustLevelRepository,
     private val contextCompactor: ContextCompactor,
     private val planApprovalManager: PlanApprovalManager,
     private val toolOutputStore: ToolOutputStore,
@@ -1387,14 +1390,17 @@ class StatefulAgentWorkflow @Inject constructor(
             }
         }
 
-        val eval = policyEngine.evaluate(tool, tool.name, arguments, mode)
+        // 信任档位决定审批强度；严格档下只读工具也要弹窗，故不能走 AUTO_APPROVE 短路。
+        val trustLevel = trustLevelRepository.current()
+        val eval = policyEngine.evaluate(tool, tool.name, arguments, mode, trustLevel)
         if (eval.verdict == ToolPermissionPolicyEngine.Verdict.DENY) {
             val reason = eval.denyReason ?: "该工具被项目安全规则策略禁止执行"
             val code = if (mode == AgentMode.PLAN) "PLAN_MODE_REJECTED" else "SYSTEM_DENIED"
             return PermissionCheckResult(false, reason, code)
         }
 
-        if (tool.permissionPolicy == ToolPermissionPolicy.AUTO_APPROVE) {
+        // AUTO_APPROVE 短路仅在非严格档生效：基本信任下只读工具静默放行，严格档一律弹窗。
+        if (trustLevel != TrustLevel.STRICT && tool.permissionPolicy == ToolPermissionPolicy.AUTO_APPROVE) {
             return PermissionCheckResult(true)
         }
 

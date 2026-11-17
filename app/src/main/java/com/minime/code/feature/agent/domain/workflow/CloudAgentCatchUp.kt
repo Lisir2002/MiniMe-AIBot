@@ -35,6 +35,8 @@ class CloudAgentCatchUp @Inject constructor(
     private val api: CloudAgentApi,
     private val settings: CloudAgentSettingsRepository,
     private val messagePersistence: MessagePersistenceUseCase,
+    private val chatSessionDao: com.minime.code.feature.agent.data.local.dao.ChatSessionDao,
+    private val targetResolver: CloudTargetResolver,
     @param:ApplicationContext private val context: Context
 ) {
     /** 同一会话的补拉串行化，避免「回前台」与「切会话」并发触发导致游标竞态。 */
@@ -54,13 +56,15 @@ class CloudAgentCatchUp @Inject constructor(
         val running: Boolean get() = !terminated && taskStatus.lowercase() in RUNNING_STATUSES
     }
 
-    /** 若当前未启用云端模式或会话未建立云端映射，返回 null（调用方直接跳过）。 */
+    /** 若会话不在云端运行或未建立云端映射，返回 null（调用方直接跳过）。 */
     suspend fun syncSession(appSessionId: String): Result? {
-        if (!settings.isEnabled()) return null
-        val baseUrl = settings.serverUrl()
-        if (baseUrl.isBlank() || appSessionId.isBlank()) return null
+        if (appSessionId.isBlank()) return null
+        // 按会话绑定的目标解析服务器；不同会话可落在不同的云服务器。
+        val target = targetResolver.resolve(appSessionId) ?: return null
+        val baseUrl = target.baseUrl
+        if (baseUrl.isBlank()) return null
         val cloudSessionId = settings.getCloudSessionId(appSessionId, baseUrl) ?: return null
-        val auth = "Bearer ${settings.token()}"
+        val auth = "Bearer ${target.token}"
 
         val mutex = synchronized(locks) { locks.getOrPut(appSessionId) { Mutex() } }
         return mutex.withLock {
@@ -80,14 +84,15 @@ class CloudAgentCatchUp @Inject constructor(
         }
     }
 
-    /** 批量同步所有「本服务器下建立过云端映射」的会话（App 冷启动/回前台调用）。 */
+    /**
+     * 批量同步所有「当前在云端运行」的会话（App 冷启动/回前台调用）。
+     * 遍历所有会话，由 [syncSession] 按各自绑定的目标解析服务器——不再假设只有一台。
+     */
     suspend fun syncAll(): Map<String, Result> {
-        if (!settings.isEnabled()) return emptyMap()
-        val baseUrl = settings.serverUrl()
-        if (baseUrl.isBlank()) return emptyMap()
+        // 不再依赖全局开关：逐会话由 resolve 判断是否在云端运行，避免"关了总闸但某会话仍绑定云端"时漏补拉。
         val out = linkedMapOf<String, Result>()
-        for (appSessionId in settings.allCloudAppSessionIds(baseUrl)) {
-            syncSession(appSessionId)?.let { out[appSessionId] = it }
+        for (session in chatSessionDao.getAllOnce()) {
+            syncSession(session.id)?.let { out[session.id] = it }
         }
         return out
     }

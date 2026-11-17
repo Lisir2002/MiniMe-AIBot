@@ -255,6 +255,7 @@ class CloudAgentServerManager @Inject constructor(
             if (existing.action == Inspection.Action.UP_TO_DATE) {
                 onProgress("已是最新版本 ${existing.currentVersion}，无需重装。\n")
                 settings.setServerUrl("http://${conn.host}:$SERVER_PORT")
+                settings.setServerUrlFor(conn.id, "http://${conn.host}:$SERVER_PORT")
                 return@withContext Result.success(
                     DeployResult(true, existing.currentVersion ?: rel.version, "已是最新版本，无需重装", log.toString())
                 )
@@ -295,8 +296,9 @@ class CloudAgentServerManager @Inject constructor(
                 )
             }
 
-            // 4) 回填 serverUrl（复用基座连接 host，端口固定 8080）
+            // 4) 回填 serverUrl（复用基座连接 host，端口固定 8080）；按 connectionId 存一份供多服务器解析
             settings.setServerUrl("http://${conn.host}:$SERVER_PORT")
+            settings.setServerUrlFor(conn.id, "http://${conn.host}:$SERVER_PORT")
             Result.success(DeployResult(true, deployedVersion, "部署成功", log.toString()))
         } catch (e: Exception) {
             Result.success(DeployResult(false, "", friendlySshError(e), ""))

@@ -68,6 +68,11 @@ data class ChatSession(
     val totalOutputTokens: Int = 0,
     val lastInputTokens: Int = 0,
     val isPinned: Boolean = false,
+    /**
+     * 本会话绑定的云端执行目标（远程服务器连接 id）；null 表示本机运行。
+     * 非 null 时该会话的 Agent 循环在对应云服务器上执行；同一 App 的不同会话可绑定不同服务器。
+     */
+    val cloudConnectionId: String? = null,
     /** 子代理会话：父会话 id；null 表示普通根会话。 */
     val parentId: String? = null,
     /** 子代理会话：派生子代理的类型（如 coder / researcher）；null 表示普通根会话。 */

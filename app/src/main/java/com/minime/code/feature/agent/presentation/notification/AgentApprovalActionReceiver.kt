@@ -46,10 +46,12 @@ class AgentApprovalActionReceiver : BroadcastReceiver() {
                 // 回传后云端续跑，App 下次回前台由 CloudAgentCatchUp 补拉结果（无需在此持有 ViewModel）。
                 val approve = choice == "approve"
                 if (choice != "approve" && choice != "reject") return
+                // sessionId 随通知 extras 带来，用于定位该审批属于哪台云服务器。
+                val sessionId = intent.getStringExtra(EXTRA_SESSION_ID)
                 val pendingResult = goAsync()
                 scope.launch {
                     try {
-                        cloudAgentWorkflow.decide(decisionId = requestId, approve = approve)
+                        cloudAgentWorkflow.decide(sessionId = sessionId, decisionId = requestId, approve = approve)
                     } catch (e: Exception) {
                         // 网络失败时用户仍可在 App 内重试；通知快捷操作不阻塞崩溃。
                     } finally {

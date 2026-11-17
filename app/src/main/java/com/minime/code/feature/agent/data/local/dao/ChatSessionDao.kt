@@ -65,6 +65,10 @@ interface ChatSessionDao {
     @Query("UPDATE chat_sessions SET isPinned = :pinned WHERE id = :id")
     suspend fun updatePinned(id: String, pinned: Boolean)
 
+    /** 设置/清除会话绑定的云端执行目标；null 表示切回本机运行。 */
+    @Query("UPDATE chat_sessions SET cloudConnectionId = :connectionId, updatedAt = :updatedAt WHERE id = :id")
+    suspend fun updateCloudConnectionId(id: String, connectionId: String?, updatedAt: Long)
+
     @Query("DELETE FROM chat_sessions WHERE id = :id")
     suspend fun delete(id: String)
 

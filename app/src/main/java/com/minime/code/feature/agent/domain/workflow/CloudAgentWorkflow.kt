@@ -31,7 +31,9 @@ class CloudAgentWorkflow @Inject constructor(
     private val api: CloudAgentApi,
     private val settings: CloudAgentSettingsRepository,
     private val providerRepository: AIProviderRepository,
-    private val defaultModelSettings: DefaultModelSettingsRepository
+    private val defaultModelSettings: DefaultModelSettingsRepository,
+    private val trustLevelRepository: com.minime.code.feature.settings.data.repository.TrustLevelRepository,
+    private val targetResolver: CloudTargetResolver
 ) : AgentWorkflow {
 
     private companion object {
@@ -51,13 +53,15 @@ class CloudAgentWorkflow @Inject constructor(
         context: AgentContext,
         tools: List<AgentTool>
     ): Flow<AgentEvent> = channelFlow {
-        val baseUrl = settings.serverUrl()
-        if (baseUrl.isBlank()) {
-            send(AgentEvent.Failed("云端 Agent 模式已开启，但未配置服务器地址"))
+        val appSessionId = context.sessionId ?: ""
+        // 从会话绑定的执行目标解析出服务器地址/令牌：多会话可各跑各的服务器。
+        val target = targetResolver.resolve(appSessionId)
+        if (target == null || target.baseUrl.isBlank()) {
+            send(AgentEvent.Failed("云端 Agent 目标不可用，请检查服务器的执行目标配置"))
             return@channelFlow
         }
-        val auth = "Bearer ${settings.token()}"
-        val appSessionId = context.sessionId ?: ""
+        val baseUrl = target.baseUrl
+        val auth = "Bearer ${target.token}"
 
         // 1) 解析当前 App 生效的 provider 配置，交给云端（云端据此调 LLM）
         val cfg = resolveProviderConfig()
@@ -81,8 +85,9 @@ class CloudAgentWorkflow @Inject constructor(
             settings.setPollCursor(appSessionId, baseUrl, cursor)
         }
 
-        // 4) 提交提问
-        api.submitMessage(baseUrl, auth, cloudSessionId, SubmitMessageReq(userRequest, cfg))
+        // 4) 提交提问（携带当前信任档位，云端据此裁决工具审批强度）
+        val trustLevel = trustLevelRepository.current().wireName
+        api.submitMessage(baseUrl, auth, cloudSessionId, SubmitMessageReq(userRequest, cfg, trustLevel))
 
         // 5) 轮询增量事件，转成标准 AgentEvent
         var terminated = false
@@ -154,10 +159,11 @@ class CloudAgentWorkflow @Inject constructor(
         )
     }
 
-    /** 用户审批决策回传云端。UI 在用户点击批准/拒绝后调用。 */
-    suspend fun decide(decisionId: String, approve: Boolean) {
-        val baseUrl = settings.serverUrl()
-        api.decide(baseUrl, "Bearer ${settings.token()}", decisionId, DecisionReq(approve))
+    /** 用户审批决策回传云端。UI 在用户点击批准/拒绝后调用；[sessionId] 用于定位对应的云服务器。 */
+    suspend fun decide(sessionId: String?, decisionId: String, approve: Boolean) {
+        val target = targetResolver.resolve(sessionId)
+            ?: throw IllegalStateException("审批回传失败：会话没有可用的云端目标")
+        api.decide(target.baseUrl, "Bearer ${target.token}", decisionId, DecisionReq(approve))
     }
 
     // ---- AgentWorkflow 其余方法：云端模式下的简化实现 ----

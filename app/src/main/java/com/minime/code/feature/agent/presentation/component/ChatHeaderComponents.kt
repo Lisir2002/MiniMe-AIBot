@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -19,29 +20,41 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.minime.code.R
 import com.minime.code.core.theme.Radius
 import com.minime.code.core.theme.Spacing
+import com.minime.code.core.ui.SegmentedTabs
 import com.minime.code.feature.agent.domain.model.AgentMode
+import com.minime.code.feature.agent.domain.model.TrustLevel
+import com.minime.code.feature.agent.domain.workflow.CloudTargetDiscovery
 import com.minime.code.feature.onboarding.domain.OnboardingStep
 import com.minime.code.feature.onboarding.presentation.onboardingTarget
 import com.minime.code.feature.settings.presentation.component.ModelLogoIcon
@@ -62,6 +75,10 @@ internal fun ChatHeader(
     currentMode: AgentMode,
     onToggleMode: (AgentMode) -> Unit,
     connectionState: com.minime.code.feature.agent.domain.container.ConnectionState? = null,
+    /** 只读运行环境标签（如「阿里云-生产」「本机运行」），有值时在顶栏第二行显示徽标。 */
+    environmentLabel: String? = null,
+    /** 生效后端是云服务器（true=云图标，false=本机图标）。 */
+    environmentIsCloud: Boolean = true,
     showMenuButton: Boolean = true,
     terminalActive: Boolean = false,
     gitActive: Boolean = false,
@@ -139,8 +156,9 @@ internal fun ChatHeader(
                     onClick = onNavigateToTerminal
                 )
             }
-            // 远程模式：左边 SSH 连接状态，右边 token 累计统计
-            if (connectionState != null) {
+            // 顶栏第二行：左侧显示生效的运行环境徽标（只读），右侧 token 累计统计。
+            // 远程 SSH 工具执行模式已移除，不再显示本地 SSH 连接状态——那会误导用户以为云端断了。
+            if (environmentLabel != null || connectionState != null) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -148,7 +166,32 @@ internal fun ChatHeader(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    ConnectionIndicator(state = connectionState)
+                    if (environmentLabel != null) {
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = Spacing.sm, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                MiniMeIcon(
+                                    imageVector = if (environmentIsCloud) MiniMeIcons.Cloud else MiniMeIcons.Smartphone,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Text(
+                                    text = environmentLabel,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        }
+                    } else if (connectionState != null) {
+                        ConnectionIndicator(state = connectionState)
+                    }
                     TokenStats(
                         inputTokens = inputTokens,
                         outputTokens = outputTokens
@@ -274,7 +317,18 @@ internal fun RemoteConnectingPlaceholder(
 }
 
 @Composable
-internal fun WelcomeState(bottomReserve: Dp, modifier: Modifier = Modifier) {
+internal fun WelcomeState(
+    bottomReserve: Dp,
+    modifier: Modifier = Modifier,
+    availableTargets: List<CloudTargetDiscovery.AvailableTarget> = emptyList(),
+    currentConnectionId: String? = null,
+    trustLevel: TrustLevel = TrustLevel.BASIC,
+    discovering: Boolean = false,
+    onSelectTarget: ((String?) -> Unit)? = null,
+    onAddServer: (() -> Unit)? = null,
+    onRefreshTargets: (() -> Unit)? = null,
+    onTrustLevelChange: ((TrustLevel) -> Unit)? = null
+) {
     BoxWithConstraints(
         modifier = modifier.padding(Spacing.xl),
         contentAlignment = Alignment.Center
@@ -293,14 +347,215 @@ internal fun WelcomeState(bottomReserve: Dp, modifier: Modifier = Modifier) {
             Text(
                 text = stringResource(R.string.chat_placeholder),
                 style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(Spacing.sm))
             Text(
                 text = stringResource(R.string.chat_input_hint),
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            // 运行环境卡：空会话是决定「本机/某台云服务器 + 审批强度」的最佳时机。
+            // 仅当 ViewModel 提供了切换回调时才显示交互控件（保持旧调用兼容）。
+            if (onSelectTarget != null && onTrustLevelChange != null) {
+                Spacer(Modifier.height(Spacing.lg))
+                RuntimeEnvironmentCard(
+                    availableTargets = availableTargets,
+                    currentConnectionId = currentConnectionId,
+                    trustLevel = trustLevel,
+                    discovering = discovering,
+                    onSelectTarget = onSelectTarget,
+                    onAddServer = onAddServer,
+                    onRefreshTargets = onRefreshTargets,
+                    onTrustLevelChange = onTrustLevelChange
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 空会话「运行与权限」卡：
+ * - 运行环境：扁平单选列表（本机 + 每台已装 agent-server 的云服务器），一步到位；
+ * - 工具审批：三档分段（完全/基本/严格）。切「完全信任」需二次安全确认。
+ */
+@Composable
+private fun RuntimeEnvironmentCard(
+    availableTargets: List<CloudTargetDiscovery.AvailableTarget>,
+    currentConnectionId: String?,
+    trustLevel: TrustLevel,
+    discovering: Boolean,
+    onSelectTarget: (String?) -> Unit,
+    onAddServer: (() -> Unit)?,
+    onRefreshTargets: (() -> Unit)?,
+    onTrustLevelChange: (TrustLevel) -> Unit
+) {
+    var showFullTrustConfirm by remember { mutableStateOf(false) }
+    val trustValues = listOf(TrustLevel.FULL, TrustLevel.BASIC, TrustLevel.STRICT)
+    val trustLabels = listOf(
+        stringResource(R.string.runtime_card_trust_full),
+        stringResource(R.string.runtime_card_trust_basic),
+        stringResource(R.string.runtime_card_trust_strict)
+    )
+    val localSelected = currentConnectionId == null
+
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+        ) {
+            // 标题行 + 刷新按钮
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = stringResource(R.string.runtime_card_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (onRefreshTargets != null) {
+                    IconButton(onClick = onRefreshTargets, modifier = Modifier.size(32.dp)) {
+                        if (discovering) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(
+                                imageVector = MiniMeIcons.RefreshCw,
+                                contentDescription = stringResource(R.string.runtime_card_refresh),
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+            Text(
+                text = stringResource(R.string.runtime_card_env_label),
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            // 本机运行（单选）
+            TargetRow(
+                icon = MiniMeIcons.Smartphone,
+                label = stringResource(R.string.runtime_card_env_local),
+                selected = localSelected,
+                onClick = { if (!localSelected) onSelectTarget(null) }
+            )
+
+            // 每台云服务器（单选，带版本）
+            availableTargets.forEach { t ->
+                TargetRow(
+                    icon = MiniMeIcons.Cloud,
+                    label = t.displayLabel,
+                    subtitle = stringResource(R.string.runtime_card_target_version, t.version),
+                    selected = currentConnectionId == t.connectionId,
+                    onClick = { if (currentConnectionId != t.connectionId) onSelectTarget(t.connectionId) }
+                )
+            }
+
+            // 无可用服务器 → 引导入口
+            if (availableTargets.isEmpty() && !discovering && onAddServer != null) {
+                TextButton(onClick = onAddServer, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.runtime_card_add_server))
+                }
+            } else if (onAddServer != null) {
+                TextButton(onClick = onAddServer) {
+                    Text(stringResource(R.string.runtime_card_manage_servers))
+                }
+            }
+
+            Spacer(Modifier.height(Spacing.xs))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
+            Text(
+                text = stringResource(R.string.runtime_card_trust_label),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            SegmentedTabs(
+                selected = trustValues.indexOf(trustLevel).coerceAtLeast(0),
+                labels = trustLabels,
+                onSelect = { idx ->
+                    val target = trustValues[idx]
+                    if (target == TrustLevel.FULL && trustLevel != TrustLevel.FULL) {
+                        showFullTrustConfirm = true
+                    } else {
+                        onTrustLevelChange(target)
+                    }
+                }
+            )
         }
+    }
+
+    if (showFullTrustConfirm) {
+        AlertDialog(
+            onDismissRequest = { showFullTrustConfirm = false },
+            title = { Text(stringResource(R.string.perm_trust_full_confirm_title)) },
+            text = { Text(stringResource(R.string.perm_trust_full_confirm_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    onTrustLevelChange(TrustLevel.FULL)
+                    showFullTrustConfirm = false
+                }) { Text(stringResource(R.string.common_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showFullTrustConfirm = false }) { Text(stringResource(R.string.common_cancel)) }
+            }
+        )
+    }
+}
+
+/** 运行环境单选行：图标 + 名称（+可选副标题）+ 单选圆点。 */
+@Composable
+private fun TargetRow(
+    icon: ImageVector,
+    label: String,
+    subtitle: String? = null,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val containerColor = if (selected) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+    } else {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.4f)
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(containerColor)
+            .clickable(onClick = onClick)
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+            )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        RadioButton(selected = selected, onClick = onClick)
     }
 }

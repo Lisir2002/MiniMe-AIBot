@@ -45,6 +45,7 @@ import com.minime.code.feature.settings.data.repository.ApprovalNotificationSett
 import com.minime.code.feature.settings.data.repository.ModelReasoningEffortRepository
 import com.minime.code.feature.settings.data.repository.StartupSessionMode
 import com.minime.code.feature.agent.domain.model.AgentContext
+import com.minime.code.feature.agent.domain.workflow.CloudTargetDiscovery
 import com.minime.code.feature.agent.domain.model.AgentImage
 import com.minime.code.feature.agent.domain.model.AgentMessage
 import com.minime.code.feature.agent.domain.model.AgentMode
@@ -146,6 +147,9 @@ class AIAgentViewModel @Inject constructor(
     private val agentWorkflow: AgentWorkflow,
     private val cloudAgentWorkflow: com.minime.code.feature.agent.domain.workflow.CloudAgentWorkflow,
     private val cloudAgentCatchUp: com.minime.code.feature.agent.domain.workflow.CloudAgentCatchUp,
+    private val cloudTargetDiscovery: com.minime.code.feature.agent.domain.workflow.CloudTargetDiscovery,
+    private val cloudTargetResolver: com.minime.code.feature.agent.domain.workflow.CloudTargetResolver,
+    private val cloudAgentSettings: com.minime.code.feature.settings.data.repository.CloudAgentSettingsRepository,
     private val toolRegistry: ToolRegistry,
     private val agentMessageDao: AgentMessageDao,
     private val chatSessionDao: ChatSessionDao,
@@ -858,6 +862,29 @@ class AIAgentViewModel @Inject constructor(
         currentSessionState.map { s -> (s?.providerId ?: "") to (s?.model ?: "") }
             .stateIn(viewModelScope, SharingStarted.Eagerly, Pair(null, null))
 
+    // ---- 执行目标（多云服务器）--------------------------------------------
+
+    /** 当前会话绑定的云端执行目标连接 id；null 表示本机运行。 */
+    val currentCloudConnectionId: StateFlow<String?> = currentSessionState
+        .map { it?.cloudConnectionId }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** 已安装 agent-server、可作为执行目标的云服务器列表。 */
+    private val _availableCloudTargets = MutableStateFlow<List<CloudTargetDiscovery.AvailableTarget>>(emptyList())
+    val availableCloudTargets: StateFlow<List<CloudTargetDiscovery.AvailableTarget>> = _availableCloudTargets.asStateFlow()
+
+    /** 是否正在探测云服务器。 */
+    private val _discoveringCloudTargets = MutableStateFlow(false)
+    val discoveringCloudTargets: StateFlow<Boolean> = _discoveringCloudTargets.asStateFlow()
+
+    /** 刷新可用云服务器列表（空会话卡片进入/下拉时调用）。 */
+    fun refreshCloudTargets() = viewModelScope.launch(Dispatchers.IO) {
+        _discoveringCloudTargets.value = true
+        runCatching { cloudTargetDiscovery.discover(forceRefresh = true) }
+            .onSuccess { _availableCloudTargets.value = it }
+        _discoveringCloudTargets.value = false
+    }
+
     /**
      * 当前会话的消息状态：会话切换时自动切换到对应历史，并携带所属会话 id 与 loaded 标志，
      * 使 UI 能区分「切换/冷启动加载中」与「空会话」——避免先闪 Welcome 或上一个会话的消息再突然刷新。
@@ -1055,7 +1082,7 @@ class AIAgentViewModel @Inject constructor(
     /** 用户决策云端待审批工具：回传云端 → 云端续跑 → 清除卡片并补拉续跑结果。 */
     fun decideCloudPending(sessionId: String, decisionId: String, approve: Boolean) = viewModelScope.launch {
         runCatching {
-            cloudAgentWorkflow.decide(decisionId, approve)
+            cloudAgentWorkflow.decide(sessionId, decisionId, approve)
         }.onFailure { e ->
             FileLogger.e(TAG, "回传云端审批失败: $decisionId", e)
         }
@@ -1077,6 +1104,27 @@ class AIAgentViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    /**
+     * 切换当前会话的执行目标。[connectionId] 为 null 表示切回本机运行。
+     * 切换前先取消该会话的在途任务/跟随协程、清理旧服务器上的云端上下文映射，避免串台。
+     * 仅空会话界面提供该入口（有消息的会话需保持上下文连续，不允许中途换后端）。
+     */
+    fun switchSessionTarget(sessionId: String, connectionId: String?) = viewModelScope.launch(Dispatchers.IO) {
+        val current = chatSessionDao.getById(sessionId)?.cloudConnectionId
+        if (current == connectionId) return@launch
+
+        // 1) 取消在途任务与跟随轮询
+        sessionJobs.remove(sessionId)?.cancel()
+        cloudFollowJobs.remove(sessionId)?.cancel()
+        // 2) 清旧目标上的云端 session/游标映射（换服务器后不能沿用旧上下文）
+        runCatching { cloudTargetResolver.clearSessionMapping(sessionId) }
+        // 3) 清运行态与残留审批卡片
+        _cloudPendingDecisions.value = _cloudPendingDecisions.value - sessionId
+        setAgentState(sessionId, AgentUIState.Idle)
+        // 4) 落库新目标
+        sessionUseCase.setSessionCloudTarget(sessionId, connectionId)
     }
 
     private val _llmCallEvents = MutableSharedFlow<LlmCallEvent>(extraBufferCapacity = 16)
@@ -1364,6 +1412,12 @@ class AIAgentViewModel @Inject constructor(
         // 冷启动收尾：上次进程被杀时残留的「执行中」工具回填为「已中断」。在后台执行，不阻塞首屏与会话展示。
         viewModelScope.launch(Dispatchers.IO) {
             sessionUseCase.initColdStartCleanup()
+        }
+
+        // 后台探测可用的云服务器执行目标（空会话卡片需要；失败静默）。
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { cloudTargetDiscovery.discover() }
+                .onSuccess { _availableCloudTargets.value = it }
         }
 
         // 启动与工作区切换时重新扫描技能（项目级技能随工作区变化），刷新 `/` 命令菜单。
@@ -3292,11 +3346,14 @@ class AIAgentViewModel @Inject constructor(
         } else {
             ReasoningEffort.MEDIUM.name
         }
+        // 新会话默认执行目标：用户在设置页选过默认云服务器则预填，否则本机。
+        val defaultCloudId = cloudAgentSettings.defaultConnectionId().takeIf { it.isNotBlank() }
         return sessionUseCase.newSessionEntity(
             workspacePath = workspacePath,
             providerId = providerId,
             model = model,
-            reasoningEffort = effort
+            reasoningEffort = effort,
+            cloudConnectionId = defaultCloudId
         )
     }
 

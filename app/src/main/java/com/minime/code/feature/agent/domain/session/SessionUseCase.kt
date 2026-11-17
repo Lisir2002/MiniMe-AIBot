@@ -47,7 +47,8 @@ class SessionUseCase @Inject constructor(
         workspacePath: String,
         providerId: String? = null,
         model: String? = null,
-        reasoningEffort: String = ReasoningEffort.MEDIUM.name
+        reasoningEffort: String = ReasoningEffort.MEDIUM.name,
+        cloudConnectionId: String? = null
     ): ChatSessionEntity {
         val now = System.currentTimeMillis()
         return ChatSessionEntity(
@@ -58,7 +59,8 @@ class SessionUseCase @Inject constructor(
             updatedAt = now,
             providerId = providerId,
             model = model,
-            reasoningEffort = reasoningEffort
+            reasoningEffort = reasoningEffort,
+            cloudConnectionId = cloudConnectionId
         )
     }
 
@@ -150,6 +152,8 @@ class SessionUseCase @Inject constructor(
             providerId = providerId ?: parent.providerId,
             model = model ?: parent.model,
             reasoningEffort = reasoningEffort ?: parent.reasoningEffort,
+            // 子代理必须在父会话的执行目标上运行（本机的子代理不能在云端跑，反之亦然）
+            cloudConnectionId = parent.cloudConnectionId,
             parentId = parentId,
             subagentType = subagentType
         )
@@ -205,6 +209,15 @@ class SessionUseCase @Inject constructor(
 
     suspend fun updateReasoningEffort(sessionId: String, effort: String) {
         chatSessionDao.updateReasoningEffort(sessionId, effort)
+    }
+
+    /**
+     * 切换会话执行目标。[connectionId] 为 null 表示切回本机。
+     * 仅更新会话字段；旧目标下的云端 session 映射/游标由 CloudTargetResolver 在解析时按
+     * connectionId 隔离，不会串台（切换前若该会话正在运行，调用方负责先取消跟随任务）。
+     */
+    suspend fun setSessionCloudTarget(sessionId: String, connectionId: String?) {
+        chatSessionDao.updateCloudConnectionId(sessionId, connectionId, System.currentTimeMillis())
     }
 
     /**

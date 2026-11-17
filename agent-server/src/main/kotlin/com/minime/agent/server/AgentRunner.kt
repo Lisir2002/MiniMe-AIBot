@@ -60,7 +60,7 @@ class AgentRunner(
     /** 当前在跑的任务 job，便于取消（第一版不实现取消，占位）。 */
     private val running = java.util.concurrent.ConcurrentHashMap<String, kotlinx.coroutines.Job>()
 
-    fun submit(sessionId: String, taskId: String, userText: String, providerConfig: ProviderConfigDto) {
+    fun submit(sessionId: String, taskId: String, userText: String, providerConfig: ProviderConfigDto, trustLevelWire: String = "basic") {
         store.setTaskStatus(taskId, TaskStatus.QUEUED)
         val job = scope.launch(Dispatchers.IO) {
             try {
@@ -68,7 +68,7 @@ class AgentRunner(
                 val history = store.getSessionContext(sessionId).toMutableList()
                 history += AgentMessage.UserMessage(content = userText)
                 store.append(NewEvent(sessionId, EventKind.USER_MESSAGE, taskId, text = userText))
-                runLoop(sessionId, taskId, history, providerConfig, startIteration = 0, appendUserEvent = false)
+                runLoop(sessionId, taskId, history, providerConfig, startIteration = 0, appendUserEvent = false, trustLevelWire = trustLevelWire)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Throwable) {
@@ -110,10 +110,11 @@ class AgentRunner(
             val startIteration = cp?.iteration ?: 0
             val taskId = t.taskId
             val sessionId = t.sessionId
+            val trustLevelWire = store.getTaskTrustLevel(taskId)
             val job = scope.launch(Dispatchers.IO) {
                 try {
                     log.info("续跑任务 $taskId，从第 $startIteration 轮恢复")
-                    runLoop(sessionId, taskId, messages.toMutableList(), cfg, startIteration, appendUserEvent = false)
+                    runLoop(sessionId, taskId, messages.toMutableList(), cfg, startIteration, appendUserEvent = false, trustLevelWire = trustLevelWire)
                 } catch (e: kotlinx.coroutines.CancellationException) {
                     throw e
                 } catch (e: Throwable) {
@@ -134,8 +135,10 @@ class AgentRunner(
         initialMessages: MutableList<AgentMessage>,
         cfg: ProviderConfigDto,
         startIteration: Int,
-        appendUserEvent: Boolean
+        appendUserEvent: Boolean,
+        trustLevelWire: String = "basic"
     ) {
+        val trustLevel = com.minime.code.feature.agent.domain.model.TrustLevel.fromWire(trustLevelWire)
         store.setTaskStatus(taskId, TaskStatus.RUNNING)
         if (appendUserEvent) {
             store.append(NewEvent(sessionId, EventKind.USER_MESSAGE, taskId, text = initialMessages.lastOrNull()?.let {
@@ -222,8 +225,10 @@ class AgentRunner(
                     toolName = call.name, toolArgs = compactArgs(call), toolCallId = call.id
                 ))
 
-                // 高风险工具（ASK）→ 写 pending_decision 并挂起，等 App 回传
-                if (tool.permissionPolicy == ToolPermissionPolicy.ASK) {
+                // 是否挂起等审批：完全信任档全部静默放行；严格档所有工具都审批；
+                // 基本信任档沿用工具自身 ASK/AUTO 策略（Bash 需审批，loadSkill/memory 自动）。
+                val needsApproval = TrustPolicy.needsApproval(trustLevel, tool.permissionPolicy)
+                if (needsApproval) {
                     val decisionId = call.id
                     store.append(NewEvent(
                         sessionId, EventKind.PENDING_DECISION, taskId,

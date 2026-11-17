@@ -103,6 +103,7 @@ import com.minime.code.feature.settings.data.repository.DefaultModelSettingsRepo
 import com.minime.code.feature.settings.data.repository.GeneralSettingsRepository
 import com.minime.code.feature.settings.data.repository.ProviderKeyRotator
 import com.minime.code.feature.settings.data.repository.TitleModelSettingsRepository
+import com.minime.code.feature.settings.data.repository.TrustLevelRepository
 import com.minime.code.feature.workspace.data.local.dao.RemoteConnectionDao
 import com.minime.code.feature.workspace.data.repository.WorkspaceRepository
 
@@ -422,6 +423,7 @@ object AgentModule {
         promptProvider: SystemPromptProvider,
         permissionManager: ToolPermissionManager,
         policyEngine: ToolPermissionPolicyEngine,
+        trustLevelRepository: TrustLevelRepository,
         contextCompactor: ContextCompactor,
         planApprovalManager: PlanApprovalManager,
         toolOutputStore: ToolOutputStore,
@@ -449,6 +451,7 @@ object AgentModule {
             promptProvider,
             permissionManager,
             policyEngine,
+            trustLevelRepository,
             contextCompactor,
             planApprovalManager,
             toolOutputStore,

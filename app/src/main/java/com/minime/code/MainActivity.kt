@@ -694,6 +694,7 @@ fun AppNavigation(
                                     onNavigateToTerminal = { openWorkbench(WorkbenchPaneKind.TERMINAL) },
                                     onNavigateToGit = { openWorkbench(WorkbenchPaneKind.GIT) },
                                     onNavigateToBrowser = { openWorkbench(WorkbenchPaneKind.BROWSER) },
+                                    onNavigateToRuntimeConnection = { navController.navigate("settings") },
                                     terminalActive = paneOpen && paneKind == WorkbenchPaneKind.TERMINAL,
                                     gitActive = paneOpen && paneKind == WorkbenchPaneKind.GIT,
                                     browserActive = paneOpen && paneKind == WorkbenchPaneKind.BROWSER,

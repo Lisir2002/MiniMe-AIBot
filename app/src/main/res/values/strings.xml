@@ -514,6 +514,19 @@
     <string name="chat_no_remote_connection">未连接远程服务器</string>
     <string name="chat_placeholder">有什么可以帮你的？</string>
     <string name="chat_input_hint">描述你的需求，我来帮你编写、修改或解释代码</string>
+    <string name="runtime_card_title">运行与权限</string>
+    <string name="runtime_card_env_label">运行环境</string>
+    <string name="runtime_card_env_local">本机运行</string>
+    <string name="runtime_card_env_cloud">完全云端</string>
+    <string name="runtime_card_trust_label">工具审批</string>
+    <string name="runtime_card_trust_full">完全信任</string>
+    <string name="runtime_card_trust_basic">基本信任</string>
+    <string name="runtime_card_trust_strict">严格审批</string>
+    <string name="runtime_card_cloud_hint">云端任务在服务器持续运行，熄屏或关闭 App 后照常执行</string>
+    <string name="runtime_card_refresh">刷新服务器列表</string>
+    <string name="runtime_card_target_version">服务端 %1$s</string>
+    <string name="runtime_card_add_server">添加云服务器</string>
+    <string name="runtime_card_manage_servers">管理云服务器</string>
 
     <!-- Agent Status -->
     <string name="agent_stopped_by_user">已被用户停止</string>
@@ -1468,6 +1481,15 @@
     <string name="perm_entire_tool">整个工具</string>
     <string name="perm_deny">禁止</string>
     <string name="perm_promote_to_global">提升为全局</string>
+    <string name="perm_trust_group">工具信任档位</string>
+    <string name="perm_trust_full_title">完全信任</string>
+    <string name="perm_trust_full_desc">所有工具静默执行，不再逐一审批（含高风险操作，切换需安全确认）</string>
+    <string name="perm_trust_basic_title">基本信任（推荐）</string>
+    <string name="perm_trust_basic_desc">只读与安全操作自动放行，仅审批写入、命令、外部工具；可记住选择，同一工作区不再重复询问</string>
+    <string name="perm_trust_strict_title">严格审批</string>
+    <string name="perm_trust_strict_desc">所有工具（含只读）都需审批；可记住选择，同一工作区不再重复询问</string>
+    <string name="perm_trust_full_confirm_title">切换到完全信任？</string>
+    <string name="perm_trust_full_confirm_message">完全信任会让所有工具（包括删除、命令等高风险操作）静默执行，不再逐一征求你的同意。仅在充分信任当前工作区与模型时开启。</string>
     <string name="perm_safety_group">安全防护</string>
     <string name="perm_disable_safety_interception">禁用安全拦截</string>
     <string name="perm_disable_safety_interception_desc">开启后 AUTO 模式下不再拦截灾难性删除，Shizuku 也不再逐次确认</string>

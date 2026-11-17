@@ -5,6 +5,7 @@ import com.minime.code.feature.agent.data.remote.cloudagent.CloudAgentApi
 import com.minime.code.feature.agent.data.remote.cloudagent.EventsResp
 import com.minime.code.feature.agent.data.remote.cloudagent.PendingDecisionDto
 import com.minime.code.feature.agent.data.remote.cloudagent.StoredEventDto
+import com.minime.code.feature.agent.data.local.dao.ChatSessionDao
 import com.minime.code.feature.agent.domain.session.MessagePersistenceUseCase
 import com.minime.code.feature.agent.presentation.MessageRole
 import com.minime.code.feature.settings.data.repository.CloudAgentSettingsRepository
@@ -28,9 +29,17 @@ class CloudAgentCatchUpTest {
     private val api = mockk<CloudAgentApi>()
     private val settings = mockk<CloudAgentSettingsRepository>(relaxed = true)
     private val persistence = mockk<MessagePersistenceUseCase>(relaxed = true)
+    private val chatSessionDao = mockk<ChatSessionDao>(relaxed = true)
+    private val targetResolver = mockk<CloudTargetResolver>(relaxed = true)
     private val context = mockk<Context>(relaxed = true)
 
-    private fun catchUp() = CloudAgentCatchUp(api, settings, persistence, context)
+    private fun catchUp(): CloudAgentCatchUp {
+        // 让目标解析统一指向测试服务器，保持原有"单服务器"用例语义不变。
+        coEvery { targetResolver.resolve(any()) } returns CloudTargetResolver.CloudTarget(
+            connectionId = null, baseUrl = "http://example.com:8080", token = "t"
+        )
+        return CloudAgentCatchUp(api, settings, persistence, chatSessionDao, targetResolver, context)
+    }
 
     private fun assistantEvent(seq: Long, text: String) = StoredEventDto(
         seq = seq, sessionId = "cloud-1", kind = "assistant_text", text = text

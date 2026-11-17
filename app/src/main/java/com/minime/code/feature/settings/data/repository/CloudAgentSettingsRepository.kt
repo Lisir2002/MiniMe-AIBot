@@ -35,6 +35,11 @@ class CloudAgentSettingsRepository @Inject constructor(
         val ENABLED_KEY = booleanPreferencesKey("cloud_agent_enabled")
         val SERVER_URL_KEY = stringPreferencesKey("cloud_agent_server_url")
         val TOKEN_KEY = stringPreferencesKey("cloud_agent_token")
+        /** 新会话默认绑定的云服务器连接 id（空=本机）。 */
+        val DEFAULT_CONNECTION_KEY = stringPreferencesKey("cloud_agent_default_connection")
+
+        fun serverUrlKey(connectionId: String) = stringPreferencesKey("cloud_server_url_$connectionId")
+        fun tokenKey(connectionId: String) = stringPreferencesKey("cloud_token_$connectionId")
     }
 
     /** 是否启用完全云端 Agent 模式。默认 false（本地执行）。 */
@@ -53,6 +58,35 @@ class CloudAgentSettingsRepository @Inject constructor(
     suspend fun isEnabled(): Boolean = enabledFlow.first()
     suspend fun serverUrl(): String = serverUrlFlow.first()
     suspend fun token(): String = tokenFlow.first()
+
+    // ---- 按连接 id 存取（多服务器）----------------------------------------
+
+    /** 新会话默认绑定的云服务器连接 id；空表示本机。 */
+    val defaultConnectionIdFlow: Flow<String> =
+        context.cloudAgentDataStore.data.map { it[DEFAULT_CONNECTION_KEY] ?: "" }
+
+    suspend fun defaultConnectionId(): String = defaultConnectionIdFlow.first()
+
+    suspend fun setDefaultConnectionId(connectionId: String) =
+        context.cloudAgentDataStore.edit { it[DEFAULT_CONNECTION_KEY] = connectionId }
+
+    /** 读取指定连接的服务器地址；未单独存过时回退到全局 serverUrl（兼容旧版升级）。 */
+    suspend fun serverUrlFor(connectionId: String): String {
+        val scoped = context.cloudAgentDataStore.data.map { it[serverUrlKey(connectionId)] ?: "" }.first()
+        return scoped.ifEmpty { serverUrl() }
+    }
+
+    /** 读取指定连接的令牌；未单独存过时回退到全局 token（兼容旧版升级）。 */
+    suspend fun tokenFor(connectionId: String): String {
+        val scoped = context.cloudAgentDataStore.data.map { it[tokenKey(connectionId)] ?: "" }.first()
+        return scoped.ifEmpty { token() }
+    }
+
+    suspend fun setServerUrlFor(connectionId: String, url: String) =
+        context.cloudAgentDataStore.edit { it[serverUrlKey(connectionId)] = url.trim().trimEnd('/') }
+
+    suspend fun setTokenFor(connectionId: String, token: String) =
+        context.cloudAgentDataStore.edit { it[tokenKey(connectionId)] = token }
 
     /** appSessionId -> 云端 sessionId 的映射键（同一 App 会话复用同一云端会话，多轮上下文留在云端）。 */
     private fun cloudSessionKey(appSessionId: String, serverUrl: String) =

@@ -78,7 +78,12 @@ class CloudAgentHttpException(val code: Int, val body: String) : Exception("云�
 data class CreateSessionReq(val title: String = "新会话")
 data class CreateSessionResp(val sessionId: String)
 
-data class SubmitMessageReq(val content: String, val provider: ProviderConfigDto)
+data class SubmitMessageReq(
+    val content: String,
+    val provider: ProviderConfigDto,
+    /** 工具审批信任档位（full/basic/strict），随任务提交供云端异步审批裁决。 */
+    val trustLevel: String = "basic"
+)
 
 data class ProviderConfigDto(
     val type: String = "anthropic",

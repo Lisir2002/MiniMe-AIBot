@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.minime.code.feature.agent.data.remote.cloudagent.CloudAgentApi
 import com.minime.code.feature.agent.domain.workflow.CloudAgentServerManager
+import com.minime.code.feature.agent.domain.workflow.CloudTargetDiscovery
 import com.minime.code.feature.settings.data.repository.CloudAgentSettingsRepository
 import com.minime.code.feature.workspace.domain.model.RemoteConnection
 import com.minime.code.feature.workspace.domain.model.RemoteProtocol
@@ -51,7 +52,8 @@ class CloudAgentSettingsViewModel @Inject constructor(
     private val settings: CloudAgentSettingsRepository,
     private val api: CloudAgentApi,
     private val connectionRepository: RemoteRepository,
-    private val serverManager: CloudAgentServerManager
+    private val serverManager: CloudAgentServerManager,
+    private val cloudTargetDiscovery: CloudTargetDiscovery
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CloudAgentUiState())
@@ -115,6 +117,11 @@ class CloudAgentSettingsViewModel @Inject constructor(
         )
         viewModelScope.launch {
             settings.setServerUrl(choice.serverUrl)
+            // 按 connectionId 存地址并设为新会话默认目标，供多服务器会话级解析使用。
+            settings.setServerUrlFor(choice.id, choice.serverUrl)
+            settings.setDefaultConnectionId(choice.id)
+            settings.setEnabled(true)
+            cloudTargetDiscovery.invalidate()
             inspectContainer()
         }
     }

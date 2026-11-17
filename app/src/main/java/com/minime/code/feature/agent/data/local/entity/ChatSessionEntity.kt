@@ -35,6 +35,8 @@ data class ChatSessionEntity(
     val totalOutputTokens: Int = 0,
     val lastInputTokens: Int = 0,
     val isPinned: Boolean = false,
+    /** 本会话绑定的云端执行目标（远程服务器连接 id）；null 表示本机运行。 */
+    val cloudConnectionId: String? = null,
     /** 子代理会话：父会话 id；null 表示普通根会话。 */
     val parentId: String? = null,
     /** 子代理会话：派生子代理的类型（如 coder / researcher）；null 表示普通根会话。 */
@@ -60,6 +62,7 @@ data class ChatSessionEntity(
         totalOutputTokens = totalOutputTokens,
         lastInputTokens = lastInputTokens,
         isPinned = isPinned,
+        cloudConnectionId = cloudConnectionId,
         parentId = parentId,
         subagentType = subagentType
     )
@@ -85,6 +88,7 @@ data class ChatSessionEntity(
             totalOutputTokens = session.totalOutputTokens,
             lastInputTokens = session.lastInputTokens,
             isPinned = session.isPinned,
+            cloudConnectionId = session.cloudConnectionId,
             parentId = session.parentId,
             subagentType = session.subagentType
         )

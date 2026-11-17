@@ -664,6 +664,8 @@ fun AIChatPanel(
     onNavigateToTerminal: () -> Unit = {},
     onNavigateToGit: () -> Unit = {},
     onNavigateToBrowser: () -> Unit = {},
+    /** 空会话卡片「添加/管理云服务器」入口：跳转到运行与连接枢纽页。 */
+    onNavigateToRuntimeConnection: (() -> Unit)? = null,
     settingsViewModel: SettingsViewModel? = null,
     workspaceViewModel: WorkspaceViewModel? = null,
     onOpenDrawer: () -> Unit,
@@ -1464,9 +1466,16 @@ fun AIChatPanel(
     val executionMode = settingsViewModel?.executionMode?.collectAsStateWithLifecycle()?.value
     val connectionState = settingsViewModel?.connectionState?.collectAsStateWithLifecycle()?.value
     val cloudAgentEnabled = settingsViewModel?.cloudAgentEnabled?.collectAsStateWithLifecycle()?.value == true
-    // 完全云端模式下 Agent 循环与工具都在云端跑，本地 SSH 连接状态与任务无关。
-    // 顶栏不再显示「SSH：未连接」——那只是本地工具执行环境的连接，会误导用户以为云端断了。
-    val isRemote = !cloudAgentEnabled && executionMode == com.minime.code.feature.settings.data.repository.ExecutionMode.REMOTE_SSH
+    val trustLevel = settingsViewModel?.trustLevel?.collectAsStateWithLifecycle()?.value
+        ?: com.minime.code.feature.agent.domain.model.TrustLevel.BASIC
+    // 执行目标（会话级）：当前会话绑定哪台云服务器，null=本机。
+    val availableCloudTargets by viewModel.availableCloudTargets.collectAsStateWithLifecycle()
+    val discoveringCloudTargets by viewModel.discoveringCloudTargets.collectAsStateWithLifecycle()
+    val currentCloudConnectionId by viewModel.currentCloudConnectionId.collectAsStateWithLifecycle()
+    val currentCloudTarget = availableCloudTargets.firstOrNull { it.connectionId == currentCloudConnectionId }
+    val sessionIsOnCloud = currentCloudConnectionId != null
+    // 本地 SSH 工具执行模式已砍；顶栏只显示"生效后端"（本机 / 某台云服务器）。
+    val isRemote = !sessionIsOnCloud && executionMode == com.minime.code.feature.settings.data.repository.ExecutionMode.REMOTE_SSH
 
     val markdownImageTransformer = remember(viewModel.fileAccess) {
         MarkdownImageTransformer(viewModel.fileAccess)
@@ -1593,7 +1602,14 @@ fun AIChatPanel(
                 onNavigateToBrowser = onNavigateToBrowser,
                 currentMode = currentMode,
                 onToggleMode = { viewModel.setSessionMode(it) },
-                connectionState = null, // 顶栏不再显示本地 SSH 状态：远程工具执行模式已移除，云端模式由「服务器与云端」管理
+                connectionState = null, // 顶栏不再显示本地 SSH 状态：远程工具执行模式已移除
+                environmentLabel = if (sessionIsOnCloud) {
+                    currentCloudTarget?.displayLabel
+                        ?: stringResource(R.string.runtime_card_env_cloud)
+                } else {
+                    stringResource(R.string.runtime_card_env_local)
+                },
+                environmentIsCloud = sessionIsOnCloud,
                 showMenuButton = showMenuButton,
                 terminalActive = terminalActive,
                 gitActive = gitActive,
@@ -1631,9 +1647,18 @@ fun AIChatPanel(
                         }
                     }
                 } else if (messages.isEmpty()) {
+                    LaunchedEffect(Unit) { viewModel.refreshCloudTargets() }
                     WelcomeState(
                         bottomReserve = with(LocalDensity.current) { inputBarReservePx.toDp() },
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        availableTargets = availableCloudTargets,
+                        currentConnectionId = currentCloudConnectionId,
+                        trustLevel = trustLevel,
+                        discovering = discoveringCloudTargets,
+                        onSelectTarget = { cid -> currentSessionId?.let { viewModel.switchSessionTarget(it, cid) } },
+                        onAddServer = onNavigateToRuntimeConnection.takeIf { it != null },
+                        onRefreshTargets = { viewModel.refreshCloudTargets() },
+                        onTrustLevelChange = settingsViewModel?.let { svm -> { level -> svm.setTrustLevel(level) } }
                     )
                 } else {
                     LazyColumn(

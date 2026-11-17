@@ -373,6 +373,7 @@ class SettingsViewModel @Inject constructor(
     private val mcpManager: McpManager,
     private val permissionRulesRepository: PermissionRulesRepository,
     private val toolSafetySettingsRepository: ToolSafetySettingsRepository,
+    private val trustLevelRepository: com.minime.code.feature.settings.data.repository.TrustLevelRepository,
     private val skillRepository: SkillRepository,
     private val agentDefinitionRepository: AgentDefinitionRepository,
     private val agentDefinitionConfigRepository: AgentDefinitionConfigRepository,
@@ -703,6 +704,9 @@ class SettingsViewModel @Inject constructor(
 
     private val _disableSafetyInterception = MutableStateFlow(false)
     val disableSafetyInterception: StateFlow<Boolean> = _disableSafetyInterception.asStateFlow()
+
+    private val _trustLevel = MutableStateFlow(com.minime.code.feature.agent.domain.model.TrustLevel.BASIC)
+    val trustLevel: StateFlow<com.minime.code.feature.agent.domain.model.TrustLevel> = _trustLevel.asStateFlow()
 
     private val _activeProfileId = MutableStateFlow(ContainerProfile.BUILTIN_ID)
     val activeProfileId: StateFlow<String> = _activeProfileId.asStateFlow()
@@ -1153,6 +1157,12 @@ class SettingsViewModel @Inject constructor(
             launch {
                 toolSafetySettingsRepository.disableSafetyInterceptionFlow.collectLatest {
                     _disableSafetyInterception.value = it
+                }
+            }
+
+            launch {
+                trustLevelRepository.trustLevelFlow.collectLatest {
+                    _trustLevel.value = it
                 }
             }
 
@@ -2947,6 +2957,16 @@ class SettingsViewModel @Inject constructor(
     fun setDisableSafetyInterception(disabled: Boolean) {
         viewModelScope.launch { toolSafetySettingsRepository.setDisableSafetyInterception(disabled) }
     }
+
+    /** 切换工具审批信任档位（完全/基本/严格）。 */
+    fun setTrustLevel(level: com.minime.code.feature.agent.domain.model.TrustLevel) {
+        _trustLevel.value = level
+        viewModelScope.launch { trustLevelRepository.setTrustLevel(level) }
+    }
+
+    /** 切换「完全云端 Agent」开关（空会话运行环境卡用）。 */
+    fun setCloudAgentEnabled(enabled: Boolean) =
+        viewModelScope.launch { cloudAgentSettingsRepository.setEnabled(enabled) }
 }
 
 /** 读取公告 md（zh 用中文版，其余英文版）；跟随系统语言时按系统语言判断。读取失败返回空串（空内容不弹窗）。 */
