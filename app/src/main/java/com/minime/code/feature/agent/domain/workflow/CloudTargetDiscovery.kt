@@ -33,6 +33,13 @@ class CloudTargetDiscovery @Inject constructor(
     ) {
         /** 顶栏/卡片显示的短标签。 */
         val displayLabel: String get() = name.ifBlank { host }
+
+        /**
+         * 该服务端版本是否支持"工具审批三档信任"。信任档位随 App rc13 引入，
+         * 旧版 agent-server 不认识 trustLevel 字段、Bash 固定每次审批，会让
+         * "完全信任"失效。UI 据此提示用户升级云端服务。
+         */
+        val trustLevelSupported: Boolean get() = supportsTrustLevel(version)
     }
 
     @Volatile
@@ -84,4 +91,51 @@ class CloudTargetDiscovery @Inject constructor(
     private companion object {
         const val CACHE_TTL_MS = 20_000L
     }
+}
+
+/** 支持信任档位的最低服务端版本（含）：App rc13 首次随附的服务端。 */
+const val MIN_TRUST_LEVEL_VERSION = "1.0.0-rc13"
+
+/**
+ * 判断服务端版本是否达到信任档位生效阈值。
+ * 解析形如 1.0.0-rc13 / 1.0.0 的语义版本，与阈值按（主,次,修,rc序号）比较；
+ * rc 序号缺省视为 0，正式版视为无穷大（rcN < 正式版）。
+ * 无法解析（unknown / dev / 空）时保守返回 false，引导用户升级。
+ */
+fun supportsTrustLevel(version: String): Boolean {
+    val v = parseServerVersion(version) ?: return false
+    val min = parseServerVersion(MIN_TRUST_LEVEL_VERSION)!!
+    return compareServerVersion(v, min) >= 0
+}
+
+private data class ServerSemVer(val major: Int, val minor: Int, val patch: Int, val rc: Int)
+
+private val SERVER_VERSION_RE = Regex("""^v?(\d+)\.(\d+)\.(\d+)(?:-(?:rc|alpha|beta|dev)\.?(\d+))?""", RegexOption.IGNORE_CASE)
+
+private fun parseServerVersion(s: String): ServerSemVer? {
+    val m = SERVER_VERSION_RE.matchEntire(s.trim()) ?: return null
+    // 没有预发布段（rc/alpha/...）视为正式版，rc 字段记为 -1（比较时作为无穷大）。
+    val rcPart = m.groupValues[4]
+    return ServerSemVer(
+        m.groupValues[1].toIntOrNull() ?: return null,
+        m.groupValues[2].toIntOrNull() ?: return null,
+        m.groupValues[3].toIntOrNull() ?: return null,
+        if (rcPart.isBlank()) -1 else (rcPart.toIntOrNull() ?: 0)
+    )
+}
+
+/** 比较 rc 段：-1 表示正式版（视为无穷大，大于任何 rcN）。 */
+private fun compareRc(a: Int, b: Int): Int = when {
+    a == b -> 0
+    a == -1 -> 1   // 正式版 > 任意 rc
+    b == -1 -> -1  // 任意 rc < 正式版
+    else -> a.compareTo(b)
+}
+
+/** 比较：主/次/修按数值；rc 段越小越旧，正式版（rc=-1）最大。 */
+private fun compareServerVersion(a: ServerSemVer, b: ServerSemVer): Int {
+    if (a.major != b.major) return a.major.compareTo(b.major)
+    if (a.minor != b.minor) return a.minor.compareTo(b.minor)
+    if (a.patch != b.patch) return a.patch.compareTo(b.patch)
+    return compareRc(a.rc, b.rc)
 }

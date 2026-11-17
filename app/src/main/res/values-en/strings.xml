@@ -159,9 +159,23 @@
     <string name="settings_token_stats_cache_hit_rate">Cache hit rate</string>
     <string name="settings_token_stats_cache_read_write">Read %1$s / Write %2$s</string>
     <string name="settings_token_stats_trend">Usage trend</string>
+    <string name="settings_token_stats_trend_daily_avg">Daily avg %1$s</string>
+    <string name="settings_token_stats_trend_peak">Peak %1$s (%2$s)</string>
     <string name="settings_token_stats_legend_input">Input</string>
     <string name="settings_token_stats_legend_output">Output</string>
     <string name="settings_token_stats_legend_cached">Cached</string>
+    <string name="settings_token_stats_heatmap">Activity heatmap</string>
+    <string name="settings_token_stats_heatmap_hint">Darker means more usage in that slot (local time)</string>
+    <string name="settings_token_stats_heatmap_legend_less">Less</string>
+    <string name="settings_token_stats_heatmap_legend_more">More</string>
+    <string name="settings_token_stats_heatmap_detail">%1$s %2$d:00 · %3$s used · %4$d calls</string>
+    <string name="settings_token_stats_week_mon">Mon</string>
+    <string name="settings_token_stats_week_tue">Tue</string>
+    <string name="settings_token_stats_week_wed">Wed</string>
+    <string name="settings_token_stats_week_thu">Thu</string>
+    <string name="settings_token_stats_week_fri">Fri</string>
+    <string name="settings_token_stats_week_sat">Sat</string>
+    <string name="settings_token_stats_week_sun">Sun</string>
     <string name="settings_token_stats_provider">By vendor</string>
     <string name="settings_token_stats_model">By model</string>
     <string name="settings_token_stats_success_rate">Success rate %1$s</string>
@@ -527,6 +541,9 @@
     <string name="runtime_card_target_version">Server %1$s</string>
     <string name="runtime_card_add_server">Add cloud server</string>
     <string name="runtime_card_manage_servers">Manage cloud servers</string>
+    <!-- Shown when the cloud agent-server is too old for trust levels (needs rc13+). -->
+    <string name="runtime_card_trust_server_old">Cloud server version %1$s is outdated; trust levels take effect after upgrading the cloud service</string>
+    <string name="runtime_card_trust_server_old_short">Upgrade cloud service</string>
 
     <!-- Agent Status -->
     <string name="agent_stopped_by_user">Stopped by user</string>

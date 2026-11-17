@@ -238,6 +238,9 @@ data class TokenStatsUiState(
     val period: TokenStatsPeriod = TokenStatsPeriod.LAST_7_DAYS,
     val summary: com.minime.code.feature.agent.data.local.dao.CallSummary? = null,
     val trend: List<com.minime.code.feature.agent.data.local.dao.DayCallStats> = emptyList(),
+    /** 按「星期×小时」聚合的活跃时段热力图（7*24 格）。 */
+    val heatmap: com.minime.code.feature.settings.presentation.TokenHeatmapData =
+        com.minime.code.feature.settings.presentation.TokenHeatmapData(emptyList(), 0, 0),
     val providers: List<com.minime.code.feature.agent.data.local.dao.ProviderCallStats> = emptyList(),
     val models: List<com.minime.code.feature.agent.data.local.dao.ModelCallStats> = emptyList(),
     val recentCalls: List<RecentCallRecord> = emptyList(),
@@ -1183,8 +1186,10 @@ class SettingsViewModel @Inject constructor(
                             } else {
                                 llmCallRecordDao.getDayStats(start, tz, filterProviderId, filterModel)
                             },
-                            llmCallRecordDao.getSummary(start, filterProviderId, filterModel)
-                        ) { rawTrend, summary -> rawTrend to summary },
+                            llmCallRecordDao.getSummary(start, filterProviderId, filterModel),
+                            // 热力图始终按小时聚合（跨周累加到同一星期×小时格），与趋势粒度无关
+                            llmCallRecordDao.getHourStats(start, tz, filterProviderId, filterModel)
+                        ) { rawTrend, summary, heatmapBuckets -> Triple(rawTrend, summary, heatmapBuckets) },
                         combine(
                             llmCallRecordDao.getProviderStats(start, filterProviderId, filterModel),
                             _providerStatsPage
@@ -1229,8 +1234,9 @@ class SettingsViewModel @Inject constructor(
                             val keyCounts = configuredProviders.associate { it.id to it.apiKeys.size }
                             Triple(providerList, modelList, keyCounts)
                         }
-                    ) { (rawTrend, summary), (pProviders, pPage, pTotal), (modelPaging, costStats), (calls, total, page), (availableProviders, availableModels, keyCounts) ->
+                    ) { (rawTrend, summary, heatmapBuckets), (pProviders, pPage, pTotal), (modelPaging, costStats), (calls, total, page), (availableProviders, availableModels, keyCounts) ->
                         val trend = padTrend(period, rawTrend, tz)
+                        val heatmap = com.minime.code.feature.settings.presentation.buildHeatmap(heatmapBuckets)
                         val costs = withContext(Dispatchers.Default) {
                             val perCall = calls.associate {
                                 it.record.id to callCostUsd(it.record.providerId, it.record.model, it.record.inputTokens.toLong(), it.record.cachedInputTokens.toLong(), it.record.outputTokens.toLong(), it.record.cacheCreationTokens.toLong())
@@ -1244,6 +1250,7 @@ class SettingsViewModel @Inject constructor(
                             period = period,
                             summary = summary,
                             trend = trend,
+                            heatmap = heatmap,
                             providers = pProviders,
                             models = modelPaging.paged,
                             recentCalls = calls,

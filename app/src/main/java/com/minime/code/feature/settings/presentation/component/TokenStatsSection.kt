@@ -62,6 +62,9 @@ import com.minime.code.feature.agent.data.local.entity.LlmCallRecordEntity
 import com.minime.code.feature.agent.presentation.component.formatTokenCount
 import com.minime.code.feature.settings.presentation.TokenStatsPeriod
 import com.minime.code.feature.settings.presentation.TokenStatsUiState
+import com.minime.code.feature.settings.presentation.HeatmapCell
+import com.minime.code.feature.settings.presentation.TokenHeatmapData
+import com.minime.code.feature.settings.presentation.heatmapLevel
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
@@ -205,6 +208,26 @@ internal fun TokenStatsSection(
                     SettingsGroupHeader(text = stringResource(R.string.settings_token_stats_trend))
                     Spacer(Modifier.height(Spacing.xs))
                     SettingsGroup {
+                        val (avgText, peakText) = rememberTrendSummary(state.trend, state.period == TokenStatsPeriod.TODAY)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = Spacing.lg, end = Spacing.lg, top = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.lg)
+                        ) {
+                            Text(
+                                text = avgText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            if (peakText != null) {
+                                Text(
+                                    text = peakText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                         TokenTrendChart(
                             trend = state.trend,
                             isHourly = state.period == TokenStatsPeriod.TODAY
@@ -221,6 +244,17 @@ internal fun TokenStatsSection(
                             LegendDot(CACHE_COLOR, stringResource(R.string.settings_token_stats_legend_cached))
                         }
                     }
+                }
+            }
+        }
+
+        // ── 活跃时段热力图（星期 × 小时）──
+        item(key = "activity_heatmap") {
+            Column {
+                SettingsGroupHeader(text = stringResource(R.string.settings_token_stats_heatmap))
+                Spacer(Modifier.height(Spacing.xs))
+                SettingsGroup {
+                    TokenActivityHeatmap(heatmap = state.heatmap)
                 }
             }
         }
@@ -614,6 +648,218 @@ private fun trendLine(color: Color): LineCartesianLayer.Line = LineCartesianLaye
     stroke = LineCartesianLayer.LineStroke.Continuous(thicknessDp = 2f),
     areaFill = LineCartesianLayer.AreaFill.single(Fill(color.copy(alpha = 0.18f).toArgb()))
 )
+
+/**
+ * 趋势图摘要：(日均消耗文案, 峰值文案)。
+ * 日均 = 周期内 input+output+cache 之和 / 有数据的桶数；峰值取单桶 input+output+cache 最大者。
+ * 「今天」周期按小时，峰值标注形如 "13时"，其余按天，标注形如 "3/8"。
+ */
+@Composable
+private fun rememberTrendSummary(
+    trend: List<DayCallStats>,
+    isHourly: Boolean
+): Pair<String, String?> {
+    val hourSuffix = stringResource(R.string.token_stats_hour_suffix)
+    val avgTemplate = stringResource(R.string.settings_token_stats_trend_daily_avg, "%1\$s")
+    val peakTemplate = stringResource(R.string.settings_token_stats_trend_peak, "%1\$s", "%2\$s")
+    val summary = remember(trend, isHourly, hourSuffix) { trendSummary(trend, isHourly, hourSuffix) }
+        ?: return "-" to null
+    val (avg, peakTokens, peakLabel) = summary
+    val avgText = avgTemplate.replace("%1\$s", formatTokenCount(avg))
+    val peakText = peakTemplate
+        .replace("%1\$s", formatTokenCount(peakTokens))
+        .replace("%2\$s", peakLabel)
+    return avgText to peakText
+}
+
+/** 纯计算：返回 (日均 token, 峰值 token, 峰值标签)；无数据返回 null。 */
+private fun trendSummary(
+    trend: List<DayCallStats>,
+    isHourly: Boolean,
+    hourSuffix: String
+): Triple<Long, Long, String>? {
+    if (trend.isEmpty()) return null
+    val per = trend.map { it.inputTokens + it.outputTokens + it.cachedInputTokens }
+    val avg = per.sum() / trend.size
+    val peakIndex = per.indices.maxByOrNull { per[it] } ?: 0
+    val peak = trend[peakIndex]
+    val label = if (isHourly) {
+        "${peak.day % 24}$hourSuffix"
+    } else {
+        SimpleDateFormat("M/d", Locale.getDefault())
+            .format(Date(peak.day * 86_400_000L + tzOffsetNow()))
+    }
+    return Triple(avg, per[peakIndex], label)
+}
+
+/**
+ * 活跃时段热力图：7 行（周一~周日）× 24 列（0~23 时）。
+ * 每格颜色深浅由 [heatmapLevel] 决定（输入蓝 + 对数透明度阶梯），点击格子在下方显示明细。
+ * 窄屏下整图可横向滚动，保证 24 列每格有最小可点按宽度。
+ */
+@Composable
+private fun TokenActivityHeatmap(heatmap: TokenHeatmapData) {
+    val weekLabels = listOf(
+        R.string.settings_token_stats_week_mon,
+        R.string.settings_token_stats_week_tue,
+        R.string.settings_token_stats_week_wed,
+        R.string.settings_token_stats_week_thu,
+        R.string.settings_token_stats_week_fri,
+        R.string.settings_token_stats_week_sat,
+        R.string.settings_token_stats_week_sun
+    ).map { stringResource(it) }
+
+    var selected by remember { mutableStateOf<HeatmapCell?>(null) }
+    // 筛选或周期切换导致格子变化时，清掉旧选中态
+    LaunchedEffect(heatmap) { selected = null }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.lg, vertical = 12.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.settings_token_stats_heatmap_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(10.dp))
+
+        if (!heatmap.hasData) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_token_stats_no_data),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            return@Column
+        }
+
+        val cellSize = 18.dp
+        val gap = 2.dp
+        val rowLabelWidth = 34.dp
+        val scrollState = rememberScrollState()
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // 左侧星期标签列
+            Column(modifier = Modifier.width(rowLabelWidth)) {
+                Spacer(Modifier.height((cellSize + gap))) // 与时间刻度行对齐
+                weekLabels.forEach { label ->
+                    Box(
+                        modifier = Modifier.height(cellSize),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(Modifier.height(gap))
+                }
+            }
+            // 右侧可横向滚动的 24 列网格
+            Column(modifier = Modifier.horizontalScroll(scrollState)) {
+                // 时间刻度（每 3 小时标注一次）
+                Row {
+                    for (h in 0..23) {
+                        Box(modifier = Modifier.width(cellSize), contentAlignment = Alignment.Center) {
+                            if (h % 3 == 0) {
+                                Text(
+                                    text = h.toString(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(gap))
+                    }
+                }
+                // 7×24 格子
+                for (d in 0..6) {
+                    Row {
+                        for (h in 0..23) {
+                            val cell = heatmap.cells[d * 24 + h]
+                            val level = heatmapLevel(cell.tokens, heatmap.peakTokens)
+                            val cellColor = if (level == 0) {
+                                MaterialTheme.semanticColors.subtleBorder
+                            } else {
+                                INPUT_COLOR.copy(alpha = HEATMAP_ALPHAS[level - 1])
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(cellSize)
+                                    .clip(RoundedCornerShape(3.dp))
+                                    .background(cellColor)
+                                    .clickable { selected = cell }
+                            )
+                            Spacer(Modifier.width(gap))
+                        }
+                    }
+                    Spacer(Modifier.height(gap))
+                }
+            }
+        }
+
+        Spacer(Modifier.height(10.dp))
+        // 图例：少 → 多
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.settings_token_stats_heatmap_legend_less),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.width(4.dp))
+            for (level in 0..4) {
+                val c = if (level == 0) {
+                    MaterialTheme.semanticColors.subtleBorder
+                } else {
+                    INPUT_COLOR.copy(alpha = HEATMAP_ALPHAS[level - 1])
+                }
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(c)
+                )
+                Spacer(Modifier.width(2.dp))
+            }
+            Spacer(Modifier.width(2.dp))
+            Text(
+                text = stringResource(R.string.settings_token_stats_heatmap_legend_more),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        // 选中格明细
+        selected?.let { cell ->
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(
+                    R.string.settings_token_stats_heatmap_detail,
+                    weekLabels[cell.dayOfWeek],
+                    cell.hour,
+                    formatTokenCount(cell.tokens),
+                    cell.calls
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+private val HEATMAP_ALPHAS = floatArrayOf(0.25f, 0.45f, 0.7f, 1.0f)
 
 private fun tzOffsetNow(): Long =
     java.util.TimeZone.getDefault().getOffset(System.currentTimeMillis()).toLong()

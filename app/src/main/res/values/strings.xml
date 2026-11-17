@@ -159,9 +159,23 @@
     <string name="settings_token_stats_cache_hit_rate">缓存命中率</string>
     <string name="settings_token_stats_cache_read_write">读取 %1$s / 写入 %2$s</string>
     <string name="settings_token_stats_trend">消耗趋势</string>
+    <string name="settings_token_stats_trend_daily_avg">日均 %1$s</string>
+    <string name="settings_token_stats_trend_peak">峰值 %1$s（%2$s）</string>
     <string name="settings_token_stats_legend_input">输入</string>
     <string name="settings_token_stats_legend_output">输出</string>
     <string name="settings_token_stats_legend_cached">缓存</string>
+    <string name="settings_token_stats_heatmap">活跃时段热力图</string>
+    <string name="settings_token_stats_heatmap_hint">颜色越深，该时段消耗越多（按本地时区统计）</string>
+    <string name="settings_token_stats_heatmap_legend_less">少</string>
+    <string name="settings_token_stats_heatmap_legend_more">多</string>
+    <string name="settings_token_stats_heatmap_detail">%1$s %2$d:00 · 消耗 %3$s · %4$d 次调用</string>
+    <string name="settings_token_stats_week_mon">周一</string>
+    <string name="settings_token_stats_week_tue">周二</string>
+    <string name="settings_token_stats_week_wed">周三</string>
+    <string name="settings_token_stats_week_thu">周四</string>
+    <string name="settings_token_stats_week_fri">周五</string>
+    <string name="settings_token_stats_week_sat">周六</string>
+    <string name="settings_token_stats_week_sun">周日</string>
     <string name="settings_token_stats_provider">供应商统计</string>
     <string name="settings_token_stats_model">模型统计</string>
     <string name="settings_token_stats_success_rate">成功率 %1$s</string>
@@ -527,6 +541,9 @@
     <string name="runtime_card_target_version">服务端 %1$s</string>
     <string name="runtime_card_add_server">添加云服务器</string>
     <string name="runtime_card_manage_servers">管理云服务器</string>
+    <!-- 云端服务端版本过旧时的提示：信任档位需服务端 rc13+ 才生效，否则 Bash 仍每次审批 -->
+    <string name="runtime_card_trust_server_old">当前云端服务版本 %1$s 较旧，信任档位需升级云端服务后生效</string>
+    <string name="runtime_card_trust_server_old_short">云端服务待升级</string>
 
     <!-- Agent Status -->
     <string name="agent_stopped_by_user">已被用户停止</string>

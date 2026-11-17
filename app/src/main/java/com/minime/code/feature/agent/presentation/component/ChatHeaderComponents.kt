@@ -79,6 +79,8 @@ internal fun ChatHeader(
     environmentLabel: String? = null,
     /** 生效后端是云服务器（true=云图标，false=本机图标）。 */
     environmentIsCloud: Boolean = true,
+    /** 云端服务端版本过旧、信任档位不生效时，在环境徽标上给出警示。 */
+    environmentTrustWarning: Boolean = false,
     showMenuButton: Boolean = true,
     terminalActive: Boolean = false,
     gitActive: Boolean = false,
@@ -169,7 +171,11 @@ internal fun ChatHeader(
                     if (environmentLabel != null) {
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            color = if (environmentTrustWarning) {
+                                MaterialTheme.colorScheme.errorContainer
+                            } else {
+                                MaterialTheme.colorScheme.secondaryContainer
+                            },
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = Spacing.sm, vertical = 2.dp),
@@ -179,14 +185,29 @@ internal fun ChatHeader(
                                 MiniMeIcon(
                                     imageVector = if (environmentIsCloud) MiniMeIcons.Cloud else MiniMeIcons.Smartphone,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    tint = if (environmentTrustWarning) {
+                                        MaterialTheme.colorScheme.onErrorContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSecondaryContainer
+                                    },
                                     modifier = Modifier.size(12.dp)
                                 )
                                 Text(
                                     text = environmentLabel,
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    color = if (environmentTrustWarning) {
+                                        MaterialTheme.colorScheme.onErrorContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSecondaryContainer
+                                    }
                                 )
+                                if (environmentTrustWarning) {
+                                    Text(
+                                        text = "· ${stringResource(R.string.runtime_card_trust_server_old_short)}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
                             }
                         }
                     } else if (connectionState != null) {
@@ -400,6 +421,9 @@ private fun RuntimeEnvironmentCard(
         stringResource(R.string.runtime_card_trust_strict)
     )
     val localSelected = currentConnectionId == null
+    // 选中的云端服务端版本是否支持三档信任：选中本机或版本达标时为 true（无需提示）。
+    val selectedTarget = availableTargets.firstOrNull { it.connectionId == currentConnectionId }
+    val trustSupportedHere = localSelected || selectedTarget?.trustLevelSupported ?: true
 
     Surface(
         shape = RoundedCornerShape(16.dp),
@@ -491,6 +515,17 @@ private fun RuntimeEnvironmentCard(
                     }
                 }
             )
+            // 云端服务端过旧：信任档位（尤其完全信任）不会在其上生效，明确提示升级。
+            if (!localSelected && !trustSupportedHere && selectedTarget != null) {
+                Text(
+                    text = stringResource(
+                        R.string.runtime_card_trust_server_old,
+                        selectedTarget.version
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
     }
 

@@ -27,7 +27,30 @@ val APP_VERSION_NAME: String = providers.environmentVariable("GITHUB_REF_NAME")
     ?.takeIf { it.matches(Regex("v\\d+.*")) }
     ?.removePrefix("v")
     ?: "1.0.0"
-val APP_VERSION_CODE = 1
+
+/**
+ * versionCode 由 versionName 严格派生，随每个 rc 递增，供系统安装器与应用内更新自检
+ * （ApkVerifier 只比 versionCode）判定"是否为更新版本"。
+ *
+ * 历史缺陷：此前恒为 1，导致检查更新用 versionName 判定有新版本、下载后却因
+ * versionCode 相等被判 NotNewer（"安装包版本不高于当前版本"），应用内更新永远失败。
+ *
+ * 编码：MAJOR*10000000 + MINOR*100000 + PATCH*1000 + 阶段序号。
+ * 预发布用 rc 序号（rc13→13），正式版用 900（大于任意 rc），保证 rc13 < rc14 < 正式版。
+ * 例：1.0.0-rc13 → 10000013；1.0.0 → 10000900；1.0.1-rc1 → 10001001。
+ */
+fun versionCodeOf(name: String): Int {
+    val core = name.substringBefore('-')
+    val pre = name.substringAfter('-', "")
+    val nums = core.split('.').map { it.toIntOrNull() ?: 0 }
+    val major = nums.getOrElse(0) { 0 }
+    val minor = nums.getOrElse(1) { 0 }
+    val patch = nums.getOrElse(2) { 0 }
+    val preNum = Regex("""\d+""").find(pre)?.value?.toIntOrNull() ?: 0
+    val stage = if (pre.isEmpty()) 900 else preNum.coerceIn(1, 899)
+    return major * 10_000_000 + minor * 100_000 + patch * 1_000 + stage
+}
+val APP_VERSION_CODE = versionCodeOf(APP_VERSION_NAME)
 
 // 内置使用手册 / AI 容器文档（~/.minimecode/docs）位于 app/src/main/assets/docs，由
 // scripts/sync-app-docs.py 从 docs-site/docs（与 VitePress 官网同源）转换生成：

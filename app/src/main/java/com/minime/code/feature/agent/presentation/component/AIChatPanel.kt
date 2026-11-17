@@ -1474,6 +1474,12 @@ fun AIChatPanel(
     val currentCloudConnectionId by viewModel.currentCloudConnectionId.collectAsStateWithLifecycle()
     val currentCloudTarget = availableCloudTargets.firstOrNull { it.connectionId == currentCloudConnectionId }
     val sessionIsOnCloud = currentCloudConnectionId != null
+    // 云端服务端过旧且用户选了非默认信任档位时，顶栏环境徽标警示"信任档位不生效"。
+    // 探测中/版本未知时先不警示，避免服务器刚添加、尚未读到版本就误报。
+    val trustWarningOnHeader = sessionIsOnCloud &&
+        currentCloudTarget != null &&
+        !currentCloudTarget.trustLevelSupported &&
+        trustLevel != com.minime.code.feature.agent.domain.model.TrustLevel.BASIC
     // 本地 SSH 工具执行模式已砍；顶栏只显示"生效后端"（本机 / 某台云服务器）。
     val isRemote = !sessionIsOnCloud && executionMode == com.minime.code.feature.settings.data.repository.ExecutionMode.REMOTE_SSH
 
@@ -1610,6 +1616,7 @@ fun AIChatPanel(
                     stringResource(R.string.runtime_card_env_local)
                 },
                 environmentIsCloud = sessionIsOnCloud,
+                environmentTrustWarning = trustWarningOnHeader,
                 showMenuButton = showMenuButton,
                 terminalActive = terminalActive,
                 gitActive = gitActive,
