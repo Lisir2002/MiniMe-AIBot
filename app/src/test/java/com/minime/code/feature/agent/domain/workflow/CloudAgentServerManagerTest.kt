@@ -189,4 +189,39 @@ class CloudAgentServerManagerTest {
         val blocked = CloudAgentServerManager.rateLimitMessage(403, null, null, "Forbidden by policy")
         assertTrue(blocked.contains("拒绝访问"))
     }
+
+    @Test
+    fun portScripts_useCustomPort() {
+        // 端口可配置：清理与探测脚本必须嵌入用户自定义端口，而非写死 8080。
+        val cleanup = CloudAgentServerManager.buildPortCleanupCommand(18080)
+        assertTrue(cleanup.contains("publish=18080"))
+        assertTrue(cleanup.contains("sport = :18080"))
+        assertFalse(cleanup.contains("publish=8080"))
+
+        val probe = CloudAgentServerManager.buildPortProbeCommand(18080)
+        assertTrue(probe.contains("s.bind(('',18080))"))
+        assertTrue(probe.contains("PORT_PROBE=AVAILABLE"))
+        assertTrue(probe.contains("nc -l 18080"))
+        assertFalse(probe.contains("s.bind(('',8080))"))
+    }
+
+    @Test
+    fun portProbeResult_parsesAllStatuses() {
+        val ok = CloudAgentServerManager.parsePortProbe("尝试监听…\nPORT_PROBE=AVAILABLE", 18080)
+        assertTrue(ok.available)
+        assertEquals("AVAILABLE", ok.status)
+
+        val busy = CloudAgentServerManager.parsePortProbe("PORT_PROBE=BUSY", 8080)
+        assertFalse(busy.available)
+        assertEquals("BUSY", busy.status)
+        assertTrue(busy.message.contains("8080"))
+
+        val denied = CloudAgentServerManager.parsePortProbe("PORT_PROBE=DENIED", 80)
+        assertFalse(denied.available)
+        assertTrue(denied.message.contains("root"))
+
+        val unknown = CloudAgentServerManager.parsePortProbe("no marker", 9000)
+        assertFalse(unknown.available)
+        assertEquals("UNKNOWN", unknown.status)
+    }
 }

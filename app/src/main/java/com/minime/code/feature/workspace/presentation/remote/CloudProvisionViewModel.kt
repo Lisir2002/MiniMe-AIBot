@@ -152,8 +152,12 @@ class CloudProvisionViewModel @Inject constructor(
             executionModeRepository.setExecutionMode(ExecutionMode.REMOTE_SSH)
             executionModeHolder.setMode(ExecutionMode.REMOTE_SSH)
 
-            // 联动：推导并回填云端 Agent 地址（host 复用同一台服务器，端口固定 8080）。
-            cloudAgentSettings.setServerUrl("http://${params.host}:8080")
+            // 联动：回填云端 Agent 地址（host 复用同一台服务器，端口取用户自定义的全局端口）。
+            val agentPort = cloudAgentSettings.port()
+            val agentUrl = "http://${params.host}:$agentPort"
+            cloudAgentSettings.setServerUrl(agentUrl)
+            cloudAgentSettings.setPortFor(connId, agentPort)
+            cloudAgentSettings.setServerUrlFor(connId, agentUrl)
 
             // 联动：后台顺带部署 agent-server（失败不影响向导完成；用户可在设置页重试/查看日志）。
             val authStr = when (val a = params.auth) {
@@ -165,7 +169,7 @@ class CloudProvisionViewModel @Inject constructor(
                 authType = if (params.auth is RemoteAuth.PrivateKey) "key" else "password",
                 authData = authStr
             )
-            runCatching { serverManager.deployOrUpgrade(deployConn) { /* 向导阶段不逐行刷 UI */ } }
+            runCatching { serverManager.deployOrUpgrade(deployConn, port = agentPort) { /* 向导阶段不逐行刷 UI */ } }
 
             _enabled.value = true
         }

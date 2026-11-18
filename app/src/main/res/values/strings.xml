@@ -2081,7 +2081,7 @@
     <string name="cloud_agent_testing">正在连接…</string>
     <string name="cloud_agent_test_ok">连接成功，云端服务正常</string>
     <string name="cloud_agent_test_fail">连接失败：%1$s</string>
-    <string name="cloud_agent_setup_guide">在服务器上运行 agent-server 并开放 8080 端口。模型密钥只保存在服务端，App 不接触。</string>
+    <string name="cloud_agent_setup_guide">在服务器上运行 agent-server 并开放监听端口（默认 8080，可自定义）。模型密钥只保存在服务端，App 不接触。</string>
     <string name="cloud_agent_need_url">请先填写服务器地址</string>
     <string name="cloud_agent_approval_title">云端请求执行操作</string>
     <string name="cloud_agent_approve">批准</string>
@@ -2103,6 +2103,10 @@
     <string name="cloud_agent_select_server">选择已保存的服务器</string>
     <string name="cloud_agent_no_saved_server">还没有已保存的服务器，请先在「连接与同步」添加</string>
     <string name="cloud_agent_use_saved_hint">选择后自动填入 http://服务器IP:8080，无需手动输入</string>
+    <string name="cloud_agent_port_section">服务端口</string>
+    <string name="cloud_agent_port_desc">云端服务监听端口，可自定义避开被占用的端口（默认 8080）。点「检测端口」会通过 SSH 在服务器上实际尝试绑定，验证是否可用；部署时自动开放该端口并回填地址。</string>
+    <string name="cloud_agent_port_label">端口（1-65535）</string>
+    <string name="cloud_agent_port_probe">检测端口</string>
     <string name="cloud_agent_version_section">服务端版本</string>
     <string name="cloud_agent_version_current">当前版本：%1$s</string>
     <string name="cloud_agent_version_expected">App 期望：%1$s</string>

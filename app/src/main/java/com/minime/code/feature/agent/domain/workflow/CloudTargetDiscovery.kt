@@ -1,5 +1,6 @@
 package com.minime.code.feature.agent.domain.workflow
 
+import com.minime.code.feature.settings.data.repository.CloudAgentSettingsRepository
 import com.minime.code.feature.workspace.domain.model.RemoteConnection
 import com.minime.code.feature.workspace.domain.model.RemoteProtocol
 import com.minime.code.feature.workspace.domain.repository.RemoteRepository
@@ -14,13 +15,15 @@ import javax.inject.Singleton
 /**
  * 可用云端执行目标发现器：列出所有"已安装 agent-server"的远程服务器连接。
  *
- * 判定方式：对每个 SFTP 连接拼 http://host:8080 并读 /version，能读到即视为可用目标
- * （不 SSH、不改服务器状态）。结果带短 TTL 缓存，空会话卡片/设置页可频繁读取而不反复探测。
+ * 判定方式：对每个 SFTP 连接取其已保存的 serverUrl（含用户自定义端口，回退 http://host:8080）
+ * 并读 /version，能读到即视为可用目标（不 SSH、不改服务器状态）。
+ * 结果带短 TTL 缓存，空会话卡片/设置页可频繁读取而不反复探测。
  */
 @Singleton
 class CloudTargetDiscovery @Inject constructor(
     private val remoteRepository: RemoteRepository,
-    private val serverManager: CloudAgentServerManager
+    private val serverManager: CloudAgentServerManager,
+    private val settings: CloudAgentSettingsRepository
 ) {
     /** 一个可用的云端执行目标。 */
     data class AvailableTarget(
@@ -71,7 +74,8 @@ class CloudTargetDiscovery @Inject constructor(
         discover().firstOrNull { it.connectionId == connectionId }
 
     private suspend fun probe(conn: RemoteConnection): AvailableTarget? {
-        val baseUrl = "http://${conn.host}:8080"
+        val saved = settings.serverUrlFor(conn.id)
+        val baseUrl = saved.ifBlank { "http://${conn.host}:${CloudAgentSettingsRepository.DEFAULT_PORT}" }
         val info = serverManager.queryVersion(baseUrl).getOrNull() ?: return null
         return AvailableTarget(
             connectionId = conn.id,

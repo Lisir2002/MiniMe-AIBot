@@ -167,6 +167,58 @@ internal fun CloudAgentSettingsBody(
                 }
             }
 
+            // 服务端口：可自定义避开被占用端口，并实际尝试绑定测试可用性
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(Radius.md),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(Spacing.md)) {
+                    Text(
+                        stringResource(R.string.cloud_agent_port_section),
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        stringResource(R.string.cloud_agent_port_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(Spacing.sm))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = state.port,
+                            onValueChange = { viewModel.setPort(it) },
+                            label = { Text(stringResource(R.string.cloud_agent_port_label)) },
+                            singleLine = true,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(Modifier.width(Spacing.sm))
+                        OutlinedButton(
+                            onClick = { viewModel.probePort() },
+                            enabled = !state.portProbing && state.selectedConnectionId != null
+                        ) {
+                            if (state.portProbing) {
+                                CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                            } else {
+                                Text(stringResource(R.string.cloud_agent_port_probe))
+                            }
+                        }
+                    }
+                    state.portProbeResult?.let { probe ->
+                        Spacer(Modifier.height(Spacing.sm))
+                        Text(
+                            probe.message,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (probe.available) MaterialTheme.semanticColors.success
+                            else MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+
             // 容器检测：部署前探测专属 AIAgent 容器 + 版本核对（INSTALL/UPGRADE/UP_TO_DATE）
             Card(
                 modifier = Modifier.fillMaxWidth(),

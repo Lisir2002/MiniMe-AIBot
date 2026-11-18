@@ -145,65 +145,111 @@ class CloudAgentServerManager @Inject constructor(
         ).joinToString("\n")
 
         /**
-         * 端口占用清理脚本（纯函数便于单测）：安装前释放 SERVER_PORT，解决
+         * 端口占用清理脚本（纯函数便于单测）：安装前释放指定端口，解决
          * 「docker rm -f 只删固定名容器，删不掉占端口的旧服务 → docker run 报 address already in use（退出码 125）」。
          *
-         * 背景：旧版一键安装只 `docker rm -f minime-agent-server`，若 8080 被历史容器（名字/镜像不同）
+         * 背景：旧版一键安装只 `docker rm -f minime-agent-server`，若该端口被历史容器（名字/镜像不同）
          * 或宿主机直接起的旧 agent 进程占用，就清不掉，新容器绑端口必然失败。
          *
          * 安全原则（绝不误杀用户其它服务）：
-         *  1) docker 容器：按 `publish=$SERVER_PORT` 找出占用者，名字/镜像/启动命令含
+         *  1) docker 容器：按 `publish=$port` 找出占用者，名字/镜像/启动命令含
          *     minime|minimecode|agent-server 特征才删，否则仅提示；
          *  2) 宿主机进程：ss/lsof/fuser 探到 PID 后读 /proc/<pid>/cmdline，含 agent-server 特征才 kill，
          *     否则仅提示；
          *  3) 复核：若端口仍被占用则 exit 1 阻断部署并给出明确指引，不带着冲突往下走。
          */
-        fun buildPortCleanupCommand(): String = listOf(
+        fun buildPortCleanupCommand(port: Int = SERVER_PORT): String = listOf(
             "SUDO=''",
             "if [ \"\$(id -u)\" != \"0\" ] && command -v sudo >/dev/null 2>&1; then SUDO='sudo'; fi",
-            "echo '检查端口 $SERVER_PORT 占用…'",
+            "echo '检查端口 $port 占用…'",
             // 1) docker 容器：按发布端口找，特征匹配才删
             "if command -v docker >/dev/null 2>&1; then",
-            "  for cid in \$(\$SUDO docker ps -a --filter 'publish=$SERVER_PORT' -q 2>/dev/null); do",
+            "  for cid in \$(\$SUDO docker ps -a --filter 'publish=$port' -q 2>/dev/null); do",
             "    INFO=\$(\$SUDO docker inspect --format '{{.Name}} {{.Config.Image}} {{.Config.Cmd}}' \"\$cid\" 2>/dev/null)",
             "    case \"\$INFO\" in",
             "      *minime*|*minimecode*|*agent-server*|*agent_server*)",
-            "        echo \"移除占用 $SERVER_PORT 的旧 agent 容器：\$INFO\"",
+            "        echo \"移除占用 $port 的旧 agent 容器：\$INFO\"",
             "        \$SUDO docker rm -f \"\$cid\" >/dev/null 2>&1 || true",
             "        ;;",
-            "      *) echo \"端口 $SERVER_PORT 被其它容器占用（\$INFO），未自动删除，请先手动停止\" ;;",
+            "      *) echo \"端口 $port 被其它容器占用（\$INFO），未自动删除，请先手动停止\" ;;",
             "    esac",
             "  done",
             "fi",
             // 2) 宿主机进程：按端口探 PID，特征匹配才 kill
             "PIDS=''",
             "if command -v ss >/dev/null 2>&1; then",
-            "  PIDS=\$(\$SUDO ss -ltnp 'sport = :$SERVER_PORT' 2>/dev/null | grep -oE 'pid=[0-9]+' | cut -d= -f2 | sort -u)",
+            "  PIDS=\$(\$SUDO ss -ltnp 'sport = :$port' 2>/dev/null | grep -oE 'pid=[0-9]+' | cut -d= -f2 | sort -u)",
             "elif command -v lsof >/dev/null 2>&1; then",
-            "  PIDS=\$(lsof -tiTCP:$SERVER_PORT -sTCP:LISTEN 2>/dev/null)",
+            "  PIDS=\$(lsof -tiTCP:$port -sTCP:LISTEN 2>/dev/null)",
             "elif command -v fuser >/dev/null 2>&1; then",
-            "  PIDS=\$(\$SUDO fuser -n tcp $SERVER_PORT 2>/dev/null)",
+            "  PIDS=\$(\$SUDO fuser -n tcp $port 2>/dev/null)",
             "fi",
             "for pid in \$PIDS; do",
             "  CMD=\$(tr '\\0' ' ' < /proc/\$pid/cmdline 2>/dev/null || true)",
             "  case \"\$CMD\" in",
             "    *agent-server*|*minimecode*|*minime*)",
-            "      echo \"停止占用 $SERVER_PORT 的旧 agent 进程（pid=\$pid）\"",
+            "      echo \"停止占用 $port 的旧 agent 进程（pid=\$pid）\"",
             "      kill -9 \"\$pid\" 2>/dev/null || true",
             "      ;;",
-            "    *) echo \"端口 $SERVER_PORT 被其它进程占用（pid=\$pid: \$(echo \"\$CMD\" | cut -c1-80)），未自动停止\" ;;",
+            "    *) echo \"端口 $port 被其它进程占用（pid=\$pid: \$(echo \"\$CMD\" | cut -c1-80)），未自动停止\" ;;",
             "  esac",
             "done",
             // 3) 复核端口，仍被占则阻断
             "STILL=0",
             "if command -v ss >/dev/null 2>&1; then",
-            "  if [ -n \"\$(ss -ltn 'sport = :$SERVER_PORT' 2>/dev/null | grep LISTEN)\" ]; then STILL=1; fi",
+            "  if [ -n \"\$(ss -ltn 'sport = :$port' 2>/dev/null | grep LISTEN)\" ]; then STILL=1; fi",
             "elif command -v lsof >/dev/null 2>&1; then",
-            "  if lsof -iTCP:$SERVER_PORT -sTCP:LISTEN >/dev/null 2>&1; then STILL=1; fi",
+            "  if lsof -iTCP:$port -sTCP:LISTEN >/dev/null 2>&1; then STILL=1; fi",
             "fi",
-            "if [ \"\$STILL\" != '0' ]; then echo '端口 $SERVER_PORT 仍被占用，请先手动停止占用程序后重试'; exit 1; fi",
-            "echo '端口 $SERVER_PORT 已释放'"
+            "if [ \"\$STILL\" != '0' ]; then echo '端口 $port 仍被占用，请先手动停止占用程序后重试'; exit 1; fi",
+            "echo '端口 $port 已释放'"
         ).joinToString("\n")
+
+        /**
+         * 端口可用性探测脚本（纯函数便于单测）：在服务器上**实际尝试绑定**指定端口，
+         * 判断能否被 agent-server 监听（比只看 ss/lsof 更准，能发现 TIME_WAIT / 权限 / 占用等真实绑定失败）。
+         *
+         * 尝试顺序：
+         *  1) python3：bind('',port) + listen 后立即关闭 → 成功输出 PORT_PROBE=AVAILABLE，占用/权限输出 =BUSY/=DENIED；
+         *  2) 无 python3 时用 nc -l 带超时试绑（nc 各不相同，尽力而为）；
+         *  3) 都不可用时输出 PORT_PROBE=UNKNOWN 并附 ss/lsof 静态占用判断，由 UI 提示用户手动确认。
+         *
+         * 该脚本不部署、不改防火墙规则：真正的公网可达还需云服务器安全组/系统防火墙放行对应端口。
+         */
+        fun buildPortProbeCommand(port: Int = SERVER_PORT): String = listOf(
+            "SUDO=''",
+            "if [ \"\$(id -u)\" != \"0\" ] && command -v sudo >/dev/null 2>&1; then SUDO='sudo'; fi",
+            "echo '尝试在 $port 端口建立测试监听…'",
+            "if command -v python3 >/dev/null 2>&1; then",
+            "  RESULT=\$(python3 -c \"import socket;s=socket.socket();s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);s.bind(('',$port));s.listen(1);s.close();print('OK')\" 2>&1 || true)",
+            "  case \"\$RESULT\" in",
+            "    *OK*) echo 'PORT_PROBE=AVAILABLE' ;;",
+            "    *13*|*ermission*|*enied*) echo 'PORT_PROBE=DENIED' ;;",
+            "    *) echo 'PORT_PROBE=BUSY' ;;",
+            "  esac",
+            "elif command -v nc >/dev/null 2>&1; then",
+            "  if timeout 2 nc -l $port >/dev/null 2>&1; then echo 'PORT_PROBE=AVAILABLE'; else echo 'PORT_PROBE=UNKNOWN'; fi",
+            "else",
+            "  OCC=0",
+            "  if command -v ss >/dev/null 2>&1 && [ -n \"\$(ss -ltn 'sport = :$port' 2>/dev/null | grep LISTEN)\" ]; then OCC=1; fi",
+            "  if [ \"\$OCC\" = '1' ]; then echo 'PORT_PROBE=BUSY'; else echo 'PORT_PROBE=UNKNOWN'; fi",
+            "fi"
+        ).joinToString("\n")
+
+        /** 从探测脚本回显解析 [PortProbeResult]（纯函数便于单测）。 */
+        fun parsePortProbe(output: String, port: Int): PortProbeResult {
+            val status = output.lineSequence()
+                .firstOrNull { it.startsWith("PORT_PROBE=") }
+                ?.removePrefix("PORT_PROBE=")?.trim() ?: "UNKNOWN"
+            val message = when (status) {
+                "AVAILABLE" -> "端口 $port 可用：已在服务器上成功绑定并监听（部署时可直接用）。"
+                "BUSY" -> "端口 $port 已被占用或无法绑定，建议换一个端口或先停止占用程序。"
+                "DENIED" -> "权限不足，无法绑定 $port（1024 以下端口需 root/sudo），建议换用 1024 以上端口。"
+                "UNKNOWN" -> "无法自动确认 $port（服务器缺少探测工具），请手动检查后部署。"
+                else -> "端口探测失败：$status"
+            }
+            return PortProbeResult(status == "AVAILABLE", status, message, output)
+        }
     }
 
     private val gson = Gson()
@@ -220,6 +266,14 @@ class CloudAgentServerManager @Inject constructor(
 
     /** 服务端版本信息。 */
     data class ServerVersionInfo(val version: String, val protocol: Int)
+
+    /** 端口可用性探测结果。 */
+    data class PortProbeResult(
+        val available: Boolean,   // 能否绑定监听
+        val status: String,       // AVAILABLE / BUSY / DENIED / UNKNOWN / ERROR
+        val message: String,      // 给 UI 的可读说明
+        val log: String           // 远程回显
+    )
 
     /** 容器检测结果：部署前先探测服务器上的专属 AIAgent 容器状态。 */
     data class Inspection(
@@ -367,6 +421,29 @@ class CloudAgentServerManager @Inject constructor(
     }
 
     /**
+     * 端口可用性探测：SSH 到服务器实际尝试绑定端口，判断能否作为 agent-server 监听端口。
+     * 不部署、不改防火墙；公网可达仍需云服务器安全组放行该端口。
+     */
+    suspend fun probePort(
+        conn: RemoteConnection,
+        port: Int = SERVER_PORT,
+        onProgress: (String) -> Unit = {}
+    ): Result<PortProbeResult> = withContext(Dispatchers.IO) {
+        var client: SSHClient? = null
+        try {
+            client = connect(conn)
+            val r = exec(client, buildPortProbeCommand(port), onProgress)
+            Result.success(parsePortProbe(r.output, port))
+        } catch (e: Exception) {
+            Result.success(
+                PortProbeResult(false, "ERROR", friendlySshError(e), "")
+            )
+        } finally {
+            runCatching { client?.disconnect() }
+        }
+    }
+
+    /**
      * 部署前探测：SSH 到服务器检查专属 AIAgent 容器是否存在、是否运行、当前版本，
      * 并从 GitHub 取最新版本，得出 [Inspection.action] 决策。
      *
@@ -375,6 +452,7 @@ class CloudAgentServerManager @Inject constructor(
      */
     suspend fun inspect(
         conn: RemoteConnection,
+        port: Int = SERVER_PORT,
         onProgress: (String) -> Unit = {}
     ): Result<Inspection> = withContext(Dispatchers.IO) {
         var client: SSHClient? = null
@@ -383,7 +461,7 @@ class CloudAgentServerManager @Inject constructor(
             val latest = latestRelease().getOrNull()?.version
             onProgress("连接 ${conn.host}:${conn.port} 检测容器…\n")
             client = connect(conn)
-            val r = exec(client, buildInspectCommand(), onProgress)
+            val r = exec(client, buildInspectCommand(port), onProgress)
             val containerLine = r.output.lineSequence()
                 .firstOrNull { it.startsWith("INSPECT_CONTAINER=") }
                 ?.removePrefix("INSPECT_CONTAINER=").orEmpty()
@@ -434,6 +512,7 @@ class CloudAgentServerManager @Inject constructor(
     suspend fun deployOrUpgrade(
         conn: RemoteConnection,
         token: String = "",
+        port: Int = SERVER_PORT,
         onProgress: (String) -> Unit = {}
     ): Result<DeployResult> = withContext(Dispatchers.IO) {
         var client: SSHClient? = null
@@ -465,21 +544,21 @@ class CloudAgentServerManager @Inject constructor(
                 )
             }
 
-            // 0.5) 端口清理：按端口释放 $SERVER_PORT（只清本服务的旧容器/旧进程，不误杀其它服务）。
+            // 0.5) 端口清理：按端口释放 $port（只清本服务的旧容器/旧进程，不误杀其它服务）。
             //      必须在 docker run 之前——旧逻辑只删固定名容器，旧服务占端口会导致退出码 125。
-            safeProgress("检查并释放端口 $SERVER_PORT…\n")
-            val portCmd = buildPortCleanupCommand()
+            safeProgress("检查并释放端口 $port…\n")
+            val portCmd = buildPortCleanupCommand(port)
             val rPort = exec(client, portCmd, safeProgress)
             log.append(mask(rPort.output))
             if (rPort.exitCode != null && rPort.exitCode != 0) {
                 return@withContext Result.success(
-                    DeployResult(false, "", "端口 $SERVER_PORT 释放失败（被其它服务占用，请手动停止）", log.toString())
+                    DeployResult(false, "", "端口 $port 释放失败（被其它服务占用，请手动停止）", log.toString())
                 )
             }
 
             // 1) 部署前检测：已有最新容器且运行中则跳过重装（幂等，避免每次点都重启服务）
             safeProgress("检测服务器现有容器…\n")
-            val probe = exec(client, buildInspectCommand(), safeProgress)
+            val probe = exec(client, buildInspectCommand(port), safeProgress)
             log.append(mask(probe.output))
             val containerLine = probe.output.lineSequence()
                 .firstOrNull { it.startsWith("INSPECT_CONTAINER=") }
@@ -490,8 +569,8 @@ class CloudAgentServerManager @Inject constructor(
             val existing = decideInspection(containerLine, versionJson?.let { parseVersionFromJson(it) }, rel.version)
             if (existing.action == Inspection.Action.UP_TO_DATE) {
                 safeProgress("已是最新版本 ${existing.currentVersion}，无需重装。\n")
-                settings.setServerUrl("http://${conn.host}:$SERVER_PORT")
-                settings.setServerUrlFor(conn.id, "http://${conn.host}:$SERVER_PORT")
+                settings.setServerUrl("http://${conn.host}:$port")
+                settings.setServerUrlFor(conn.id, "http://${conn.host}:$port")
                 return@withContext Result.success(
                     DeployResult(true, existing.currentVersion ?: rel.version, "已是最新版本，无需重装", log.toString())
                 )
@@ -510,7 +589,7 @@ class CloudAgentServerManager @Inject constructor(
 
             // 3) 原子替换 jar + 写 systemd 服务（无 systemd 时降级 nohup）+ 启动
             safeProgress("安装并启动服务…\n")
-            val installCmd = buildInstallCommand(rel.tag, token)
+            val installCmd = buildInstallCommand(rel.tag, token, port)
             val r2 = exec(client, installCmd, safeProgress)
             log.append(mask(r2.output))
             if (r2.exitCode != null && r2.exitCode != 0) {
@@ -521,7 +600,7 @@ class CloudAgentServerManager @Inject constructor(
 
             // 4) 等待 health + version 校验（服务端启动需要几秒）；带 token 调受保护端点确认鉴权真生效
             safeProgress("校验服务健康状态…\n")
-            val verifyCmd = buildVerifyCommand(token)
+            val verifyCmd = buildVerifyCommand(token, port)
             val r3 = exec(client, verifyCmd, safeProgress)
             log.append(mask(r3.output))
             val deployedVersion = parseVersionFromOutput(r3.output) ?: "unknown"
@@ -532,9 +611,12 @@ class CloudAgentServerManager @Inject constructor(
                 )
             }
 
-            // 5) 回填 serverUrl（复用基座连接 host，端口固定 8080）；按 connectionId 存一份供多服务器解析
-            settings.setServerUrl("http://${conn.host}:$SERVER_PORT")
-            settings.setServerUrlFor(conn.id, "http://${conn.host}:$SERVER_PORT")
+            // 5) 回填 serverUrl（复用基座连接 host + 用户自定义端口）；按 connectionId 存一份供多服务器解析
+            val serverUrl = "http://${conn.host}:$port"
+            settings.setServerUrl(serverUrl)
+            settings.setServerUrlFor(conn.id, serverUrl)
+            settings.setPort(port)
+            settings.setPortFor(conn.id, port)
             Result.success(DeployResult(true, deployedVersion, "部署成功", log.toString()))
         } catch (e: Exception) {
             Result.success(DeployResult(false, "", friendlySshError(e), ""))
@@ -642,7 +724,7 @@ class CloudAgentServerManager @Inject constructor(
      *
      * 业务 jar 由 [buildDownloadCommand] 单独从 Release 下载后挂载。
      */
-    private fun buildInstallCommand(releaseTag: String, token: String = ""): String {
+    private fun buildInstallCommand(releaseTag: String, token: String = "", port: Int = SERVER_PORT): String {
         val image = baseImageFor(releaseTag)
         val tarUrl = "https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$releaseTag/$BASE_IMAGE_TAR"
         val q = shellQuote(tarUrl)
@@ -668,15 +750,15 @@ class CloudAgentServerManager @Inject constructor(
             "  echo '镜像包载入成功'",
             "fi",
             "\$SUDO docker rm -f $SERVICE_NAME >/dev/null 2>&1 || true",
-            "\$SUDO docker run -d --name $SERVICE_NAME --restart unless-stopped --cap-add NET_ADMIN -p $SERVER_PORT:$SERVER_PORT " +
+            "\$SUDO docker run -d --name $SERVICE_NAME --restart unless-stopped --cap-add NET_ADMIN -p $port:$port " +
                 "-v \"\$D:/data/agent-server\" -v \"\$WS:/workspace\" " +
-                "-e MINIME_DB=/data/agent-server/events.db -e MINIME_WORKSPACE=/workspace -e MINIME_PORT=$SERVER_PORT$tokenEnv " +
+                "-e MINIME_DB=/data/agent-server/events.db -e MINIME_WORKSPACE=/workspace -e MINIME_PORT=$port$tokenEnv " +
                 "$image java -jar /data/agent-server/agent-server.jar >/dev/null",
             "echo \"service=docker container=$SERVICE_NAME image=$image\""
         ).joinToString("\n")
     }
 
-    private fun buildVerifyCommand(token: String = ""): String {
+    private fun buildVerifyCommand(token: String = "", port: Int = SERVER_PORT): String {
         // 鉴权校验：token 非空时必须能带 Bearer 读到 /policy（受保护端点），否则说明 token 没写进服务端。
         // token 为空时只探测无需鉴权的 /version，保持向后兼容。
         val authFlag = if (token.isBlank()) "" else " -H \"Authorization: Bearer ${token.replace("\"", "")}\""
@@ -684,9 +766,9 @@ class CloudAgentServerManager @Inject constructor(
             "OK=0",
             "P=000",
             "for i in \$(seq 1 20); do",
-            "  V=\$(curl -fsS --max-time 2$authFlag http://127.0.0.1:$SERVER_PORT/version 2>/dev/null || true)",
+            "  V=\$(curl -fsS --max-time 2$authFlag http://127.0.0.1:$port/version 2>/dev/null || true)",
             if (token.isNotBlank())
-                "  P=\$(curl -s -o /dev/null -w '%{http_code}' --max-time 2$authFlag http://127.0.0.1:$SERVER_PORT/policy 2>/dev/null || true)"
+                "  P=\$(curl -s -o /dev/null -w '%{http_code}' --max-time 2$authFlag http://127.0.0.1:$port/policy 2>/dev/null || true)"
             else "  P=200",
             "  if [ -n \"\$V\" ] && [ \"\$P\" = \"200\" ]; then echo \"VERSION_JSON=\$V\"; OK=1; break; fi",
             "  sleep 1",
@@ -701,13 +783,13 @@ class CloudAgentServerManager @Inject constructor(
      *  INSPECT_VERSION_JSON=<json>     从容器内 /version 读到的版本（容器运行时才有）
      * docker 不可用时两项都为空，交给 decideInspection 判为 UNKNOWN。
      */
-    private fun buildInspectCommand(): String = listOf(
+    private fun buildInspectCommand(port: Int = SERVER_PORT): String = listOf(
         "SUDO=''",
         "if [ \"\$(id -u)\" != \"0\" ] && command -v sudo >/dev/null 2>&1; then SUDO='sudo'; fi",
         "if command -v docker >/dev/null 2>&1; then",
         "  C=\$(\$SUDO docker ps -a --filter 'name=^/$SERVICE_NAME\$' --format '{{.Names}}' 2>/dev/null | head -n1)",
         "  echo \"INSPECT_CONTAINER=\${C:-EMPTY}\"",
-        "  V=\$(curl -fsS --max-time 3 http://127.0.0.1:$SERVER_PORT/version 2>/dev/null || true)",
+        "  V=\$(curl -fsS --max-time 3 http://127.0.0.1:$port/version 2>/dev/null || true)",
         "  if [ -n \"\$V\" ]; then echo \"INSPECT_VERSION_JSON=\$V\"; fi",
         "else",
         "  echo 'INSPECT_CONTAINER=EMPTY'",

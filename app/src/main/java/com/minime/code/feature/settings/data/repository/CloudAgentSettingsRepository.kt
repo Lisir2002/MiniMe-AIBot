@@ -37,11 +37,34 @@ class CloudAgentSettingsRepository @Inject constructor(
         val ENABLED_KEY = booleanPreferencesKey("cloud_agent_enabled")
         val SERVER_URL_KEY = stringPreferencesKey("cloud_agent_server_url")
         val TOKEN_KEY = stringPreferencesKey("cloud_agent_token")
+        /** 云端服务监听端口（字符串，用户可自定义避开占用端口）；默认 8080。 */
+        val PORT_KEY = stringPreferencesKey("cloud_agent_port")
         /** 新会话默认绑定的云服务器连接 id（空=本机）。 */
         val DEFAULT_CONNECTION_KEY = stringPreferencesKey("cloud_agent_default_connection")
 
+        const val DEFAULT_PORT = 8080
+
         fun serverUrlKey(connectionId: String) = stringPreferencesKey("cloud_server_url_$connectionId")
         fun tokenKey(connectionId: String) = stringPreferencesKey("cloud_token_$connectionId")
+        fun portKey(connectionId: String) = stringPreferencesKey("cloud_port_$connectionId")
+
+        /**
+         * 校验端口字符串：合法返回规范化数字，非法返回 null。
+         * 范围 1..65535；1024 以下需 root，但允许（部署脚本会走 sudo）。
+         */
+        fun validatePort(raw: String): Int? {
+            val n = raw.trim().toIntOrNull() ?: return null
+            return n.takeIf { it in 1..65535 }
+        }
+
+        /** 从完整 URL 提取端口；解析失败返回默认端口。 */
+        fun portFromUrl(url: String): Int = runCatching {
+            val parsed = java.net.URI(url.trim())
+            if (parsed.port > 0) parsed.port else DEFAULT_PORT
+        }.getOrDefault(DEFAULT_PORT)
+
+        /** 用 host + 端口生成规范 serverUrl。 */
+        fun serverUrl(host: String, port: Int): String = "http://$host:$port"
 
         /** 生成强随机访问令牌：32 字节安全随机 → Base64URL（URL/header 安全，无 +/=）。 */
         fun generateToken(): String {
@@ -61,9 +84,13 @@ class CloudAgentSettingsRepository @Inject constructor(
     /** Bearer token（可选）。 */
     val tokenFlow: Flow<String> = context.cloudAgentDataStore.data.map { it[TOKEN_KEY] ?: "" }
 
+    /** 云端服务端口（字符串形式，UI 输入框直接绑定；默认 8080）。 */
+    val portFlow: Flow<String> = context.cloudAgentDataStore.data.map { it[PORT_KEY] ?: DEFAULT_PORT.toString() }
+
     suspend fun setEnabled(enabled: Boolean) = context.cloudAgentDataStore.edit { it[ENABLED_KEY] = enabled }
     suspend fun setServerUrl(url: String) = context.cloudAgentDataStore.edit { it[SERVER_URL_KEY] = url.trim().trimEnd('/') }
     suspend fun setToken(token: String) = context.cloudAgentDataStore.edit { it[TOKEN_KEY] = token.trim() }
+    suspend fun setPort(port: Int) = context.cloudAgentDataStore.edit { it[PORT_KEY] = port.toString() }
 
     /**
      * 首次进入云端页时确保有一个强随机 token（服务端 MINIME_TOKEN 与客户端 Bearer 共用同一值）。
@@ -90,6 +117,7 @@ class CloudAgentSettingsRepository @Inject constructor(
     suspend fun isEnabled(): Boolean = enabledFlow.first()
     suspend fun serverUrl(): String = serverUrlFlow.first()
     suspend fun token(): String = tokenFlow.first()
+    suspend fun port(): Int = validatePort(portFlow.first()) ?: DEFAULT_PORT
 
     // ---- 按连接 id 存取（多服务器）----------------------------------------
 
@@ -119,6 +147,17 @@ class CloudAgentSettingsRepository @Inject constructor(
 
     suspend fun setTokenFor(connectionId: String, token: String) =
         context.cloudAgentDataStore.edit { it[tokenKey(connectionId)] = token }
+
+    /** 读取指定连接的端口；未单独存过时从该连接的 serverUrl 解析，再回退全局端口。 */
+    suspend fun portFor(connectionId: String): Int {
+        val data = context.cloudAgentDataStore.data.first()
+        data[portKey(connectionId)]?.let { validatePort(it)?.let { p -> return p } }
+        data[serverUrlKey(connectionId)]?.let { return portFromUrl(it) }
+        return data[PORT_KEY]?.let { validatePort(it) } ?: DEFAULT_PORT
+    }
+
+    suspend fun setPortFor(connectionId: String, port: Int) =
+        context.cloudAgentDataStore.edit { it[portKey(connectionId)] = port.toString() }
 
     /** appSessionId -> 云端 sessionId 的映射键（同一 App 会话复用同一云端会话，多轮上下文留在云端）。 */
     private fun cloudSessionKey(appSessionId: String, serverUrl: String) =
