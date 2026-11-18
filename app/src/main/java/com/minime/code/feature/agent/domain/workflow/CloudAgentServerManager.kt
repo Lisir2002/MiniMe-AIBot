@@ -272,7 +272,7 @@ class CloudAgentServerManager @Inject constructor(
             val downloadCmd = buildDownloadCommand(rel.jarUrl)
             val r1 = exec(client, downloadCmd, safeProgress)
             log.append(mask(r1.output))
-            if (r1.exitCode != 0) {
+            if (r1.exitCode != null && r1.exitCode != 0) {
                 return@withContext Result.success(
                     DeployResult(false, "", "下载 jar 失败（退出码 ${r1.exitCode}）", log.toString())
                 )
@@ -283,7 +283,7 @@ class CloudAgentServerManager @Inject constructor(
             val installCmd = buildInstallCommand(rel.tag, token)
             val r2 = exec(client, installCmd, safeProgress)
             log.append(mask(r2.output))
-            if (r2.exitCode != 0) {
+            if (r2.exitCode != null && r2.exitCode != 0) {
                 return@withContext Result.success(
                     DeployResult(false, "", "安装/启动失败（退出码 ${r2.exitCode}）", log.toString())
                 )
@@ -296,7 +296,7 @@ class CloudAgentServerManager @Inject constructor(
             log.append(mask(r3.output))
             val deployedVersion = parseVersionFromOutput(r3.output) ?: "unknown"
 
-            if (r3.exitCode != 0) {
+            if (r3.exitCode != null && r3.exitCode != 0) {
                 return@withContext Result.success(
                     DeployResult(false, deployedVersion, "服务启动后健康检查/鉴权校验未通过（token 是否正确写入？）", log.toString())
                 )
@@ -371,6 +371,10 @@ class CloudAgentServerManager @Inject constructor(
                     onProgress(line + "\n")
                 }
             }
+            // 关键：exit-status 是 SSH 独立消息包，到达可能晚于 stdout EOF。
+            // 必须 join 等待命令真正结束并收齐 exit-status，否则直接读 exitStatus 会得到 null，
+            // 导致「安装脚本明明执行到最后一行、却被误判为退出码 null 失败」的竞态。
+            runCatching { cmd.join(30, java.util.concurrent.TimeUnit.SECONDS) }
             return ExecOutput(sb.toString(), cmd.exitStatus)
         } finally {
             runCatching { session.close() }
