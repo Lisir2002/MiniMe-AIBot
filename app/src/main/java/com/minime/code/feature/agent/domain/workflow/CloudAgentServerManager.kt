@@ -85,6 +85,64 @@ class CloudAgentServerManager @Inject constructor(
                 "GitHub 拒绝访问（HTTP $code），可能是网络或代理限制。"
             }
         }
+
+        /**
+         * 前置环境准备脚本（新服务器一键安装的关键步骤，纯函数便于单测）：
+         * 在下载 jar / 启动容器之前，先探测容器运行依赖是否齐全，缺失则**自动安装**，全程幂等。
+         *
+         * 覆盖：
+         *  1) 提权：root 直连；非 root 且有 sudo 则借 sudo 安装系统依赖，否则给出明确指引后退出。
+         *  2) 包管理器探测：apt / dnf / yum / apk。
+         *  3) curl：下载 jar 与镜像 tar 依赖，缺失即装。
+         *  4) Docker：缺失即装（apk 用 apk add，其余用官方 get.docker.com 脚本，覆盖主流发行版）。
+         *  5) 启动 daemon：systemd → service → 直接 dockerd 三级降级。
+         *  6) 探活：docker info 轮询（最多 40 秒），失败退出码非 0 阻断后续部署。
+         *
+         * 为什么不只报「请先安装 Docker」：用户从一开始就要求新服务器先自动补齐前置环境再部署，
+         * 旧逻辑把检测压到最后一步且只报错，导致一键安装对全新服务器必然失败。
+         */
+        fun buildBootstrapCommand(): String = listOf(
+            "set -e",
+            "SUDO=''",
+            "if [ \"\$(id -u)\" != \"0\" ]; then",
+            "  if command -v sudo >/dev/null 2>&1; then SUDO='sudo';",
+            "  else echo '安装前置依赖需要 root 或 sudo 权限，请用 root 账户连接'; exit 1; fi",
+            "fi",
+            "PKG=''",
+            "if command -v apt-get >/dev/null 2>&1; then PKG=apt",
+            "elif command -v dnf >/dev/null 2>&1; then PKG=dnf",
+            "elif command -v yum >/dev/null 2>&1; then PKG=yum",
+            "elif command -v apk >/dev/null 2>&1; then PKG=apk",
+            "fi",
+            "echo \"包管理器：\${PKG:-未识别}\"",
+            "if ! command -v curl >/dev/null 2>&1; then",
+            "  echo '未检测到 curl，正在安装…'",
+            "  case \"\$PKG\" in",
+            "    apt) \$SUDO apt-get update -qq && \$SUDO apt-get install -y curl ;;",
+            "    dnf) \$SUDO dnf install -y curl ;;",
+            "    yum) \$SUDO yum install -y curl ;;",
+            "    apk) \$SUDO apk add --no-cache curl ;;",
+            "    *) echo '无法识别包管理器，请手动安装 curl 后重试'; exit 1 ;;",
+            "  esac",
+            "else echo 'curl 已就绪'; fi",
+            "if command -v docker >/dev/null 2>&1; then",
+            "  echo 'Docker 已安装'",
+            "else",
+            "  echo '未检测到 Docker，正在自动安装…'",
+            "  if [ \"\$PKG\" = 'apk' ]; then \$SUDO apk add --no-cache docker",
+            "  else curl -fsSL --retry 3 --connect-timeout 15 https://get.docker.com | \$SUDO sh; fi",
+            "fi",
+            "if ! \$SUDO docker info >/dev/null 2>&1; then",
+            "  echo '启动 Docker 服务…'",
+            "  if command -v systemctl >/dev/null 2>&1; then \$SUDO systemctl enable --now docker >/dev/null 2>&1 || true; fi",
+            "  if ! \$SUDO docker info >/dev/null 2>&1 && command -v service >/dev/null 2>&1; then \$SUDO service docker start >/dev/null 2>&1 || true; fi",
+            "  if ! \$SUDO docker info >/dev/null 2>&1; then \$SUDO nohup dockerd >/dev/null 2>&1 & fi",
+            "fi",
+            "OK=0",
+            "for i in \$(seq 1 20); do if \$SUDO docker info >/dev/null 2>&1; then OK=1; break; fi; sleep 2; done",
+            "if [ \"\$OK\" != '1' ]; then echo 'Docker 安装后仍无法启动，请查看 journalctl -u docker 或重启服务器后重试'; exit 1; fi",
+            "echo \"前置环境就绪：\$(\$SUDO docker --version)\""
+        ).joinToString("\n")
     }
 
     private val gson = Gson()
@@ -333,7 +391,20 @@ class CloudAgentServerManager @Inject constructor(
             client = connect(conn)
             val log = StringBuilder()
 
-            // 0) 部署前检测：已有最新容器且运行中则跳过重装（幂等，避免每次点都重启服务）
+            // 0) 前置环境：新服务器先补齐容器运行依赖（curl + Docker），缺失则自动安装并启动。
+            //    必须在探测/下载之前——旧逻辑把「未检测到 Docker」压到最后安装步骤才报错，
+            //    导致新服务器下载完 jar 才失败（用户反复反馈的一键安装问题）。
+            safeProgress("检查服务器前置环境（curl / Docker）…\n")
+            val bootstrapCmd = buildBootstrapCommand()
+            val rBoot = exec(client, bootstrapCmd, safeProgress)
+            log.append(mask(rBoot.output))
+            if (rBoot.exitCode != null && rBoot.exitCode != 0) {
+                return@withContext Result.success(
+                    DeployResult(false, "", "前置环境准备失败（缺少 Docker 且无法自动安装）", log.toString())
+                )
+            }
+
+            // 1) 部署前检测：已有最新容器且运行中则跳过重装（幂等，避免每次点都重启服务）
             safeProgress("检测服务器现有容器…\n")
             val probe = exec(client, buildInspectCommand(), safeProgress)
             log.append(mask(probe.output))
@@ -353,7 +424,7 @@ class CloudAgentServerManager @Inject constructor(
                 )
             }
 
-            // 1) 下载 jar 到临时文件（失败不影响旧版）
+            // 2) 下载 jar 到临时文件（失败不影响旧版）
             safeProgress("下载 agent-server-${rel.version}.jar …\n")
             val downloadCmd = buildDownloadCommand(rel.jarUrl)
             val r1 = exec(client, downloadCmd, safeProgress)
@@ -364,7 +435,7 @@ class CloudAgentServerManager @Inject constructor(
                 )
             }
 
-            // 2) 原子替换 jar + 写 systemd 服务（无 systemd 时降级 nohup）+ 启动
+            // 3) 原子替换 jar + 写 systemd 服务（无 systemd 时降级 nohup）+ 启动
             safeProgress("安装并启动服务…\n")
             val installCmd = buildInstallCommand(rel.tag, token)
             val r2 = exec(client, installCmd, safeProgress)
@@ -375,7 +446,7 @@ class CloudAgentServerManager @Inject constructor(
                 )
             }
 
-            // 3) 等待 health + version 校验（服务端启动需要几秒）；带 token 调受保护端点确认鉴权真生效
+            // 4) 等待 health + version 校验（服务端启动需要几秒）；带 token 调受保护端点确认鉴权真生效
             safeProgress("校验服务健康状态…\n")
             val verifyCmd = buildVerifyCommand(token)
             val r3 = exec(client, verifyCmd, safeProgress)
@@ -388,7 +459,7 @@ class CloudAgentServerManager @Inject constructor(
                 )
             }
 
-            // 4) 回填 serverUrl（复用基座连接 host，端口固定 8080）；按 connectionId 存一份供多服务器解析
+            // 5) 回填 serverUrl（复用基座连接 host，端口固定 8080）；按 connectionId 存一份供多服务器解析
             settings.setServerUrl("http://${conn.host}:$SERVER_PORT")
             settings.setServerUrlFor(conn.id, "http://${conn.host}:$SERVER_PORT")
             Result.success(DeployResult(true, deployedVersion, "部署成功", log.toString()))
@@ -470,6 +541,7 @@ class CloudAgentServerManager @Inject constructor(
     // ---- 远程脚本 ----
 
     // 注意：普通 Kotlin 字符串里 \$ = 字面 $（交给远程 shell 展开）；裸 $XXX 是 Kotlin 编译期插值。
+
     private fun buildDownloadCommand(jarUrl: String): String {
         val q = shellQuote(jarUrl)
         return listOf(
@@ -505,22 +577,25 @@ class CloudAgentServerManager @Inject constructor(
         val tokenEnv = if (token.isBlank()) "" else " -e MINIME_TOKEN=${shellQuote(token)}"
         return listOf(
             "set -e",
+            "SUDO=''",
+            "if [ \"\$(id -u)\" != \"0\" ] && command -v sudo >/dev/null 2>&1; then SUDO='sudo'; fi",
             "D=\"\$HOME/$INSTALL_DIR\"",
             "WS=\"\$HOME/minimecode-workspace\"",
             "mkdir -p \"\$D\" \"\$WS\"",
-            "if ! command -v docker >/dev/null 2>&1; then echo '未检测到 Docker，请先安装 Docker'; exit 1; fi",
+            // 防御性兜底：正常情况下前置 bootstrap 已自动安装并探活 Docker；此处仅防绕过部署流程直调本命令。
+            "if ! \$SUDO docker info >/dev/null 2>&1; then echo 'Docker 不可用，请重新执行一键部署以自动安装前置环境'; exit 1; fi",
             // 基座镜像：无条件 pull（版本化 tag）→ 失败则 tar 兜底。绝不在本地命中时跳过。
             "echo '拉取云端运行环境镜像（$image）…'",
-            "if ! docker pull $image >/dev/null 2>&1; then",
+            "if ! \$SUDO docker pull $image >/dev/null 2>&1; then",
             "  echo '镜像仓库不可达，改用 Release 镜像包兜底…'",
             "  curl -fsSL --retry 3 --connect-timeout 15 $q -o \"\$D/base.tar.new\"",
             "  test -s \"\$D/base.tar.new\" || { echo '镜像包下载失败'; exit 1; }",
             "  mv -f \"\$D/base.tar.new\" \"\$D/base.tar\"",
-            "  docker load -i \"\$D/base.tar\" >/dev/null",
+            "  \$SUDO docker load -i \"\$D/base.tar\" >/dev/null",
             "  echo '镜像包载入成功'",
             "fi",
-            "docker rm -f $SERVICE_NAME >/dev/null 2>&1 || true",
-            "docker run -d --name $SERVICE_NAME --restart unless-stopped --cap-add NET_ADMIN -p $SERVER_PORT:$SERVER_PORT " +
+            "\$SUDO docker rm -f $SERVICE_NAME >/dev/null 2>&1 || true",
+            "\$SUDO docker run -d --name $SERVICE_NAME --restart unless-stopped --cap-add NET_ADMIN -p $SERVER_PORT:$SERVER_PORT " +
                 "-v \"\$D:/data/agent-server\" -v \"\$WS:/workspace\" " +
                 "-e MINIME_DB=/data/agent-server/events.db -e MINIME_WORKSPACE=/workspace -e MINIME_PORT=$SERVER_PORT$tokenEnv " +
                 "$image java -jar /data/agent-server/agent-server.jar >/dev/null",
@@ -554,8 +629,10 @@ class CloudAgentServerManager @Inject constructor(
      * docker 不可用时两项都为空，交给 decideInspection 判为 UNKNOWN。
      */
     private fun buildInspectCommand(): String = listOf(
+        "SUDO=''",
+        "if [ \"\$(id -u)\" != \"0\" ] && command -v sudo >/dev/null 2>&1; then SUDO='sudo'; fi",
         "if command -v docker >/dev/null 2>&1; then",
-        "  C=\$(docker ps -a --filter 'name=^/$SERVICE_NAME\$' --format '{{.Names}}' 2>/dev/null | head -n1)",
+        "  C=\$(\$SUDO docker ps -a --filter 'name=^/$SERVICE_NAME\$' --format '{{.Names}}' 2>/dev/null | head -n1)",
         "  echo \"INSPECT_CONTAINER=\${C:-EMPTY}\"",
         "  V=\$(curl -fsS --max-time 3 http://127.0.0.1:$SERVER_PORT/version 2>/dev/null || true)",
         "  if [ -n \"\$V\" ]; then echo \"INSPECT_VERSION_JSON=\$V\"; fi",

@@ -117,6 +117,42 @@ class CloudAgentServerManagerTest {
     }
 
     @Test
+    fun bootstrapScript_checksAndAutoInstallsDockerBeforeDeploy() {
+        // 新服务器一键安装：前置环境脚本必须自己检测 + 自动安装 curl/Docker + 启动 daemon + 探活，
+        // 而不是把「未检测到 Docker」的错误压到最后一步。
+        val s = CloudAgentServerManager.buildBootstrapCommand()
+        // 提权与非 root 分支
+        assertTrue(s.contains("id -u"))
+        assertTrue(s.contains("SUDO='sudo'"))
+        // curl 检测 + 各包管理器安装
+        assertTrue(s.contains("command -v curl"))
+        assertTrue(s.contains("apt-get install -y curl"))
+        assertTrue(s.contains("apk add --no-cache curl"))
+        // Docker 检测 + 自动安装（官方脚本 + apk 两路）
+        assertTrue(s.contains("未检测到 Docker，正在自动安装"))
+        assertTrue(s.contains("get.docker.com"))
+        assertTrue(s.contains("apk add --no-cache docker"))
+        // daemon 启动三级降级
+        assertTrue(s.contains("systemctl enable --now docker"))
+        assertTrue(s.contains("service docker start"))
+        assertTrue(s.contains("nohup dockerd"))
+        // 探活失败必须 exit 1 阻断后续部署
+        assertTrue(s.contains("docker info"))
+        assertTrue(s.contains("Docker 安装后仍无法启动"))
+        assertTrue(s.contains("exit 1"))
+    }
+
+    @Test
+    fun bootstrapScript_isIdempotent() {
+        // 幂等：curl/Docker 已存在时只回显已就绪，不重复安装（重复部署不慢、不破坏现有环境）。
+        val s = CloudAgentServerManager.buildBootstrapCommand()
+        assertTrue(s.contains("else echo 'curl 已就绪'"))
+        assertTrue(s.contains("echo 'Docker 已安装'"))
+        // 探活走 SUDO 前缀，兼容非 root 连接
+        assertTrue(s.contains("\$SUDO docker info"))
+    }
+
+    @Test
     fun rateLimitMessage_isActionable() {
         // 403 限流：给出配额原因 + 关闭 VPN/稍后重试建议，不再是误导的「检查网络」
         val limited = CloudAgentServerManager.rateLimitMessage(
