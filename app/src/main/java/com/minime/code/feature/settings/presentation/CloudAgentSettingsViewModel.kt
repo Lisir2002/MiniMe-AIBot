@@ -91,6 +91,9 @@ class CloudAgentSettingsViewModel @Inject constructor(
                 )
             }
         }
+        // 首次进入确保有一个强随机 token（服务端 MINIME_TOKEN 与客户端 Bearer 共用同一值）。
+        // tokenFlow 的 collect 会自动把生成结果刷进 UI 状态，无需手动 copy。
+        viewModelScope.launch { settings.ensureToken() }
         // 进入设置页时探测服务端版本 + 记录期望版本。
         checkServerVersion()
     }
@@ -103,8 +106,16 @@ class CloudAgentSettingsViewModel @Inject constructor(
     }
 
     fun setToken(token: String) {
-        _uiState.value = _uiState.value.copy(token = token)
-        viewModelScope.launch { settings.setToken(token) }
+        val trimmed = token.trim()
+        _uiState.value = _uiState.value.copy(token = trimmed)
+        viewModelScope.launch { settings.setToken(trimmed) }
+    }
+
+    /** 重新生成强随机 token；服务端/客户端统一，重新部署后生效。 */
+    fun regenerateToken() {
+        val fresh = CloudAgentSettingsRepository.generateToken()
+        _uiState.value = _uiState.value.copy(token = fresh)
+        viewModelScope.launch { settings.setToken(fresh) }
     }
 
     /** 选中已保存连接：自动推导 serverUrl 并回填，随后立即探测容器状态。 */
@@ -197,8 +208,8 @@ class CloudAgentSettingsViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(deploying = false, deployResult = "fail:连接不存在")
             return@launch
         }
-        val result = serverManager.deployOrUpgrade(conn) { line ->
-            // 进度回显到 UI（launch 在主线程，直接更新 state）
+        val result = serverManager.deployOrUpgrade(conn, _uiState.value.token) { line ->
+            // 进度回显到 UI（launch 在主线程，直接更新 state）；token 由 serverManager 侧脱敏
             _uiState.value = _uiState.value.copy(deployLog = (_uiState.value.deployLog + line).takeLast(8000))
         }.getOrElse {
             CloudAgentServerManager.DeployResult(false, "", it.message ?: "未知错误", "")

@@ -13,10 +13,16 @@ import javax.inject.Singleton
  * - [CloudAgentWorkflow] 提交提问、审批回传；
  * - [CloudAgentCatchUp] 断线补拉。
  *
- * 解析规则（按优先级）：
+ * 解析规则（唯一真相源 = 会话的 cloudConnectionId）：
  * 1. 会话绑定了 cloudConnectionId → 该服务器（按 id 取 url/token）；
- * 2. 会话未绑定，但全局云端开关开启且有全局 serverUrl → 兼容旧版/单服务器行为；
- * 3. 否则 → 本机（返回 null）。
+ * 2. cloudConnectionId == null → 本机（返回 null），**绝不**回退到全局开关。
+ *
+ * 重要：不再读取全局云端开关 [CloudAgentSettingsRepository.isEnabled] 参与路由。
+ * 该开关是旧版单服务器时代的遗留（selectServer 时置 true 后从不关闭），
+ * 曾导致「用户在运行与连接卡显式选了本机（cloudConnectionId=null），
+ * 消息/思考却仍被这个僵尸开关偷偷发回云端」的严重缺陷。
+ * 现在新会话创建时已用 defaultConnectionId 显式预填目标，会话级字段足以表达一切，
+ * 因此 cloudConnectionId 必须是唯一判据，与 UI 徽标（currentCloudConnectionId != null）同源。
  *
  * 由于云端 sessionId 与事件游标的 key 都带 serverUrl 哈希，不同服务器天然隔离，
  * 同一 App 的多个会话可各跑各的、互不串台。
@@ -36,23 +42,13 @@ class CloudTargetResolver @Inject constructor(
     /** 解析会话的云端目标；返回 null 表示该会话应在本机运行。 */
     suspend fun resolve(sessionId: String?): CloudTarget? {
         if (sessionId.isNullOrBlank()) return null
-        val boundId = chatSessionDao.getById(sessionId)?.cloudConnectionId
-
-        if (!boundId.isNullOrBlank()) {
-            val url = settings.serverUrlFor(boundId)
-            if (url.isNotBlank()) {
-                return CloudTarget(boundId, url, settings.tokenFor(boundId))
-            }
-        }
-
-        // 兼容旧版：会话未绑定目标，但全局云端模式开着且配置了地址
-        if (settings.isEnabled()) {
-            val url = settings.serverUrl()
-            if (url.isNotBlank()) {
-                return CloudTarget(null, url, settings.token())
-            }
-        }
-        return null
+        // 唯一真相源：会话绑定的目标。未绑定（含显式选本机）一律本机，
+        // 不再用全局开关兜底——那是「选本机仍走云端」缺陷的根因。
+        val boundId = chatSessionDao.getById(sessionId)?.cloudConnectionId ?: return null
+        if (boundId.isBlank()) return null
+        val url = settings.serverUrlFor(boundId)
+        if (url.isBlank()) return null
+        return CloudTarget(boundId, url, settings.tokenFor(boundId))
     }
 
     /** 该会话当前是否在云端运行（供 UI 徽标、路由判断使用）。 */

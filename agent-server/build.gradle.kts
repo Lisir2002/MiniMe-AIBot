@@ -25,6 +25,8 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-call-logging-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-status-pages-jvm:$ktorVersion")
+    // 云端登录帧 WebSocket 推流：App 订阅后服务端主动推送增量帧与状态，替代 350ms 轮询
+    implementation("io.ktor:ktor-server-websockets-jvm:$ktorVersion")
 
     // 日志实现（slf4j）
     implementation("org.slf4j:slf4j-simple:2.0.16")

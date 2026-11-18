@@ -703,6 +703,9 @@ fun AIChatPanel(
     // 完全云端模式：当前会话待审批的云端工具决策
     val cloudPending by viewModel.cloudPendingDecisions.collectAsStateWithLifecycle()
     val cloudDecision = cloudPending[currentSessionId]
+    // 完全云端模式：当前会话待登录的云端浏览器会话
+    val cloudLoginMap by viewModel.cloudLoginRequests.collectAsStateWithLifecycle()
+    val cloudLogin = cloudLoginMap[currentSessionId]
     val messagesReady = messagesState.loaded && messagesState.sessionId == currentSessionId
     val runningTool by viewModel.runningTool.collectAsStateWithLifecycle()
     val isCompacting by viewModel.isCompacting.collectAsStateWithLifecycle()
@@ -1701,8 +1704,8 @@ fun AIChatPanel(
                         // 忙碌状态指示器：在没有正文/思考流式输出、未在压缩、未被权限弹窗或询问挂起时展示。
                         // 工具正在执行或模型正在准备工具时，文案会由 thinkingLabel 动态呈现为对应场景（如「正在读取文件」）；
                         // 既无流式又无具体工具时兜底显示「正在思考」。
-                        // 云端审批挂起等同本地授权：不显示"正在思考"转圈，避免与审批卡片语义冲突。
-                        val awaitingUserInput = pendingPermission != null || pendingQuestion != null || cloudDecision != null
+                        // 云端审批/登录挂起等同本地授权：不显示"正在思考"转圈，避免与卡片语义冲突。
+                        val awaitingUserInput = pendingPermission != null || pendingQuestion != null || cloudDecision != null || cloudLogin != null
                         val showToolPreparation = shouldShowToolPreparation(
                             preparingTool = preparingTool,
                             isBusy = isBusy,
@@ -1862,6 +1865,32 @@ fun AIChatPanel(
                         forceCollapse = dashboardCollapseActive,
                         isScrolling = listState.isScrollInProgress,
                         sessionTitle = sessionTitle
+                    )
+                }
+            }
+
+            // 完全云端模式：browser 撞到登录墙，弹出云端浏览器登录面板（手机只传画面与输入）
+            val cloudLoginForPanel = rememberLastNonNull(cloudLogin)
+            AnimatedVisibility(
+                visible = cloudLogin != null,
+                modifier = Modifier.graphicsLayer { alpha = floatingPanelAlpha },
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                cloudLoginForPanel?.let { d ->
+                    CloudLoginPanel(
+                        url = d.url,
+                        reason = d.reason,
+                        onFrame = { after -> viewModel.pollLoginFrame(d.sessionId, d.loginId, after) },
+                        onStatus = { viewModel.pollLoginStatus(d.sessionId, d.loginId) },
+                        onInput = { type, x, y, text, key, dx, dy ->
+                            viewModel.sendLoginInput(d.sessionId, d.loginId, type, x, y, text, key, dx, dy)
+                        },
+                        onComplete = { viewModel.completeCloudLogin(d.sessionId, d.loginId) },
+                        onCancel = { viewModel.cancelCloudLogin(d.sessionId, d.loginId) },
+                        forceCollapse = dashboardCollapseActive,
+                        isScrolling = listState.isScrollInProgress,
+                        openStream = { viewModel.loginStreamFlow(d.sessionId, d.loginId) }
                     )
                 }
             }

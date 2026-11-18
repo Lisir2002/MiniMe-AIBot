@@ -2061,8 +2061,15 @@
     <string name="cloud_agent_enable_desc">When on, new questions are submitted to the cloud instead of running locally</string>
     <string name="cloud_agent_server_url">Server address</string>
     <string name="cloud_agent_server_url_hint">http://your-server-ip:8080</string>
-    <string name="cloud_agent_token">Access token (optional)</string>
-    <string name="cloud_agent_token_hint">Server MINIME_TOKEN, leave blank if not set</string>
+    <string name="cloud_agent_token">Access token</string>
+    <string name="cloud_agent_token_hint">Auto-generated or custom</string>
+    <string name="cloud_agent_token_section">Access token</string>
+    <string name="cloud_agent_token_desc">A strong random token is generated on first visit; you may also set your own. It is written to the server as MINIME_TOKEN on deploy and shared with the app for auth. Keep it safe — you will need to re-enter it after reinstalling or switching devices.</string>
+    <string name="cloud_agent_token_toggle_visible">Show or hide token</string>
+    <string name="cloud_agent_token_weak">Token is short — use at least 16 characters or tap Regenerate</string>
+    <string name="cloud_agent_token_regenerate">Regenerate</string>
+    <string name="cloud_agent_token_copy">Copy</string>
+    <string name="cloud_agent_token_copied">Copied</string>
     <string name="cloud_agent_test">Test connection</string>
     <string name="cloud_agent_testing">Connecting…</string>
     <string name="cloud_agent_test_ok">Connected, cloud service is healthy</string>
@@ -2073,6 +2080,16 @@
     <string name="cloud_agent_approve">Approve</string>
     <string name="cloud_agent_reject">Reject</string>
     <string name="cloud_agent_waiting">Waiting for your decision, cloud task is paused…</string>
+
+    <!-- Cloud browser login panel: remote-control cloud Chromium, no cookie transport -->
+    <string name="cloud_login_title">Cloud browser needs login</string>
+    <string name="cloud_login_reason">This site requires login. Please sign in directly on the screen below — the session stays in the cloud.</string>
+    <string name="cloud_login_frame_desc">Cloud browser live view</string>
+    <string name="cloud_login_input_hint">Tap an input field, then type here</string>
+    <string name="cloud_login_send">Type</string>
+    <string name="cloud_login_enter">Enter</string>
+    <string name="cloud_login_cancel">Cancel</string>
+    <string name="cloud_login_done">Done</string>
 
     <string name="cloud_agent_server_section">Server (reuse saved connections)</string>
     <string name="cloud_agent_select_server">Select a saved server</string>

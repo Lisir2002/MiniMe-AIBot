@@ -3,16 +3,40 @@ package com.minime.agent.server
 import com.google.gson.Gson
 import com.google.gson.JsonPrimitive
 import com.minime.code.feature.agent.data.remote.anthropic.AnthropicApi
+import com.minime.agent.server.modules.BrowserDriver
+import com.minime.agent.server.modules.BrowserDriverRouter
+import com.minime.agent.server.modules.BrowserLoginSignal
+import com.minime.agent.server.modules.RemoteBrowserDriver
+import com.minime.agent.server.modules.ServerAskUserTool
+import com.minime.agent.server.modules.ServerBrowserTool
+import com.minime.agent.server.modules.ServerFileTools
+import com.minime.agent.server.modules.ServerGenerateImageTool
+import com.minime.agent.server.modules.ServerManageMcpTool
 import com.minime.agent.server.modules.ServerLoadSkillTool
 import com.minime.agent.server.modules.ServerMemoryRepository
 import com.minime.agent.server.modules.ServerMemoryTool
 import com.minime.agent.server.modules.ServerPromptBuilder
+import com.minime.agent.server.modules.ServerGoalStatusTool
+import com.minime.agent.server.modules.ServerMessageParentTool
+import com.minime.agent.server.modules.ServerPlanModeTool
+import com.minime.agent.server.modules.ServerSearchTool
+import com.minime.agent.server.modules.ServerSendFileTool
+import com.minime.agent.server.modules.ServerShizukuTool
 import com.minime.agent.server.modules.ServerSkillRepository
+import com.minime.agent.server.modules.ServerTerminalTool
+import com.minime.agent.server.modules.ServerViewImageTool
+import com.minime.agent.server.modules.ServerTaskTool
+import com.minime.agent.server.modules.ServerTodoTool
+import com.minime.agent.server.modules.ServerWebFetchTool
+import com.minime.agent.server.modules.ServerWebSearchTool
 import com.minime.code.feature.agent.domain.model.AgentContext
 import com.minime.code.feature.agent.domain.model.AgentMessage
 import com.minime.code.feature.agent.domain.provider.AIProvider
 import com.minime.code.feature.agent.domain.provider.AnthropicAdapter
+import com.minime.code.feature.agent.domain.provider.ToolCallTextParser
 import com.minime.code.feature.agent.domain.tool.AgentTool
+import com.minime.code.feature.agent.domain.tool.modelToolResultText
+import com.minime.code.feature.agent.domain.tool.toTransportString
 import com.minime.code.feature.agent.domain.tool.ParameterType
 import com.minime.code.feature.agent.domain.tool.ToolCall
 import com.minime.code.feature.agent.domain.tool.ToolParameter
@@ -32,6 +56,8 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive as KJsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import okhttp3.OkHttpClient
 import org.slf4j.LoggerFactory
 import retrofit2.Retrofit
@@ -52,13 +78,46 @@ class AgentRunner(
         com.minime.agent.server.modules.LocalFileAccessProvider()
     ),
     private val memoryRepository: ServerMemoryRepository = ServerMemoryRepository(),
-    private val promptBuilder: ServerPromptBuilder = ServerPromptBuilder(skillRepository, memoryRepository)
+    private val promptBuilder: ServerPromptBuilder = ServerPromptBuilder(skillRepository, memoryRepository),
+    // 浏览器驱动：默认从环境变量读取微服务地址；未配置时 remote 健康检查失败，读操作自动降级本地只读。
+    // 显式注入可让单测用 mock 驱动，也让 Main 统一构造并共享给登录会话端点。
+    private val browserDriver: BrowserDriver = BrowserDriverRouter(
+        RemoteBrowserDriver(System.getenv("MINIME_BROWSER_URL") ?: "http://127.0.0.1:8090")
+    )
 ) {
+    /** 供登录会话端点访问同一驱动实例（启动登录、拉帧、注入输入、查状态）。 */
+    fun browserDriver(): BrowserDriver = browserDriver
     private val log = LoggerFactory.getLogger(AgentRunner::class.java)
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
-    /** 当前在跑的任务 job，便于取消（第一版不实现取消，占位）。 */
+    /** 当前在跑的任务 job，按 taskId 索引，供用户主动停止时精确取消。 */
     private val running = java.util.concurrent.ConcurrentHashMap<String, kotlinx.coroutines.Job>()
+
+    /**
+     * 取消指定任务：中断协程（连带中断挂起中的 LLM HTTP 请求），落「已停止」事件并置终态。
+     *
+     * 幂等且防竞态：
+     * - 任务不在 running（已正常完成/失败或从未开始）时不重复落事件；
+     * - 状态已是终态时跳过；
+     * - 取消走 CancellationException，submit/resume 的 catch 会 rethrow，不会误落 TASK_FAILED。
+     *
+     * @return true 表示确实取消了运行中的任务；false 表示任务已结束或不存在。
+     */
+    fun cancelTask(taskId: String): Boolean {
+        val job = running[taskId] ?: return false
+        if (!job.isActive) return false
+        val status = store.getTaskStatus(taskId)
+        if (status == TaskStatus.COMPLETED || status == TaskStatus.FAILED || status == TaskStatus.CANCELLED) return false
+        val sessionId = store.getSessionIdForTask(taskId) ?: return false
+        // 先置状态并落终态事件，再 cancel：cancel 会同步触发 finally（running.remove），
+        // 但状态与事件不受影响；顺序颠倒也不影响幂等，只是先落更稳妥。
+        store.setTaskStatus(taskId, TaskStatus.CANCELLED)
+        store.append(NewEvent(sessionId, EventKind.TASK_CANCELLED, taskId, text = "用户已停止"))
+        job.cancel()
+        running.remove(taskId)
+        log.info("任务 $taskId 已被用户取消")
+        return true
+    }
 
     fun submit(sessionId: String, taskId: String, userText: String, providerConfig: ProviderConfigDto, trustLevelWire: String = "basic") {
         store.setTaskStatus(taskId, TaskStatus.QUEUED)
@@ -150,11 +209,36 @@ class AgentRunner(
         provider.logSessionId = sessionId
 
         val messages = initialMessages
-        // 云端工具集：Bash + 技能加载 + 长期记忆（后两者数据完全独立于 App，存在容器内）
+        // 云端工具集：与 App 本地工具集对齐，产出结构化结果供 App 富卡片渲染。
+        // 文件读写/编辑产出 diff 卡，搜索产出结果卡，待办产出 TodoCard；
+        // 技能/记忆数据完全独立于 App，存在容器内。
+        val fileTools = ServerFileTools(workspaceRoot)
         val tools: List<AgentTool> = listOf(
             BashTool(workspaceRoot),
+            fileTools.writeFile,
+            fileTools.editFile,
+            fileTools.readFile,
+            fileTools.list,
+            ServerSearchTool(workspaceRoot),
+            ServerTodoTool(),
             ServerLoadSkillTool(skillRepository),
-            ServerMemoryTool(memoryRepository)
+            ServerMemoryTool(memoryRepository),
+            // 本轮补齐的 7 个有意义工具（与 App 卡片契约对齐）
+            ServerWebSearchTool(),
+            ServerWebFetchTool(),
+            ServerTaskTool(),
+            ServerAskUserTool(),
+            ServerPlanModeTool(),
+            ServerGoalStatusTool(),
+            ServerMessageParentTool(),
+            // 镜像补全：App 有但服务端此前缺失的 7 个工具，使云端工具集与本地完全对齐
+            ServerSendFileTool(workspaceRoot),
+            ServerViewImageTool(workspaceRoot),
+            ServerGenerateImageTool(workspaceRoot),
+            ServerShizukuTool(workspaceRoot),
+            ServerTerminalTool(workspaceRoot),
+            ServerManageMcpTool(),
+            ServerBrowserTool(browserDriver, profileId = sessionId)
         )
         // 一期不需要完整 AgentContext 能力；工具只用 projectRoot 等少量字段，给合理默认即可。
         val agentContext = AgentContext(
@@ -179,29 +263,39 @@ class AgentRunner(
                     tools = tools
                 )
 
-                // 记录助手文本 + thinking（终态事件，App 拉回放）
-                if (response.content.isNotBlank() || response.toolCalls.isNotEmpty()) {
+                // 协议无关兜底：部分模型（如讯飞 spark / 兼容端点）不返回结构化 tool_use，
+                // 而是把工具调用以 <tool_call><arg_key>... 文本吐在正文里。这里扫描并还原成
+                // 标准 ToolCall，同时从正文剥离，避免「工具调用/代码被写在正文」且无法接入卡片。
+                val recovered = recoverTextToolCalls(response.content, response.toolCalls)
+                val cleanContent = recovered.first
+                val effectiveCalls = recovered.second
+                if (effectiveCalls.isNotEmpty() && response.toolCalls.isEmpty()) {
+                    log.info("从正文兜底解析出 ${effectiveCalls.size} 个文本工具调用")
+                }
+
+                // 记录助手文本 + thinking（终态事件，App 拉回放）。正文已剥离工具调用片段。
+                if (cleanContent.isNotBlank() || effectiveCalls.isNotEmpty()) {
                     store.append(NewEvent(
                         sessionId = sessionId, kind = EventKind.ASSISTANT_TEXT, taskId = taskId,
-                        text = response.content, reasoning = response.reasoning ?: "",
+                        text = cleanContent, reasoning = response.reasoning ?: "",
                         thinkingBlocksJson = response.thinkingBlocksJson ?: "", signature = response.signature ?: ""
                     ))
                 }
 
                 // 把助手消息回填上下文（thinking/signature 原样保留， Anthropic 工具循环必需）
                 messages += AgentMessage.AssistantMessage(
-                    content = response.content,
-                    toolCalls = response.toolCalls,
+                    content = cleanContent,
+                    toolCalls = effectiveCalls,
                     reasoning = response.reasoning ?: "",
                     signature = response.signature ?: "",
                     thinkingBlocksJson = response.thinkingBlocksJson ?: "",
                     inputTokens = response.inputTokens
                 )
 
-                if (response.toolCalls.isEmpty()) {
+                if (effectiveCalls.isEmpty()) {
                     // 任务正常完成：写回会话上下文，下一轮提问可在云端续接多轮历史
                     store.updateSessionContext(sessionId, messages)
-                    store.append(NewEvent(sessionId, EventKind.TASK_COMPLETED, taskId, text = response.content))
+                    store.append(NewEvent(sessionId, EventKind.TASK_COMPLETED, taskId, text = cleanContent))
                     store.setTaskStatus(taskId, TaskStatus.COMPLETED)
                     return
                 }
@@ -249,20 +343,64 @@ class AgentRunner(
                     }
                 }
 
-                val result = tool.executeWithContext(call.arguments, agentContext)
-                val resultText = when (result) {
-                    is ToolResult.Success -> result.data.toString()
-                    is ToolResult.Error -> result.message
-                    is ToolResult.Partial -> result.message + "\n" + result.data.toString()
+                var result = tool.executeWithContext(call.arguments, agentContext)
+
+                // ---- 登录墙挂起：工具报告需要登录 → 发 LOGIN_REQUIRED 事件 → 挂起等手机登录 ----
+                // 复用审批的 deferred.await() 骨架，只是 id 加 "login:" 前缀、事件类型独立。
+                // 登录完成后用同一 profile 重跑该工具调用（profile 已带登录态，这次能拿到内容）。
+                BrowserLoginSignal.parse(result)?.let { login ->
+                    val loginId = login.loginId
+                    // 通知微服务为该 profile 准备可交互登录会话（同一 profile 才有登录态）
+                    runCatching { browserDriver.startLogin(loginId, login.url, sessionId) }
+                        .onFailure { log.warn("启动登录会话失败（App 仍可尝试拉帧）: ${it.message}") }
+                    val payload = buildJsonObject {
+                        put("loginId", KJsonPrimitive(loginId))
+                        put("url", KJsonPrimitive(login.url))
+                        put("reason", KJsonPrimitive(login.reason))
+                        put("taskId", KJsonPrimitive(taskId))
+                    }.toString()
+                    store.append(NewEvent(
+                        sessionId, EventKind.LOGIN_REQUIRED, taskId,
+                        text = payload, toolName = call.name, toolCallId = call.id
+                    ))
+                    store.setTaskStatus(taskId, TaskStatus.WAITING_LOGIN)
+                    log.info("任务 $taskId 触发登录墙，loginId=$loginId url=${login.url}")
+                    // argsPreview 存 {url,reason}，供 App 断线重开恢复登录面板时还原站点与原因
+                    val loginArgs = buildJsonObject {
+                        put("url", KJsonPrimitive(login.url))
+                        put("reason", KJsonPrimitive(login.reason))
+                    }.toString()
+                    val deferred = store.registerPending("login:$loginId", sessionId, taskId, "login", loginArgs)
+                    val loggedIn = deferred.await()
+                    store.setTaskStatus(taskId, TaskStatus.RUNNING)
+                    if (!loggedIn) {
+                        val msg = "用户取消登录或登录会话结束"
+                        store.append(NewEvent(sessionId, EventKind.LOGIN_CANCELLED, taskId, text = msg, toolCallId = call.id))
+                        store.append(NewEvent(sessionId, EventKind.TOOL_CALL_FINISHED, taskId, text = msg, toolName = call.name, toolCallId = call.id, isError = true))
+                        messages += AgentMessage.ToolResultMessage(id = call.id, toolName = call.name, result = msg)
+                        continue
+                    }
+                    store.append(NewEvent(sessionId, EventKind.LOGIN_SUCCEEDED, taskId, text = "登录成功，继续访问 ${login.url}", toolCallId = call.id))
+                    // 重跑工具：这次远程驱动的同一 profile 已带登录态，能拿到登录后的内容
+                    result = tool.executeWithContext(call.arguments, agentContext)
+                    log.info("任务 $taskId 登录完成，已重跑工具 ${call.name}")
                 }
+
+                // 与 App 本地链路完全一致：落库/回传 UI 用标准 transport JSON
+                // （{"status":"success","data":{...},"images":[]}），App 各卡片 parse 函数据此识别
+                // diff / 文件 / 搜索 / 待办 / 子代理等富卡片；直接 toString() 裸文本会让所有卡片失效。
+                val transport = result.toTransportString()
                 store.append(NewEvent(
-                    sessionId, EventKind.TOOL_CALL_FINISHED, taskId, text = resultText,
+                    sessionId, EventKind.TOOL_CALL_FINISHED, taskId, text = transport,
                     toolName = call.name, toolArgs = compactArgs(call), toolCallId = call.id,
                     isError = result is ToolResult.Error
                 ))
+                // 回填给模型的是精简投影（避免把整份 diff/文件内容再喂回去浪费 token）；
+                // 文件类工具用专用投影，其余工具回退到完整 transport（模型此前已产出这些内容）。
+                val forModel = modelToolResultText(call.name, transport) ?: transport
                 messages += AgentMessage.ToolResultMessage(
-                    id = call.id, toolName = call.name, result = resultText,
-                    modelResult = resultText
+                    id = call.id, toolName = call.name, result = transport,
+                    modelResult = forModel
                 )
             }
             // 一轮完整结束（含所有工具结果）后保存干净边界 checkpoint：
@@ -274,6 +412,23 @@ class AgentRunner(
         val msg = "达到最大迭代次数 ($maxIterations)"
         store.append(NewEvent(sessionId, EventKind.TASK_FAILED, taskId, text = msg, isError = true))
         store.setTaskStatus(taskId, TaskStatus.FAILED)
+    }
+
+    /**
+     * 文本形态工具调用兜底：优先保留 provider 返回的结构化调用；仅当其为空时才解析正文。
+     * @return Pair(剥离工具调用后的正文, 最终生效的工具调用列表)
+     */
+    private fun recoverTextToolCalls(
+        content: String,
+        structured: List<ToolCall>
+    ): Pair<String, List<ToolCall>> {
+        if (structured.isNotEmpty()) return content to structured
+        val parsed = ToolCallTextParser.parse(content)
+        if (!parsed.hasCalls) return content to structured
+        val calls = parsed.toolCalls.mapIndexed { idx, c ->
+            ToolCall(id = "textcall_${System.currentTimeMillis()}_$idx", name = c.name, arguments = c.arguments)
+        }
+        return parsed.cleanText to calls
     }
 
     private fun compactArgs(call: ToolCall): String = runCatching {

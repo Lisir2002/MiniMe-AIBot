@@ -1,8 +1,11 @@
 package com.minime.code.feature.agent.domain.workflow
 
+import com.google.gson.JsonParser
+import com.minime.code.core.util.FileLogger
 import com.minime.code.feature.agent.data.remote.cloudagent.CloudAgentApi
 import com.minime.code.feature.agent.data.remote.cloudagent.CreateSessionReq
 import com.minime.code.feature.agent.data.remote.cloudagent.DecisionReq
+import com.minime.code.feature.agent.data.remote.cloudagent.LoginInputReq
 import com.minime.code.feature.agent.data.remote.cloudagent.ProviderConfigDto
 import com.minime.code.feature.agent.data.remote.cloudagent.StoredEventDto
 import com.minime.code.feature.agent.data.remote.cloudagent.SubmitMessageReq
@@ -44,8 +47,12 @@ class CloudAgentWorkflow @Inject constructor(
         const val K_TOOL_STARTED = "tool_call_started"
         const val K_TOOL_FINISHED = "tool_call_finished"
         const val K_PENDING_DECISION = "pending_decision"
+        const val K_LOGIN_REQUIRED = "login_required"
+        const val K_LOGIN_SUCCEEDED = "login_succeeded"
+        const val K_LOGIN_CANCELLED = "login_cancelled"
         const val K_TASK_COMPLETED = "task_completed"
         const val K_TASK_FAILED = "task_failed"
+        const val K_TASK_CANCELLED = "task_cancelled"
     }
 
     override fun executeEvents(
@@ -87,7 +94,9 @@ class CloudAgentWorkflow @Inject constructor(
 
         // 4) 提交提问（携带当前信任档位，云端据此裁决工具审批强度）
         val trustLevel = trustLevelRepository.current().wireName
-        api.submitMessage(baseUrl, auth, cloudSessionId, SubmitMessageReq(userRequest, cfg, trustLevel))
+        val submitResp = api.submitMessage(baseUrl, auth, cloudSessionId, SubmitMessageReq(userRequest, cfg, trustLevel))
+        // 记住 taskId：用户点「停止」时据此精确取消云端任务（含正在进行的 LLM 调用）。
+        settings.setRunningTaskId(appSessionId, baseUrl, submitResp.taskId)
 
         // 5) 轮询增量事件，转成标准 AgentEvent
         var terminated = false
@@ -100,12 +109,15 @@ class CloudAgentWorkflow @Inject constructor(
                 when (e.kind) {
                     K_TASK_COMPLETED -> terminated = true
                     K_TASK_FAILED -> terminated = true
+                    K_TASK_CANCELLED -> terminated = true
                 }
             }
             // 每轮推进持久化游标：即使此刻进程被杀，重开后也从这里续接，不丢事件
             settings.setPollCursor(appSessionId, baseUrl, cursor)
             if (terminated) break
         }
+        // 任务到达终态（完成/失败/被取消）：清掉 taskId 映射，避免下一次停止误命中已结束任务。
+        settings.clearRunningTaskId(appSessionId, baseUrl)
         if (!terminated) {
             send(AgentEvent.Failed("云端任务等待超时"))
         }
@@ -130,9 +142,25 @@ class CloudAgentWorkflow @Inject constructor(
             decisionId = e.toolCallId, toolName = e.toolName,
             argsPreview = e.toolArgs, sessionId = appSessionId
         )
+        K_LOGIN_REQUIRED -> parseLoginRequired(e.text, appSessionId)
+        // 登录成功/取消仅用于清除登录面板；任务会自动恢复（服务端重跑工具，随后照常推事件）
+        K_LOGIN_SUCCEEDED, K_LOGIN_CANCELLED -> null
         K_TASK_COMPLETED -> AgentEvent.Completed
         K_TASK_FAILED -> AgentEvent.Failed(e.text)
         else -> null
+    }
+
+    /** 解析 LOGIN_REQUIRED 事件的 text（服务端为含 loginId/url/reason/taskId 的 JSON）。 */
+    private fun parseLoginRequired(text: String, appSessionId: String): AgentEvent? {
+        val obj = runCatching { JsonParser.parseString(text).asJsonObject }.getOrNull() ?: return null
+        val loginId = obj.get("loginId")?.asString?.takeIf { it.isNotBlank() } ?: return null
+        return AgentEvent.LoginRequired(
+            loginId = loginId,
+            url = obj.get("url")?.asString ?: "",
+            reason = obj.get("reason")?.asString ?: "",
+            taskId = obj.get("taskId")?.asString ?: "",
+            sessionId = appSessionId
+        )
     }
 
     private suspend fun ensureCloudSession(baseUrl: String, auth: String, appSessionId: String): String {
@@ -164,6 +192,54 @@ class CloudAgentWorkflow @Inject constructor(
         val target = targetResolver.resolve(sessionId)
             ?: throw IllegalStateException("审批回传失败：会话没有可用的云端目标")
         api.decide(target.baseUrl, "Bearer ${target.token}", decisionId, DecisionReq(approve))
+    }
+
+    // ---- 云端登录会话回传：登录面板把画面/输入经这里转发给 agent-server ------------------
+
+    private suspend fun cloudTarget(sessionId: String?) = targetResolver.resolve(sessionId)
+        ?: throw IllegalStateException("云端登录失败：会话没有可用的云端目标")
+
+    /** 拉取登录会话的增量帧（画面在服务端渲染，App 只拿到 JPEG 像素）。 */
+    suspend fun loginFrame(sessionId: String?, loginId: String, after: Long) =
+        cloudTarget(sessionId).let { api.loginFrame(it.baseUrl, "Bearer ${it.token}", loginId, after) }
+
+    /** 把手机的触摸/键盘事件注入云端浏览器。 */
+    suspend fun loginInput(sessionId: String?, loginId: String, req: LoginInputReq) =
+        cloudTarget(sessionId).let { api.loginInput(it.baseUrl, "Bearer ${it.token}", loginId, req) }
+
+    /** 查询登录会话状态。 */
+    suspend fun loginStatus(sessionId: String?, loginId: String) =
+        cloudTarget(sessionId).let { api.loginStatus(it.baseUrl, "Bearer ${it.token}", loginId) }
+
+    /** 订阅登录帧 WebSocket 推流（变化帧 + 状态合并）；Flow 结束即需降级到 HTTP 轮询。 */
+    suspend fun loginStream(sessionId: String?, loginId: String) =
+        cloudTarget(sessionId).let { api.loginStream(it.baseUrl, "Bearer ${it.token}", loginId) }
+
+    /** 登录成功/取消，唤醒云端挂起的任务。 */
+    suspend fun loginComplete(sessionId: String?, loginId: String, success: Boolean) =
+        cloudTarget(sessionId).let { api.loginComplete(it.baseUrl, "Bearer ${it.token}", loginId, success) }
+
+    /**
+     * 主动停止会话在云端运行中的任务：从持久化映射取 taskId，发取消请求。
+     * [sessionId] 为 App 会话 id（非云端 sessionId），用于定位服务器与 taskId。
+     * @return true 表示成功发出取消（服务端确认取消了运行中的任务）；false 表示无任务可停或已结束。
+     */
+    suspend fun cancelBySession(sessionId: String?): Boolean {
+        if (sessionId.isNullOrBlank()) return false
+        val target = targetResolver.resolve(sessionId) ?: return false
+        if (target.baseUrl.isBlank()) return false
+        val taskId = settings.getRunningTaskId(sessionId, target.baseUrl) ?: return false
+        return try {
+            val resp = api.cancelTask(target.baseUrl, "Bearer ${target.token}", taskId)
+            settings.clearRunningTaskId(sessionId, target.baseUrl)
+            resp.ok
+        } catch (e: Exception) {
+            // 停止是用户主动操作：网络失败也要清本地映射，避免下次停止继续命中失效 taskId；
+            // 云端任务会自然跑完/超时，本地 job 的取消已让 UI 立即停转。
+            settings.clearRunningTaskId(sessionId, target.baseUrl)
+            FileLogger.e("CloudAgentWorkflow", "取消云端任务失败: taskId=$taskId", e)
+            false
+        }
     }
 
     // ---- AgentWorkflow 其余方法：云端模式下的简化实现 ----

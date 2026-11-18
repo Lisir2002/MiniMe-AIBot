@@ -2,7 +2,6 @@ package com.minime.code.feature.agent.domain.workflow
 
 import com.minime.code.feature.agent.domain.model.AgentContext
 import com.minime.code.feature.agent.domain.tool.AgentTool
-import com.minime.code.feature.settings.data.repository.CloudAgentSettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import javax.inject.Inject
@@ -19,7 +18,6 @@ import javax.inject.Singleton
 class DelegatingAgentWorkflow @Inject constructor(
     @param:Named("local") private val local: AgentWorkflow,
     private val cloud: CloudAgentWorkflow,
-    private val settings: CloudAgentSettingsRepository,
     private val targetResolver: CloudTargetResolver
 ) : AgentWorkflow {
 
@@ -48,5 +46,6 @@ class DelegatingAgentWorkflow @Inject constructor(
         else local.generateTitle(sessionId, request)
 
     override suspend fun generateCommitMessage(diff: String): String? =
-        if (settings.isEnabled()) cloud.generateCommitMessage(diff) else local.generateCommitMessage(diff)
+        // diff 来自本地仓库，且云端实现恒返回 null；不再用全局云端开关决定（否则开过云端开关后本地 commit 生成会失效）
+        local.generateCommitMessage(diff)
 }

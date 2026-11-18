@@ -12,6 +12,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.security.SecureRandom
+import java.util.Base64
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -31,7 +33,7 @@ private val Context.cloudAgentDataStore by preferencesDataStore(
 class CloudAgentSettingsRepository @Inject constructor(
     @param:ApplicationContext private val context: Context
 ) {
-    private companion object {
+    companion object {
         val ENABLED_KEY = booleanPreferencesKey("cloud_agent_enabled")
         val SERVER_URL_KEY = stringPreferencesKey("cloud_agent_server_url")
         val TOKEN_KEY = stringPreferencesKey("cloud_agent_token")
@@ -40,6 +42,14 @@ class CloudAgentSettingsRepository @Inject constructor(
 
         fun serverUrlKey(connectionId: String) = stringPreferencesKey("cloud_server_url_$connectionId")
         fun tokenKey(connectionId: String) = stringPreferencesKey("cloud_token_$connectionId")
+
+        /** 生成强随机访问令牌：32 字节安全随机 → Base64URL（URL/header 安全，无 +/=）。 */
+        fun generateToken(): String {
+            val bytes = ByteArray(32).also { SecureRandom().nextBytes(it) }
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+        }
+        /** 弱令牌阈值：低于此长度提示用户（自定义短串会被服务端接受，但安全性不足）。 */
+        const val MIN_TOKEN_LENGTH = 16
     }
 
     /** 是否启用完全云端 Agent 模式。默认 false（本地执行）。 */
@@ -53,7 +63,29 @@ class CloudAgentSettingsRepository @Inject constructor(
 
     suspend fun setEnabled(enabled: Boolean) = context.cloudAgentDataStore.edit { it[ENABLED_KEY] = enabled }
     suspend fun setServerUrl(url: String) = context.cloudAgentDataStore.edit { it[SERVER_URL_KEY] = url.trim().trimEnd('/') }
-    suspend fun setToken(token: String) = context.cloudAgentDataStore.edit { it[TOKEN_KEY] = token }
+    suspend fun setToken(token: String) = context.cloudAgentDataStore.edit { it[TOKEN_KEY] = token.trim() }
+
+    /**
+     * 首次进入云端页时确保有一个强随机 token（服务端 MINIME_TOKEN 与客户端 Bearer 共用同一值）。
+     * 仅在 token 为空时生成——用户自定义过（哪怕清空）都不覆盖；升级场景因此天然复用旧 token，
+     * 不会因重新生成导致老客户端 401。
+     *
+     * 生成算法：SecureRandom 32 字节 → Base64URL 无填充（43 字符，≈256bit 熵）。
+     */
+    suspend fun ensureToken(): String {
+        val existing = token()
+        if (existing.isNotBlank()) return existing
+        val fresh = generateToken()
+        setToken(fresh)
+        return fresh
+    }
+
+    /** 重新生成一个强随机 token 并持久化（用户主动点「重新生成」时调用）。 */
+    suspend fun regenerateToken(): String {
+        val fresh = generateToken()
+        setToken(fresh)
+        return fresh
+    }
 
     suspend fun isEnabled(): Boolean = enabledFlow.first()
     suspend fun serverUrl(): String = serverUrlFlow.first()
@@ -119,6 +151,24 @@ class CloudAgentSettingsRepository @Inject constructor(
 
     suspend fun setPollCursor(appSessionId: String, serverUrl: String, seq: Long) {
         context.cloudAgentDataStore.edit { it[longPreferencesKey(cursorKey(appSessionId, serverUrl))] = seq }
+    }
+
+    // ---- 当前运行任务的 taskId（供用户主动停止云端任务）--------------------
+    // 按 appSessionId + serverUrl 存储：换服务器自动失效；每轮提交时覆盖为最新 taskId。
+    // 进程重建后停止仍可用——从持久化映射取出 taskId 直接发取消请求。
+
+    private fun runningTaskKey(appSessionId: String, serverUrl: String) =
+        "cloud_task_${serverUrl.hashCode()}_$appSessionId"
+
+    suspend fun getRunningTaskId(appSessionId: String, serverUrl: String): String? =
+        context.cloudAgentDataStore.data.map { it[stringPreferencesKey(runningTaskKey(appSessionId, serverUrl))] }.first()
+
+    suspend fun setRunningTaskId(appSessionId: String, serverUrl: String, taskId: String) {
+        context.cloudAgentDataStore.edit { it[stringPreferencesKey(runningTaskKey(appSessionId, serverUrl))] = taskId }
+    }
+
+    suspend fun clearRunningTaskId(appSessionId: String, serverUrl: String) {
+        context.cloudAgentDataStore.edit { it.remove(stringPreferencesKey(runningTaskKey(appSessionId, serverUrl))) }
     }
 
     /** 列出本服务器下所有建立过映射的 appSessionId，供 App 启动/回前台时批量补拉。 */

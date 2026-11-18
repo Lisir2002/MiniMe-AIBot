@@ -150,6 +150,8 @@ class AIAgentViewModel @Inject constructor(
     private val cloudTargetDiscovery: com.minime.code.feature.agent.domain.workflow.CloudTargetDiscovery,
     private val cloudTargetResolver: com.minime.code.feature.agent.domain.workflow.CloudTargetResolver,
     private val cloudAgentSettings: com.minime.code.feature.settings.data.repository.CloudAgentSettingsRepository,
+    private val cloudAgentApi: com.minime.code.feature.agent.data.remote.cloudagent.CloudAgentApi,
+    private val cloudEnvironmentBridge: com.minime.code.feature.agent.data.remote.cloudagent.CloudEnvironmentBridge,
     private val toolRegistry: ToolRegistry,
     private val agentMessageDao: AgentMessageDao,
     private val chatSessionDao: ChatSessionDao,
@@ -173,6 +175,9 @@ class AIAgentViewModel @Inject constructor(
     private val backupManager: BackupManager,
     private val mcpManager: McpManager,
     private val agentSoundSettings: AgentSoundSettingsRepository,
+    private val trustLevelRepository: com.minime.code.feature.settings.data.repository.TrustLevelRepository,
+    private val toolSafetySettingsRepository: com.minime.code.feature.settings.data.repository.ToolSafetySettingsRepository,
+    private val skillConfigRepository: com.minime.code.feature.agent.domain.skill.SkillConfigRepository,
     private val containerSettingsRepository: ContainerSettingsRepository,
     private val containerOsDetector: ContainerOsDetector,
     private val generalSettingsRepository: GeneralSettingsRepository,
@@ -563,8 +568,49 @@ class AIAgentViewModel @Inject constructor(
      * 监听工作区根与所有已展开目录：任一发生变动（不限 AI，终端与其它 App 同样算）或手动刷新都会重建树。
      * 只监听展开中的目录、不递归整棵树，避免大仓库开出大量 inotify 句柄。
      */
-    val browseState: StateFlow<FileBrowseState> = combine(_expandedPaths, containerRootNode) { expanded, root -> expanded to root }
-        .flatMapLatest { (expanded, root) ->
+    /**
+     * 侧边栏文件访问器：把「列目录/读文件/存在」三个能力抽象出来，
+     * 本地执行目标走 [fileAccess]（PRoot/SSH），云端目标走 agent-server 的 HTTP API。
+     * 这样只影响侧边栏这一个消费方，不污染全局注入的工具链 FileAccessProvider。
+     */
+    private data class BrowseFs(
+        val listFiles: (String) -> List<FileEntry>,
+        val readFile: (String) -> String,
+        val exists: (String) -> Boolean
+    ) {
+        companion object {
+            fun local(fileAccess: com.minime.code.feature.workspace.domain.FileAccessProvider) = BrowseFs(
+                listFiles = { fileAccess.listFiles(it) },
+                readFile = { fileAccess.readFile(it) },
+                exists = { fileAccess.exists(it) }
+            )
+        }
+    }
+
+    /** 按当前会话执行目标构造侧边栏文件访问器；云端目标用 HTTP 读该服务器 workspace。 */
+    private suspend fun browseFsFor(sessionId: String?): BrowseFs {
+        val target = cloudTargetResolver.resolve(sessionId)
+        if (target == null) return BrowseFs.local(fileAccess)
+        val baseUrl = target.baseUrl
+        val auth = if (target.token.isBlank()) "" else "Bearer ${target.token}"
+        // 这些 lambda 由 buildBrowseTree 在 Dispatchers.IO 的 flow 中同步调用，
+        // 云端 HTTP 是 suspend，用 runBlocking 在 IO 线程上桥接（不会阻塞主线程）。
+        return BrowseFs(
+            listFiles = { path ->
+                kotlinx.coroutines.runBlocking { cloudAgentApi.listWorkspace(baseUrl, auth, path) }
+                    .entries.map { e ->
+                        FileEntry(e.name, e.isDirectory, e.size, e.lastModified, null, e.permissions)
+                    }
+            },
+            readFile = { path -> kotlinx.coroutines.runBlocking { cloudAgentApi.readWorkspace(baseUrl, auth, path).content } },
+            exists = { _ -> true } // 云端 gitignore 读取失败会回退空列表，无需精确 exists
+        )
+    }
+
+    val browseState: StateFlow<FileBrowseState> = combine(
+        _expandedPaths, containerRootNode, _currentSessionId
+    ) { expanded, root, sessionId -> Triple(expanded, root, sessionId) }
+        .flatMapLatest { (expanded, root, sessionId) ->
             val watched = expanded + WorkspacePathMapper.CONTAINER_ROOT
             val triggers = merge(
                 watched.map { fileChangeHub.watchWorkspace(it).asDirtySignal() }.merge().debounce(BROWSE_DEBOUNCE_MS),
@@ -572,10 +618,12 @@ class AIAgentViewModel @Inject constructor(
                 _browseRefresh.drop(1).map { }
             )
             flow {
+                // 每次重建按「当前会话的执行目标」选文件源：选本机=本地文件，选云端=该服务器 workspace。
+                val fs = browseFsFor(sessionId)
                 // 首次产出前由 stateIn 初值 Loading 占位；后续展开/折叠/刷新不再回到 Loading，
                 // StateFlow 保留上一份 Success 直到新树就绪，避免闪加载动画与滚动位置丢失。
-                emit(buildBrowseTree(expanded, root))
-                triggers.collect { emit(buildBrowseTree(expanded, root)) }
+                emit(buildBrowseTree(expanded, root, fs))
+                triggers.collect { emit(buildBrowseTree(expanded, root, fs)) }
             }.flowOn(Dispatchers.IO)
         }
         // 新树已就绪：清掉展开等待态（无论成功/出错都清，避免转圈卡死）。
@@ -583,9 +631,9 @@ class AIAgentViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FileBrowseState.Loading)
 
     /** 读取工作区根与当前容器根，按 [expanded] 递归展开，产出扁平的可见节点列表；工作区根读取失败则整体报错。 */
-    private fun buildBrowseTree(expanded: Set<String>, containerRoot: FileTreeRoot.Container): FileBrowseState {
+    private fun buildBrowseTree(expanded: Set<String>, containerRoot: FileTreeRoot.Container, fs: BrowseFs): FileBrowseState {
         val workspaceRoot = WorkspacePathMapper.CONTAINER_ROOT
-        val workspaceEntries = runCatching { fileAccess.listFiles(workspaceRoot) }.getOrElse { e ->
+        val workspaceEntries = runCatching { fs.listFiles(workspaceRoot) }.getOrElse { e ->
             FileLogger.w(TAG, "列目录失败: $workspaceRoot", e)
             return FileBrowseState.Error(e.message)
         }
@@ -594,13 +642,13 @@ class AIAgentViewModel @Inject constructor(
         if (workspaceRoot in expanded) {
             appendBrowseChildren(
                 workspaceRoot, workspaceEntries, depth = 1, expanded = expanded,
-                ignorePatterns = loadRootGitignore(workspaceRoot), relParts = emptyList(), out = nodes
+                ignorePatterns = loadRootGitignore(workspaceRoot, fs), relParts = emptyList(), out = nodes, fs = fs
             )
         }
         // 当前容器根：读不到（容器未安装、远程未连接）时只把该行标红，不影响工作区那棵。
         val containerExpanded = CONTAINER_FS_ROOT in expanded
         val containerEntries = if (containerExpanded) {
-            runCatching { fileAccess.listFiles(CONTAINER_FS_ROOT) }.getOrNull()
+            runCatching { fs.listFiles(CONTAINER_FS_ROOT) }.getOrNull()
         } else {
             null
         }
@@ -608,7 +656,7 @@ class AIAgentViewModel @Inject constructor(
         if (containerEntries != null) {
             appendBrowseChildren(
                 CONTAINER_FS_ROOT, containerEntries, depth = 1, expanded = expanded,
-                ignorePatterns = emptyList(), relParts = emptyList(), out = nodes
+                ignorePatterns = emptyList(), relParts = emptyList(), out = nodes, fs = fs
             )
         }
         return FileBrowseState.Success(nodes)
@@ -624,11 +672,11 @@ class AIAgentViewModel @Inject constructor(
         hasError = hasError
     )
 
-    /** 读工作区根 .gitignore（本地/远程均可）；去空行/注释/否定行，读不到则空。仅根 .gitignore，不处理嵌套。 */
-    private fun loadRootGitignore(root: String): List<String> = runCatching {
+    /** 读工作区根 .gitignore（本地/远程/云端均可）；去空行/注释/否定行，读不到则空。仅根 .gitignore，不处理嵌套。 */
+    private fun loadRootGitignore(root: String, fs: BrowseFs): List<String> = runCatching {
         val path = "$root/.gitignore"
-        if (!fileAccess.exists(path)) return emptyList()
-        fileAccess.readFile(path).lineSequence()
+        if (!fs.exists(path)) return emptyList()
+        fs.readFile(path).lineSequence()
             .map { it.trim() }
             .filter { it.isNotEmpty() && !it.startsWith("#") && !it.startsWith("!") }
             .map { it.removeSuffix("/") }
@@ -642,7 +690,8 @@ class AIAgentViewModel @Inject constructor(
         expanded: Set<String>,
         ignorePatterns: List<String>,
         relParts: List<String>,
-        out: MutableList<FileTreeNode>
+        out: MutableList<FileTreeNode>,
+        fs: BrowseFs
     ) {
         // 按名字去重：文件系统的 readdir 在 FUSE 存储（外部工作区/模拟存储）上可能重复返回同一条目，
         // AOSP 的 ReaddirHelper 亦做同样处理。同名条目会产生重复的节点 path，撞坏 LazyColumn 的 key。
@@ -656,9 +705,9 @@ class AIAgentViewModel @Inject constructor(
                 out += FileTreeNode(entry, path, depth, isExpanded = false, ignored = ignored)
                 continue
             }
-            val children = runCatching { fileAccess.listFiles(path) }.getOrNull()
+            val children = runCatching { fs.listFiles(path) }.getOrNull()
             out += FileTreeNode(entry, path, depth, isExpanded = true, hasError = children == null, ignored = ignored)
-            if (children != null) appendBrowseChildren(path, children, depth + 1, expanded, ignorePatterns, parts, out)
+            if (children != null) appendBrowseChildren(path, children, depth + 1, expanded, ignorePatterns, parts, out, fs)
         }
     }
 
@@ -978,10 +1027,28 @@ class AIAgentViewModel @Inject constructor(
     private val _cloudPendingDecisions = MutableStateFlow<Map<String, AgentEvent.PendingDecision>>(emptyMap())
     val cloudPendingDecisions: StateFlow<Map<String, AgentEvent.PendingDecision>> = _cloudPendingDecisions.asStateFlow()
 
+    /** 完全云端模式：每个会话当前待登录的云端浏览器会话（null 表示无）。UI 据此弹出云端登录面板。 */
+    private val _cloudLoginRequests = MutableStateFlow<Map<String, AgentEvent.LoginRequired>>(emptyMap())
+    val cloudLoginRequests: StateFlow<Map<String, AgentEvent.LoginRequired>> = _cloudLoginRequests.asStateFlow()
+
     /** 收到云端待决策事件：记录到状态供 UI 展示审批卡片。 */
     private fun setPendingCloudDecision(sessionId: String, event: AgentEvent.PendingDecision) {
         _cloudPendingDecisions.value = _cloudPendingDecisions.value + (sessionId to event)
     }
+
+    /** 收到云端登录墙事件：记录到状态供 UI 弹出云端登录面板。 */
+    private fun setCloudLoginRequest(sessionId: String, event: AgentEvent.LoginRequired) {
+        _cloudLoginRequests.value = _cloudLoginRequests.value + (sessionId to event)
+    }
+
+    private fun pendingLoginDtoToEvent(sessionId: String, dto: com.minime.code.feature.agent.data.remote.cloudagent.PendingLoginDto) =
+        AgentEvent.LoginRequired(
+            loginId = dto.loginId,
+            url = dto.url,
+            reason = dto.reason,
+            taskId = dto.taskId,
+            sessionId = sessionId
+        )
 
     private fun pendingDtoToEvent(sessionId: String, dto: com.minime.code.feature.agent.data.remote.cloudagent.PendingDecisionDto) =
         AgentEvent.PendingDecision(
@@ -1032,14 +1099,31 @@ class AIAgentViewModel @Inject constructor(
             _cloudPendingDecisions.value = _cloudPendingDecisions.value - appSessionId
         }
 
+        // 1b) 恢复云端仍挂起、等待登录的会话（进程重建后内存态为空）
+        if (r.pendingLogins.isNotEmpty()) {
+            val restored = r.pendingLogins
+                .filter { it.loginId.isNotBlank() }
+                .associate { dto -> appSessionId to pendingLoginDtoToEvent(appSessionId, dto) }
+            _cloudLoginRequests.value = _cloudLoginRequests.value + restored
+        } else if (r.terminated || r.taskStatus.equals("completed", true) || r.taskStatus.equals("failed", true) ||
+            r.taskStatus.equals("cancelled", true)
+        ) {
+            // 任务已终态或已无待登录：清掉残留登录面板
+            _cloudLoginRequests.value = _cloudLoginRequests.value - appSessionId
+        }
+
         // 2) 前台实时流 job 存在时由它独占状态更新，补拉只落库，不插手运行态。
         val hasActiveJob = sessionJobs[appSessionId]?.isActive == true
         if (hasActiveJob) return
 
         // 3) 任务已终态：校正陈旧状态、停掉可能存在的跟随协程。
-        if (r.terminated || r.taskStatus.equals("completed", true) || r.taskStatus.equals("failed", true)) {
+        val isCancelled = r.taskStatus.equals("cancelled", true)
+        if (r.terminated || r.taskStatus.equals("completed", true) || r.taskStatus.equals("failed", true) || isCancelled) {
             cloudFollowJobs.remove(appSessionId)?.cancel()
-            if (r.taskStatus.equals("failed", true)) {
+            if (isCancelled) {
+                // 用户已停止：回到空闲，不展示成功/失败
+                setAgentState(appSessionId, AgentUIState.Idle)
+            } else if (r.taskStatus.equals("failed", true)) {
                 setAgentState(appSessionId, AgentUIState.Error("云端任务失败"))
             } else {
                 setAgentState(appSessionId, AgentUIState.Result(WorkflowStatus.SUCCESS))
@@ -1049,8 +1133,8 @@ class AIAgentViewModel @Inject constructor(
         }
 
         // 4) 云端仍在运行/排队：恢复"执行中"运行态，并启动跟随协程持续补拉。
-        //    等待审批（waiting_approval）由审批卡片表达，不显示转圈，故不置 Streaming。
-        if (r.running && !r.taskStatus.equals("waiting_approval", true)) {
+        //    等待审批/等待登录由各自的卡片/面板表达，不显示转圈，故不置 Streaming。
+        if (r.running && !r.taskStatus.equals("waiting_approval", true) && !r.taskStatus.equals("waiting_login", true)) {
             setAgentState(appSessionId, AgentUIState.Streaming)
         }
         if (r.running) startCloudFollow(appSessionId)
@@ -1106,6 +1190,63 @@ class AIAgentViewModel @Inject constructor(
         }
     }
 
+    // ---- 云端登录面板：把手机画面点击/键盘输入转发给云端浏览器 ------------------------------
+
+    /** 拉取登录会话增量帧（UI 轮询用；失败返回 null，UI 跳过本次）。 */
+    suspend fun pollLoginFrame(sessionId: String, loginId: String, after: Long) =
+        runCatching { cloudAgentWorkflow.loginFrame(sessionId, loginId, after) }.getOrNull()
+
+    /** 查询登录会话状态（UI 轮询用）。 */
+    suspend fun pollLoginStatus(sessionId: String, loginId: String) =
+        runCatching { cloudAgentWorkflow.loginStatus(sessionId, loginId) }.getOrNull()
+
+    /**
+     * 订阅登录帧 WebSocket 推流（UI 首选路径）。返回 null 表示服务端不支持/建连失败，
+     * UI 应降级到 [pollLoginFrame]/[pollLoginStatus] 轮询，保证旧服务端也能用。
+     */
+    suspend fun loginStreamFlow(sessionId: String, loginId: String) =
+        runCatching { cloudAgentWorkflow.loginStream(sessionId, loginId) }.getOrNull()
+
+    /** 把一次触摸/键盘事件注入云端浏览器（fire-and-forget，UI 高频调用）。 */
+    fun sendLoginInput(
+        sessionId: String, loginId: String, type: String,
+        x: Int = 0, y: Int = 0, text: String = "", key: String = "", dx: Int = 0, dy: Int = 0
+    ) = viewModelScope.launch(Dispatchers.IO) {
+        runCatching {
+            cloudAgentWorkflow.loginInput(
+                sessionId, loginId,
+                com.minime.code.feature.agent.data.remote.cloudagent.LoginInputReq(type, x, y, text, key, dx, dy)
+            )
+        }.onFailure { e -> FileLogger.w(TAG, "云端登录输入转发失败: $type", e) }
+    }
+
+    /** 用户确认「已登录完成」：唤醒云端挂起任务、清除面板、补拉续跑结果。 */
+    fun completeCloudLogin(sessionId: String, loginId: String) = viewModelScope.launch {
+        runCatching { cloudAgentWorkflow.loginComplete(sessionId, loginId, true) }
+            .onFailure { e -> FileLogger.e(TAG, "云端登录完成回传失败: $loginId", e) }
+        _cloudLoginRequests.value = _cloudLoginRequests.value - sessionId
+        withContext(Dispatchers.IO) {
+            for (i in 0 until 8) {
+                if (i > 0) kotlinx.coroutines.delay(1200)
+                val r = runCatching { cloudAgentCatchUp.syncSession(sessionId) }.getOrNull() ?: continue
+                if (r.pendingLogins.isEmpty() && r.taskStatus.equals("waiting_login", true).not()) {
+                    if (r.terminated) {
+                        setAgentState(sessionId, AgentUIState.Result(WorkflowStatus.SUCCESS))
+                        _completedSessions.value = _completedSessions.value + sessionId
+                    }
+                    break
+                }
+            }
+        }
+    }
+
+    /** 用户取消登录：通知云端任务收尾、清除面板。 */
+    fun cancelCloudLogin(sessionId: String, loginId: String) = viewModelScope.launch {
+        runCatching { cloudAgentWorkflow.loginComplete(sessionId, loginId, false) }
+            .onFailure { e -> FileLogger.e(TAG, "取消云端登录失败: $loginId", e) }
+        _cloudLoginRequests.value = _cloudLoginRequests.value - sessionId
+    }
+
     /**
      * 切换当前会话的执行目标。[connectionId] 为 null 表示切回本机运行。
      * 切换前先取消该会话的在途任务/跟随协程、清理旧服务器上的云端上下文映射，避免串台。
@@ -1120,11 +1261,29 @@ class AIAgentViewModel @Inject constructor(
         cloudFollowJobs.remove(sessionId)?.cancel()
         // 2) 清旧目标上的云端 session/游标映射（换服务器后不能沿用旧上下文）
         runCatching { cloudTargetResolver.clearSessionMapping(sessionId) }
-        // 3) 清运行态与残留审批卡片
+        // 3) 清运行态与残留审批卡片/登录面板
         _cloudPendingDecisions.value = _cloudPendingDecisions.value - sessionId
+        _cloudLoginRequests.value = _cloudLoginRequests.value - sessionId
         setAgentState(sessionId, AgentUIState.Idle)
         // 4) 落库新目标
         sessionUseCase.setSessionCloudTarget(sessionId, connectionId)
+        // 5) 联动刷新：侧边栏文件树按新目标重新取数（本机=本地文件，云端=该服务器 workspace）
+        refreshBrowse()
+        // 6) 联动：skill 与工具授权/信任档随执行目标切换（按 connectionId 隔离）
+        onExecutionTargetChanged(connectionId)
+    }
+
+    /**
+     * 执行目标切换后的环境联动：信任档、skill 与授权策略都按目标隔离。
+     * 信任档用 repository 的按连接存储；skill/policy 通过共享 Flow 通知设置页重载。
+     */
+    private fun onExecutionTargetChanged(connectionId: String?) = viewModelScope.launch(Dispatchers.IO) {
+        val key = connectionId ?: "local"
+        runCatching {
+            trustLevelRepository.switchScope(key)
+            toolSafetySettingsRepository.switchScope(key)
+            skillConfigRepository.notifyExecutionTargetChanged(key)
+        }
     }
 
     private val _llmCallEvents = MutableSharedFlow<LlmCallEvent>(extraBufferCapacity = 16)
@@ -1409,6 +1568,19 @@ class AIAgentViewModel @Inject constructor(
     }
 
     init {
+        // 工具授权/信任档随当前会话的执行目标自动切换作用域：
+        // 本机 session=local，云端 session=connectionId。任何会话切换/目标切换入口都统一由此驱动。
+        viewModelScope.launch {
+            currentCloudConnectionId.collect { connId ->
+                val key = connId ?: com.minime.code.feature.settings.data.repository.TrustLevelRepository.LOCAL_SCOPE
+                trustLevelRepository.switchScope(key)
+                toolSafetySettingsRepository.switchScope(key)
+                // 更新云端环境桥接（skill/授权列表按目标取数）；本机则清空。
+                cloudEnvironmentBridge.setTarget(cloudTargetResolver.resolve(_currentSessionId.value))
+                skillConfigRepository.notifyExecutionTargetChanged(key)
+            }
+        }
+
         // 冷启动收尾：上次进程被杀时残留的「执行中」工具回填为「已中断」。在后台执行，不阻塞首屏与会话展示。
         viewModelScope.launch(Dispatchers.IO) {
             sessionUseCase.initColdStartCleanup()
@@ -2423,6 +2595,12 @@ class AIAgentViewModel @Inject constructor(
                         turnHadActivity = true
                         setPendingCloudDecision(sessionId, event)
                     }
+                    is AgentEvent.LoginRequired -> {
+                        // 云端 browser 撞到登录墙：弹出云端登录面板，手机只传画面与输入。
+                        turnHadActivity = true
+                        setCloudLoginRequest(sessionId, event)
+                    }
+                    // 登录结果事件不映射为 AgentEvent（Workflow 返回 null），仅在此防御性清理
                 }
             }
             turnSucceeded = true
@@ -2546,6 +2724,17 @@ class AIAgentViewModel @Inject constructor(
     /** 停止当前工作区所有正在运行的 AI 会话（切换工作区前调用）。 */
     fun stopAllAgents() {
         val jobs = sessionJobs.values.filter { it.isActive }
+        // 云端会话：本地 job 取消不会影响服务端执行，逐个发取消请求真正中断 LLM。
+        val affectedSessions = (sessionJobs.keys + cloudFollowJobs.keys).distinct()
+        viewModelScope.launch {
+            for (sid in affectedSessions) {
+                runCatching {
+                    if (cloudTargetResolver.isCloudSession(sid)) cloudAgentWorkflow.cancelBySession(sid)
+                }.onFailure { FileLogger.e(TAG, "批量停止云端任务失败: sid=$sid", it) }
+            }
+        }
+        cloudFollowJobs.values.forEach { it.cancel() }
+        cloudFollowJobs.clear()
         agentNotificationCenter.clearAll()
         _queuedRequests.value = emptyMap()
         goalEmptyTurnCounts.clear()
@@ -2588,8 +2777,45 @@ class AIAgentViewModel @Inject constructor(
      * 取消 job 并把未完成的流式内容落库为「已停止」；队列下一条照常执行。
      */
     fun stopAgentSession(sessionId: String) {
-        val job = sessionJobs[sessionId] ?: return
-        if (!job.isActive) return
+        // 云端会话：先向服务端发取消请求，真正中断运行中的 LLM 调用；再停本地跟随协程。
+        // 必须在下面的 job 检查之前——重开 App 后本地可能没有 sessionJob、只有 cloudFollowJob，
+        // 若不在这里处理，云端任务会继续跑且无响应。cancelBySession 内部自行解析目标与 taskId。
+        viewModelScope.launch {
+            val isCloud = runCatching { cloudTargetResolver.isCloudSession(sessionId) }.getOrDefault(false)
+            if (isCloud) {
+                runCatching { cloudAgentWorkflow.cancelBySession(sessionId) }
+                    .onFailure { FileLogger.e(TAG, "停止云端任务失败: sid=$sessionId", it) }
+                // 停掉补拉跟随协程，避免它继续把云端「仍在运行」的旧状态拉回来显示转圈
+                cloudFollowJobs.remove(sessionId)?.cancel()
+            }
+        }
+        val job = sessionJobs[sessionId]
+        if (job == null || !job.isActive) {
+            // 无本地任务（如重开后仅剩跟随协程）：云端取消已在上面发出。
+            // 把尚未收尾的流式内容落为「已停止」占位，避免历史里思考内容悬挂。
+            val st = _streamingTexts.value[sessionId]
+            val sr = _streamingReasonings.value[sessionId]
+            val stopped = context.getString(R.string.agent_stopped_by_user)
+            viewModelScope.launch {
+                if (!st.isNullOrEmpty() || !sr.isNullOrEmpty()) {
+                    val partial = (st ?: "").trimEnd()
+                    val content = if (partial.isNotEmpty()) "$partial\n\n$stopped" else stopped
+                    messagePersistenceUseCase.persist(
+                        sessionId = sessionId,
+                        role = MessageRole.ASSISTANT,
+                        content = content,
+                        reasoning = sr?.takeIf { it.hasVisibleContent() }
+                    )
+                }
+            }
+            setAgentState(sessionId, AgentUIState.Idle)
+            setStreamingText(sessionId, null)
+            setStreamingReasoning(sessionId, null)
+            setCompacting(sessionId, false)
+            setRetryState(sessionId, null)
+            _runningTools.value = _runningTools.value - sessionId
+            return
+        }
         // 用户在界面上手动停止运行中的子代理：交回并发槽位并告知父代理，否则槽位泄漏到进程重启，
         // 且父代理会一直等一条永不到达的完成通知。TaskTool 的 stop/del 已在 emit(STOPPED) 时释放过，
         // 那条路径下 release 返回 false，不会重复通知。

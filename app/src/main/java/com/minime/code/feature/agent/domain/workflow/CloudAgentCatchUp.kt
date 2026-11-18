@@ -4,6 +4,7 @@ import android.content.Context
 import com.minime.code.R
 import com.minime.code.feature.agent.data.remote.cloudagent.CloudAgentApi
 import com.minime.code.feature.agent.data.remote.cloudagent.PendingDecisionDto
+import com.minime.code.feature.agent.data.remote.cloudagent.PendingLoginDto
 import com.minime.code.feature.agent.data.remote.cloudagent.StoredEventDto
 import com.minime.code.feature.agent.domain.session.MessagePersistenceUseCase
 import com.minime.code.feature.agent.domain.session.SessionUseCase
@@ -46,12 +47,14 @@ class CloudAgentCatchUp @Inject constructor(
         val applied: Int,
         val pendingDecisions: List<PendingDecisionDto>,
         val taskStatus: String,
-        val terminated: Boolean
+        val terminated: Boolean,
+        val pendingLogins: List<PendingLoginDto> = emptyList()
     ) {
         /**
          * 云端任务当前是否仍在运行。删后台/熄屏期间任务在服务端独立协程照常推进，
          * 重开补拉时若任务未终态，App 必须重建「执行中」运行态并继续跟随，否则界面看起来像断了。
-         * waiting_approval 也算"未终态"，但它应展示审批卡片而非转圈，故单独由 pendingDecisions 驱动。
+         * waiting_approval / waiting_login 也算"未终态"，但它们应展示审批卡片/登录面板而非转圈，
+         * 故分别由 pendingDecisions / pendingLogins 驱动。
          */
         val running: Boolean get() = !terminated && taskStatus.lowercase() in RUNNING_STATUSES
     }
@@ -76,11 +79,11 @@ class CloudAgentCatchUp @Inject constructor(
                 cursor = maxOf(cursor, e.seq)
                 applyToLocal(appSessionId, e)
                 applied++
-                if (e.kind == K_TASK_COMPLETED || e.kind == K_TASK_FAILED) terminated = true
+                if (e.kind == K_TASK_COMPLETED || e.kind == K_TASK_FAILED || e.kind == K_TASK_CANCELLED) terminated = true
             }
             // 游标推进到本次拉到的最新位置；即使随后进程被杀，重开也从这里续接
             settings.setPollCursor(appSessionId, baseUrl, maxOf(cursor, resp.nextSeq))
-            Result(applied, resp.pendingDecisions, resp.taskStatus, terminated)
+            Result(applied, resp.pendingDecisions, resp.taskStatus, terminated, resp.pendingLogins)
         }
     }
 
@@ -147,12 +150,13 @@ class CloudAgentCatchUp @Inject constructor(
 
     private companion object {
         /** 云端任务"未终态"的状态集合：这些状态下任务仍可能推进，App 需重建运行态继续跟随。 */
-        val RUNNING_STATUSES = setOf("queued", "running", "waiting_approval")
+        val RUNNING_STATUSES = setOf("queued", "running", "waiting_approval", "waiting_login")
 
         const val K_ASSISTANT_TEXT = "assistant_text"
         const val K_TOOL_STARTED = "tool_call_started"
         const val K_TOOL_FINISHED = "tool_call_finished"
         const val K_TASK_COMPLETED = "task_completed"
         const val K_TASK_FAILED = "task_failed"
+        const val K_TASK_CANCELLED = "task_cancelled"
     }
 }

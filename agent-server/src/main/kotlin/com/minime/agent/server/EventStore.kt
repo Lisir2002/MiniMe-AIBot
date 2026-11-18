@@ -3,6 +3,8 @@ package com.minime.agent.server
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
@@ -138,7 +140,7 @@ class EventStore(dbPath: String) : AutoCloseable {
             ps.setString(1, status); ps.setLong(2, System.currentTimeMillis()); ps.setString(3, taskId); ps.executeUpdate()
         }
         // 任务进入终态时清理该任务残留的 pending 决策，避免 App 重连后显示「幽灵审批卡片」
-        if (status == TaskStatus.COMPLETED || status == TaskStatus.FAILED) {
+        if (status == TaskStatus.COMPLETED || status == TaskStatus.FAILED || status == TaskStatus.CANCELLED) {
             conn.prepareStatement("UPDATE decisions SET status='cancelled', updated_at=? WHERE task_id=? AND status='pending'").use { ps ->
                 ps.setLong(1, System.currentTimeMillis()); ps.setString(2, taskId); ps.executeUpdate()
             }
@@ -148,6 +150,14 @@ class EventStore(dbPath: String) : AutoCloseable {
     @Synchronized
     fun getTaskStatus(taskId: String): String? {
         conn.prepareStatement("SELECT status FROM tasks WHERE id=?").use { ps ->
+            ps.setString(1, taskId); ps.executeQuery().use { rs -> return if (rs.next()) rs.getString(1) else null }
+        }
+    }
+
+    /** 按 taskId 反查所属会话：取消任务时据此往正确会话落「已停止」事件。 */
+    @Synchronized
+    fun getSessionIdForTask(taskId: String): String? {
+        conn.prepareStatement("SELECT session_id FROM tasks WHERE id=?").use { ps ->
             ps.setString(1, taskId); ps.executeQuery().use { rs -> return if (rs.next()) rs.getString(1) else null }
         }
     }
@@ -228,10 +238,11 @@ class EventStore(dbPath: String) : AutoCloseable {
     @Synchronized
     fun unfinishedTasks(): List<TaskInfo> {
         val out = mutableListOf<TaskInfo>()
-        conn.prepareStatement("SELECT id,session_id,provider_json FROM tasks WHERE status IN (?,?,?)").use { ps ->
+        conn.prepareStatement("SELECT id,session_id,provider_json FROM tasks WHERE status IN (?,?,?,?)").use { ps ->
             ps.setString(1, TaskStatus.QUEUED)
             ps.setString(2, TaskStatus.RUNNING)
             ps.setString(3, TaskStatus.WAITING_APPROVAL)
+            ps.setString(4, TaskStatus.WAITING_LOGIN)
             ps.executeQuery().use { rs ->
                 while (rs.next()) out += TaskInfo(rs.getString("id"), rs.getString("session_id"), rs.getString("provider_json"))
             }
@@ -333,7 +344,7 @@ class EventStore(dbPath: String) : AutoCloseable {
         val out = mutableListOf<PendingDecisionDto>()
         conn.prepareStatement("""
             SELECT decision_id,task_id,tool_name,args_preview,session_id
-            FROM decisions WHERE session_id=? AND status='pending' ORDER BY created_at ASC
+            FROM decisions WHERE session_id=? AND status='pending' AND tool_name<>'login' ORDER BY created_at ASC
         """.trimIndent()).use { ps ->
             ps.setString(1, sessionId)
             ps.executeQuery().use { rs ->
@@ -347,6 +358,52 @@ class EventStore(dbPath: String) : AutoCloseable {
             }
         }
         return out
+    }
+
+    /**
+     * 该会话仍挂起、等待手机云端浏览器登录的会话（App 断线重连后重建登录面板用）。
+     * 登录项以 tool_name='login' 标记，decision_id 形如 "login:<loginId>"；args_preview 存 {url,reason}。
+     * 与普通审批分开返回，避免 App 把登录当成二元审批卡。
+     */
+    @Synchronized
+    fun pendingLoginsFor(sessionId: String): List<PendingLoginDto> {
+        val out = mutableListOf<PendingLoginDto>()
+        val parser = Json { ignoreUnknownKeys = true }
+        conn.prepareStatement("""
+            SELECT decision_id,task_id,args_preview,session_id
+            FROM decisions WHERE session_id=? AND status='pending' AND tool_name='login' ORDER BY created_at ASC
+        """.trimIndent()).use { ps ->
+            ps.setString(1, sessionId)
+            ps.executeQuery().use { rs ->
+                while (rs.next()) {
+                    val decisionId = rs.getString("decision_id")
+                    val args = runCatching {
+                        parser.parseToJsonElement(rs.getString("args_preview")).jsonObject
+                    }.getOrNull()
+                    out += PendingLoginDto(
+                        loginId = decisionId.removePrefix("login:"),
+                        url = args?.get("url")?.jsonPrimitive?.content ?: "",
+                        reason = args?.get("reason")?.jsonPrimitive?.content ?: "",
+                        taskId = rs.getString("task_id") ?: "",
+                        sessionId = rs.getString("session_id") ?: ""
+                    )
+                }
+            }
+        }
+        return out
+    }
+
+    /**
+     * 反查登录会话归属：loginId -> 其所属 sessionId。
+     * 用于登录代理端点的跨会话越权校验（App 请求必须与其所属会话一致）。
+     * 返回 null 表示无此登录决策记录。
+     */
+    @Synchronized
+    fun loginOwner(loginId: String): String? {
+        conn.prepareStatement("SELECT session_id FROM decisions WHERE decision_id=?").use { ps ->
+            ps.setString(1, "login:$loginId")
+            ps.executeQuery().use { rs -> return if (rs.next()) rs.getString("session_id") else null }
+        }
     }
 
     override fun close() { conn.close() }

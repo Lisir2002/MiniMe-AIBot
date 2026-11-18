@@ -2,6 +2,7 @@ package com.minime.code.feature.agent.domain.skill
 
 import com.minime.code.core.util.FileLogger
 import com.minime.code.core.watch.FileChange
+import com.minime.code.core.watch.FileChangeBatch
 import com.minime.code.core.watch.FileChangeHub
 import com.minime.code.feature.agent.domain.container.ContainerInstaller
 import com.minime.code.feature.workspace.domain.FileAccessProvider
@@ -12,8 +13,10 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.shareIn
@@ -84,16 +87,29 @@ class SkillConfigRepository @Inject constructor(
      * 技能目录或配置文件被外部修改时广播一次。订阅驱动：只在有订阅者（设置页）期间才由
      * [FileChangeHub] 监听技能目录与两个 skills.json，无人订阅时零开销。
      */
+    private val _targetChanged = MutableSharedFlow<String>(extraBufferCapacity = 4)
+
     val changes: SharedFlow<Unit> = merge(
         fileChangeHub.watchMinimecode(SKILLS_DIR, recursive = true),
         fileChangeHub.watchMinimecode(),
         fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$MINIMECODE_DIR/$SKILLS_DIR", recursive = true),
-        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$MINIMECODE_DIR")
+        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$MINIMECODE_DIR"),
+        _targetChanged
     ).mapNotNull { batch ->
-        if (!batch.changes.any(::isSkillChange)) return@mapNotNull null
+        if (batch is String) {
+            FileLogger.i(TAG, "执行目标切换到 $batch，通知技能列表刷新")
+            return@mapNotNull Unit
+        }
+        val changeBatch = batch as? FileChangeBatch ?: return@mapNotNull null
+        if (!changeBatch.changes.any(::isSkillChange)) return@mapNotNull null
         FileLogger.i(TAG, "检测到技能目录或配置变化，已通知刷新")
         Unit
     }.shareIn(watchScope, SharingStarted.WhileSubscribed(), replay = 0)
+
+    /** 执行目标切换后通知设置页重载技能列表（本机=本地技能，云端=该服务器镜像内技能）。 */
+    fun notifyExecutionTargetChanged(scope: String) {
+        _targetChanged.tryEmit(scope)
+    }
 
     /** 技能相关变更：两个 skills.json，或全局/项目技能目录自身及其下的任何文件。 */
     private fun isSkillChange(change: FileChange): Boolean {

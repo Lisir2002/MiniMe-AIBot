@@ -2060,8 +2060,15 @@
     <string name="cloud_agent_enable_desc">开启后，新提问将提交到云端而非本机运行</string>
     <string name="cloud_agent_server_url">服务器地址</string>
     <string name="cloud_agent_server_url_hint">http://你的服务器IP:8080</string>
-    <string name="cloud_agent_token">访问令牌（可选）</string>
-    <string name="cloud_agent_token_hint">服务端 MINIME_TOKEN，留空表示不校验</string>
+    <string name="cloud_agent_token">访问令牌</string>
+    <string name="cloud_agent_token_hint">自动生成或自定义</string>
+    <string name="cloud_agent_token_section">访问令牌</string>
+    <string name="cloud_agent_token_desc">首次进入自动生成强随机令牌，也可自定义。部署时写入服务端 MINIME_TOKEN，并与 App 通信共用同一值；请妥善保存，换设备或重装后需填回此值。</string>
+    <string name="cloud_agent_token_toggle_visible">显示或隐藏令牌</string>
+    <string name="cloud_agent_token_weak">令牌偏短，建议至少 16 位或使用「重新生成」</string>
+    <string name="cloud_agent_token_regenerate">重新生成</string>
+    <string name="cloud_agent_token_copy">复制</string>
+    <string name="cloud_agent_token_copied">已复制</string>
     <string name="cloud_agent_test">测试连接</string>
     <string name="cloud_agent_testing">正在连接…</string>
     <string name="cloud_agent_test_ok">连接成功，云端服务正常</string>
@@ -2072,6 +2079,16 @@
     <string name="cloud_agent_approve">批准</string>
     <string name="cloud_agent_reject">拒绝</string>
     <string name="cloud_agent_waiting">等待你的决策，云端任务已挂起…</string>
+
+    <!-- 云端浏览器登录面板：手机遥控云端 Chromium 完成登录，全程不搬运 Cookie -->
+    <string name="cloud_login_title">云端浏览器需要登录</string>
+    <string name="cloud_login_reason">该网站需要登录后才能访问。请直接在下方画面中完成登录，登录态会保存在云端。</string>
+    <string name="cloud_login_frame_desc">云端浏览器实时画面</string>
+    <string name="cloud_login_input_hint">点击画面输入框后，在此输入文字</string>
+    <string name="cloud_login_send">输入</string>
+    <string name="cloud_login_enter">回车</string>
+    <string name="cloud_login_cancel">取消</string>
+    <string name="cloud_login_done">登录完成</string>
 
     <!-- 连接复用 + 版本系统 + 一键部署/升级 -->
     <string name="cloud_agent_server_section">服务器（复用已保存连接）</string>

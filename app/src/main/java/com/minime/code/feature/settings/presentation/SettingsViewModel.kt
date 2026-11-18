@@ -378,6 +378,7 @@ class SettingsViewModel @Inject constructor(
     private val toolSafetySettingsRepository: ToolSafetySettingsRepository,
     private val trustLevelRepository: com.minime.code.feature.settings.data.repository.TrustLevelRepository,
     private val skillRepository: SkillRepository,
+    private val cloudEnvironmentBridge: com.minime.code.feature.agent.data.remote.cloudagent.CloudEnvironmentBridge,
     private val agentDefinitionRepository: AgentDefinitionRepository,
     private val agentDefinitionConfigRepository: AgentDefinitionConfigRepository,
     private val toolRegistry: ToolRegistry,
@@ -1526,20 +1527,36 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    /** 重新扫描技能（进入设置页 / 启停切换后调用，反映磁盘上增删改）。 */
+    /** 重新扫描技能（进入设置页 / 启停切换 / 执行目标切换后调用，反映当前目标环境的技能）。 */
     fun refreshSkills() {
         viewModelScope.launch {
             _skills.value = withContext(Dispatchers.IO) {
-                val disabled = skillRepository.disabledNames()
-                skillRepository.listAllSkills().map { entry ->
-                    SkillUiEntry(
-                        name = entry.skill.name,
-                        description = entry.skill.description,
-                        scope = entry.scope,
-                        disabled = entry.skill.name.lowercase() in disabled,
-                        instructions = entry.skill.instructions,
-                        requiredTools = entry.skill.requiredTools
-                    )
+                val cloud = runCatching { cloudEnvironmentBridge.cloudSkills() }.getOrNull()
+                if (cloud != null) {
+                    // 云端目标：展示该服务器容器镜像内的技能，作用域统一标 GLOBAL。
+                    cloud.map { s ->
+                        SkillUiEntry(
+                            name = s.name,
+                            description = s.description,
+                            scope = SkillScope.GLOBAL,
+                            disabled = false, // 云端技能启停由服务端管理，此处只读展示
+                            instructions = "",
+                            requiredTools = s.requiredTools
+                        )
+                    }
+                } else {
+                    // 本机目标：沿用本地 SkillRepository（跟随 ExecutionMode 的本地/SSH 文件访问）。
+                    val disabled = skillRepository.disabledNames()
+                    skillRepository.listAllSkills().map { entry ->
+                        SkillUiEntry(
+                            name = entry.skill.name,
+                            description = entry.skill.description,
+                            scope = entry.scope,
+                            disabled = entry.skill.name.lowercase() in disabled,
+                            instructions = entry.skill.instructions,
+                            requiredTools = entry.skill.requiredTools
+                        )
+                    }
                 }
             }
         }

@@ -56,16 +56,18 @@ class CloudTargetResolverTest {
     }
 
     @Test
-    fun unboundSession_withGlobalEnabled_fallsBackToGlobalServer() = runTest {
+    fun unboundSession_evenWithGlobalEnabled_staysLocal() = runTest {
+        // 回归「选本机仍走云端」缺陷：全局开关是僵尸值（selectServer 置 true 后从不关闭），
+        // 用户在运行与连接卡显式选本机后 cloudConnectionId=null，绝不能再被全局开关发回云端。
         coEvery { dao.getById("s3") } returns session("s3", null)
         coEvery { settings.isEnabled() } returns true
         coEvery { settings.serverUrl() } returns "http://legacy:8080"
         coEvery { settings.token() } returns "legacy-token"
 
-        val target = resolver.resolve("s3")!!
-
-        assertNull(target.connectionId)
-        assertEquals("http://legacy:8080", target.baseUrl)
+        assertNull(resolver.resolve("s3"))
+        assertEquals(false, resolver.isCloudSession("s3"))
+        // 确认根本没有去读全局开关/全局地址做兜底
+        coVerify(exactly = 0) { settings.serverUrl() }
     }
 
     @Test

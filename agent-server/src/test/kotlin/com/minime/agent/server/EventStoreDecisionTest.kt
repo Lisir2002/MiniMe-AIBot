@@ -62,6 +62,33 @@ class EventStoreDecisionTest {
     }
 
     @Test
+    fun loginPending_isSeparatedFromDecisions_andRestored() {
+        // 登录项与审批项共存于同一会话：必须分开返回，否则 App 会把登录误当二元审批卡
+        store.registerPending("d5", "s1", "t1", "Bash", "echo hi")
+        store.registerPending("login:login-42", "s1", "t1", "login", """{"url":"https://example.com/login","reason":"需要登录"}""")
+
+        val decisions = store.pendingDecisionsFor("s1")
+        assertEquals(1, decisions.size)
+        assertEquals("d5", decisions.first().decisionId)
+
+        val logins = store.pendingLoginsFor("s1")
+        assertEquals(1, logins.size)
+        assertEquals("login-42", logins.first().loginId)
+        assertEquals("https://example.com/login", logins.first().url)
+        assertEquals("需要登录", logins.first().reason)
+    }
+
+    @Test
+    fun loginPending_resolvedIsRemoved() {
+        store.registerPending("login:login-99", "s1", "t1", "login", """{"url":"https://x","reason":""}""")
+        assertEquals(1, store.pendingLoginsFor("s1").size)
+
+        // 走与审批同一套 resolvePending（/login/{id}/complete 调用），登录后应从待恢复列表消失
+        assertTrue(store.resolvePending("login:login-99", approve = true))
+        assertTrue(store.pendingLoginsFor("s1").isEmpty())
+    }
+
+    @Test
     fun decisionPersistsAcrossStoreReopen() {
         store.registerPending("d4", "s1", "t1", "Bash", "echo persist")
         store.close()

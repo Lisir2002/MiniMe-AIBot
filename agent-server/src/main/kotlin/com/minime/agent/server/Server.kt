@@ -14,15 +14,47 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import io.ktor.server.websocket.WebSockets
+import io.ktor.server.websocket.webSocket
+import io.ktor.websocket.CloseReason
+import io.ktor.websocket.Frame
+import io.ktor.websocket.close
+import io.ktor.websocket.send
+import com.minime.agent.server.modules.LocalFileAccessProvider
+import com.minime.agent.server.modules.LoginInputEvent
+import com.minime.agent.server.modules.ServerSkillRepository
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.slf4j.LoggerFactory
 
-fun Application.configureServer(store: EventStore, runner: AgentRunner, token: String) {
+/** 该服务端注册的工具清单，供 App 在切换执行目标时展示真实可用工具/授权。 */
+private val SERVER_TOOL_NAMES = listOf(
+    "Bash", "readFile", "writeFile", "editFile", "list", "search", "todo",
+    "loadSkill", "memory", "websearch", "webfetch", "task",
+    "askUserQuestion", "planMode", "goalStatus", "messageParent",
+    // 镜像补全：与 App 本地工具集完全对齐
+    "sendFile", "viewImage", "generateImage", "Shizuku", "terminal", "manageMcp", "browser"
+)
+
+fun Application.configureServer(
+    store: EventStore,
+    runner: AgentRunner,
+    token: String,
+    fileAccess: LocalFileAccessProvider,
+    skillRepository: ServerSkillRepository
+) {
     val log = LoggerFactory.getLogger("AgentServer")
     install(ContentNegotiation) {
         json(Json { ignoreUnknownKeys = true; encodeDefaults = true; prettyPrint = false })
     }
     install(CallLogging)
+    // WebSocket 帧推流：用默认心跳保活；放宽帧上限（JPEG base64 单帧可达数十 KB）。
+    install(WebSockets) {
+        maxFrameSize = 2 * 1024 * 1024
+    }
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             log.error("请求处理失败: ${call.request.local.uri}", cause)
@@ -51,6 +83,45 @@ fun Application.configureServer(store: EventStore, runner: AgentRunner, token: S
             if (token.isBlank()) return true
             val header = c.request.headers["Authorization"] ?: return false
             return header == "Bearer $token"
+        }
+
+        // ---- 环境数据：供 App 侧边栏文件/skill/授权按执行目标切换 --------------------
+        // 文件系统读取在 IO 线程执行，避免阻塞 Netty 事件循环。
+        get("/workspace/list") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@get }
+            val path = call.request.queryParameters["path"] ?: "~/workspace"
+            val result = runCatching { fileAccess.listFiles(path).map { e ->
+                WorkspaceFileEntry(e.name, e.isDirectory, e.size, e.lastModified, e.permissions)
+            } }
+            call.respond(result.fold(
+                onSuccess = { WorkspaceListResponse(path, it) },
+                onFailure = { WorkspaceListResponse(path, emptyList(), it.message ?: "列目录失败") }
+            ))
+        }
+
+        get("/workspace/read") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@get }
+            val path = call.request.queryParameters["path"] ?: run {
+                call.respond(HttpStatusCode.BadRequest, WorkspaceReadResponse("", "", "missing path")); return@get
+            }
+            val result = runCatching { fileAccess.readFile(path) }
+            call.respond(result.fold(
+                onSuccess = { WorkspaceReadResponse(path, it) },
+                onFailure = { WorkspaceReadResponse(path, "", it.message ?: "读取失败") }
+            ))
+        }
+
+        get("/skills") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@get }
+            val skills = runCatching { skillRepository.listSkills().map { s ->
+                CloudSkillEntry(s.name, s.description, s.requiredTools, s.dirPath ?: "")
+            } }.getOrDefault(emptyList())
+            call.respond(SkillsResponse(skills))
+        }
+
+        get("/policy") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@get }
+            call.respond(PolicyResponse(tools = SERVER_TOOL_NAMES.map { ToolPolicyEntry(it) }))
         }
 
         post("/sessions") {
@@ -87,7 +158,8 @@ fun Application.configureServer(store: EventStore, runner: AgentRunner, token: S
             val status = store.latestTaskStatus(sessionId) ?: "idle"
             // 挂起的审批项：App 断线/删后台/熄屏期间云端可能已挂起等审批，重连后据此恢复审批卡片
             val pending = store.pendingDecisionsFor(sessionId)
-            call.respond(EventsResponse(events, nextSeq, status, pending))
+            val pendingLogins = store.pendingLoginsFor(sessionId)
+            call.respond(EventsResponse(events, nextSeq, status, pending, pendingLogins))
         }
 
         post("/decisions/{id}") {
@@ -101,6 +173,138 @@ fun Application.configureServer(store: EventStore, runner: AgentRunner, token: S
                 call.respond(HttpStatusCode.NotFound, ErrorResponse("decision not found or already resolved")); return@post
             }
             call.respond(OkResponse())
+        }
+
+        // ---- 云端登录会话：手机遥控云端浏览器完成登录，全程不搬运凭证 --------------------
+        // 这些端点把画面/输入代理给 BrowserDriver（内部走 Playwright 微服务），
+        // agent-server 只见截图像素与输入坐标，从不接触 Cookie/token。
+        // 安全性由微服务层保证：回环绑定 + X-Browser-Token + profileId 白名单 + profile 静态加密；
+        // 登录态归属由「App 只能从自己会话事件流拿到 loginId」天然隔离。
+
+        get("/login/{id}/frame") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@get }
+            val loginId = call.parameters["id"] ?: run {
+                call.respond(HttpStatusCode.BadRequest, LoginFrameResponse()); return@get
+            }
+            val after = call.request.queryParameters["after"]?.toLongOrNull() ?: 0L
+            val frame = runCatching { runner.browserDriver().loginFrame(loginId, after) }.getOrElse {
+                call.respond(HttpStatusCode.ServiceUnavailable, LoginFrameResponse()); return@get
+            }
+            call.respond(LoginFrameResponse(frame.seq, frame.jpegBase64, frame.width, frame.height, frame.changed))
+        }
+
+        post("/login/{id}/input") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@post }
+            val loginId = call.parameters["id"] ?: run {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse("missing login id")); return@post
+            }
+            val req = call.receive<LoginInputRequest>()
+            val ev = LoginInputEvent(req.type, req.x, req.y, req.text, req.key, req.dx, req.dy)
+            val ok = runCatching { runner.browserDriver().loginInput(loginId, ev) }.getOrDefault(false)
+            call.respond(OkResponse(ok = ok))
+        }
+
+        get("/login/{id}/status") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@get }
+            val loginId = call.parameters["id"] ?: run {
+                call.respond(HttpStatusCode.BadRequest, LoginStateResponse("", "error", message = "missing login id")); return@get
+            }
+            val state = runCatching { runner.browserDriver().loginStatus(loginId) }
+                .getOrDefault(com.minime.agent.server.modules.LoginState(loginId, "error", message = "浏览器服务不可用"))
+            call.respond(LoginStateResponse(state.loginId, state.state, state.url, state.message, state.detail))
+        }
+
+        /**
+         * 登录完成/取消：唤醒 AgentRunner 中挂起的 deferred，任务据此恢复或收尾。
+         * action=success 时同时通知微服务提交 profile（其实浏览器已自动持久化，这里只是显式收尾）。
+         */
+        post("/login/{id}/complete") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@post }
+            val loginId = call.parameters["id"] ?: run {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse("missing login id")); return@post
+            }
+            val body = runCatching { call.receive<Map<String, String>>() }.getOrDefault(emptyMap())
+            val success = body["success"]?.toBoolean() ?: true
+            if (success) runCatching { runner.browserDriver().finishLogin(loginId) }
+            val resolved = store.resolvePending("login:$loginId", success)
+            if (!resolved) {
+                call.respond(OkResponse(ok = false)); return@post
+            }
+            call.respond(OkResponse())
+        }
+
+        // ---- 云端登录帧 WebSocket 推流（App 订阅，替代 350ms 轮询）--------------------
+        // App 建连后服务端主动推送「变化帧 + 状态」，登录进入终态或客户端断开即结束。
+        // 与 HTTP 端点同构：拨号仍走 /login/start，输入/收尾仍走 HTTP，只把"拉画面"换成"推画面"。
+        // 消息格式：{"type":"frame",seq,jpegBase64,width,height,changed} / {"type":"status",...}
+        webSocket("/login/{id}/stream") {
+            if (!authorized(call)) {
+                call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized"))
+                return@webSocket
+            }
+            val loginId = call.parameters["id"]
+            if (loginId.isNullOrBlank()) {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse("missing login id"))
+                return@webSocket
+            }
+            // 推送间隔可调（80-1000ms，默认 150ms，低于原 350ms 轮询 → 更跟手）
+            val interval = call.request.queryParameters["interval"]?.toLongOrNull()?.coerceIn(80, 1000) ?: 150L
+            var lastSeq = 0L
+            var lastState = ""; var lastMessage = ""; var lastDetail = ""
+            val terminal = setOf("success", "failed", "timeout")
+            log.info("登录帧 WS 建连: loginId=$loginId interval=${interval}ms")
+            try {
+                while (isActive) {
+                    // 增量帧：序号前进且画面确有变化才推，静态页不产生流量
+                    val frame = runCatching { runner.browserDriver().loginFrame(loginId, lastSeq) }.getOrNull()
+                    if (frame != null && frame.seq > lastSeq) {
+                        lastSeq = frame.seq
+                        if (frame.changed && frame.jpegBase64.isNotEmpty()) {
+                            send(Frame.Text(buildJsonObject {
+                                put("type", "frame")
+                                put("seq", frame.seq)
+                                put("jpegBase64", frame.jpegBase64)
+                                put("width", frame.width)
+                                put("height", frame.height)
+                                put("changed", true)
+                            }.toString()))
+                        }
+                    }
+                    // 状态：变化才推；终态推完即收尾关闭连接
+                    val state = runCatching { runner.browserDriver().loginStatus(loginId) }.getOrNull()
+                    if (state != null && (state.state != lastState || state.message != lastMessage || state.detail != lastDetail)) {
+                        lastState = state.state; lastMessage = state.message; lastDetail = state.detail
+                        send(Frame.Text(buildJsonObject {
+                            put("type", "status")
+                            put("loginId", state.loginId)
+                            put("state", state.state)
+                            put("url", state.url)
+                            put("message", state.message)
+                            put("detail", state.detail)
+                        }.toString()))
+                        if (state.state.lowercase() in terminal) {
+                            log.info("登录帧 WS 终态收尾: loginId=$loginId state=${state.state}")
+                            break
+                        }
+                    }
+                    delay(interval)
+                }
+            } catch (e: Exception) {
+                log.info("登录帧 WS 断开: loginId=$loginId reason=${e.message}")
+            } finally {
+                runCatching { close(CloseReason(CloseReason.Codes.NORMAL, "stream-end")) }
+            }
+        }
+
+        // 用户主动停止：按 taskId 精确取消运行中的任务（中断 LLM 调用、落「已停止」事件）。
+        // 任务已结束或不存在时返回 ok=false，调用方据此作幂等处理。
+        post("/tasks/{id}/cancel") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@post }
+            val taskId = call.parameters["id"] ?: run {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse("missing task id")); return@post
+            }
+            val cancelled = runner.cancelTask(taskId)
+            call.respond(OkResponse(ok = cancelled))
         }
     }
 }

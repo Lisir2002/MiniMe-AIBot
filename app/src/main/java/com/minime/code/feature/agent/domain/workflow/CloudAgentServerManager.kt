@@ -222,29 +222,35 @@ class CloudAgentServerManager @Inject constructor(
      * 部署前先 [inspect]：容器已是最新且运行时直接跳过重装（幂等升级）；否则下载最新 jar
      * 并原子替换重启。UNKNOWN（探测失败）时仍尝试部署，避免探测能力故障阻断正常升级。
      *
-     * @param onProgress 流式回显每一步日志（运行在 IO 线程）。
+     * @param token 服务端 MINIME_TOKEN 与客户端 Bearer 共用的访问令牌；写入容器环境变量并用于部署后鉴权校验。
+     *              为空时服务端不校验（兼容旧行为）。
+     * @param onProgress 流式回显每一步日志（运行在 IO 线程）；日志经过 token 脱敏，不会回显明文。
      */
     suspend fun deployOrUpgrade(
         conn: RemoteConnection,
+        token: String = "",
         onProgress: (String) -> Unit = {}
     ): Result<DeployResult> = withContext(Dispatchers.IO) {
         var client: SSHClient? = null
+        // 所有进度/日志回显统一经 token 脱敏，避免令牌出现在远端回显或 UI 部署日志中。
+        val safeProgress: (String) -> Unit = { line -> onProgress(if (token.isBlank()) line else line.replace(token, "****")) }
+        fun mask(text: String) = if (token.isBlank()) text else text.replace(token, "****")
         try {
-            onProgress("解析最新服务端版本…\n")
+            safeProgress("解析最新服务端版本…\n")
             val rel = latestRelease().getOrElse {
                 return@withContext Result.success(
                     DeployResult(false, "", "获取最新版本失败：${it.message ?: "未知错误"}（请检查网络）", "")
                 )
             }
-            onProgress("最新版本 ${rel.version}，准备连接 ${conn.host}:${conn.port} …\n")
+            safeProgress("最新版本 ${rel.version}，准备连接 ${conn.host}:${conn.port} …\n")
 
             client = connect(conn)
             val log = StringBuilder()
 
             // 0) 部署前检测：已有最新容器且运行中则跳过重装（幂等，避免每次点都重启服务）
-            onProgress("检测服务器现有容器…\n")
-            val probe = exec(client, buildInspectCommand(), onProgress)
-            log.append(probe.output)
+            safeProgress("检测服务器现有容器…\n")
+            val probe = exec(client, buildInspectCommand(), safeProgress)
+            log.append(mask(probe.output))
             val containerLine = probe.output.lineSequence()
                 .firstOrNull { it.startsWith("INSPECT_CONTAINER=") }
                 ?.removePrefix("INSPECT_CONTAINER=").orEmpty()
@@ -253,7 +259,7 @@ class CloudAgentServerManager @Inject constructor(
                 ?.removePrefix("INSPECT_VERSION_JSON=")?.takeIf { it.isNotBlank() }
             val existing = decideInspection(containerLine, versionJson?.let { parseVersionFromJson(it) }, rel.version)
             if (existing.action == Inspection.Action.UP_TO_DATE) {
-                onProgress("已是最新版本 ${existing.currentVersion}，无需重装。\n")
+                safeProgress("已是最新版本 ${existing.currentVersion}，无需重装。\n")
                 settings.setServerUrl("http://${conn.host}:$SERVER_PORT")
                 settings.setServerUrlFor(conn.id, "http://${conn.host}:$SERVER_PORT")
                 return@withContext Result.success(
@@ -262,10 +268,10 @@ class CloudAgentServerManager @Inject constructor(
             }
 
             // 1) 下载 jar 到临时文件（失败不影响旧版）
-            onProgress("下载 agent-server-${rel.version}.jar …\n")
+            safeProgress("下载 agent-server-${rel.version}.jar …\n")
             val downloadCmd = buildDownloadCommand(rel.jarUrl)
-            val r1 = exec(client, downloadCmd, onProgress)
-            log.append(r1.output)
+            val r1 = exec(client, downloadCmd, safeProgress)
+            log.append(mask(r1.output))
             if (r1.exitCode != 0) {
                 return@withContext Result.success(
                     DeployResult(false, "", "下载 jar 失败（退出码 ${r1.exitCode}）", log.toString())
@@ -273,26 +279,26 @@ class CloudAgentServerManager @Inject constructor(
             }
 
             // 2) 原子替换 jar + 写 systemd 服务（无 systemd 时降级 nohup）+ 启动
-            onProgress("安装并启动服务…\n")
-            val installCmd = buildInstallCommand(rel.tag)
-            val r2 = exec(client, installCmd, onProgress)
-            log.append(r2.output)
+            safeProgress("安装并启动服务…\n")
+            val installCmd = buildInstallCommand(rel.tag, token)
+            val r2 = exec(client, installCmd, safeProgress)
+            log.append(mask(r2.output))
             if (r2.exitCode != 0) {
                 return@withContext Result.success(
                     DeployResult(false, "", "安装/启动失败（退出码 ${r2.exitCode}）", log.toString())
                 )
             }
 
-            // 3) 等待 health + version 校验（服务端启动需要几秒）
-            onProgress("校验服务健康状态…\n")
-            val verifyCmd = buildVerifyCommand()
-            val r3 = exec(client, verifyCmd, onProgress)
-            log.append(r3.output)
+            // 3) 等待 health + version 校验（服务端启动需要几秒）；带 token 调受保护端点确认鉴权真生效
+            safeProgress("校验服务健康状态…\n")
+            val verifyCmd = buildVerifyCommand(token)
+            val r3 = exec(client, verifyCmd, safeProgress)
+            log.append(mask(r3.output))
             val deployedVersion = parseVersionFromOutput(r3.output) ?: "unknown"
 
             if (r3.exitCode != 0) {
                 return@withContext Result.success(
-                    DeployResult(false, deployedVersion, "服务启动后健康检查未通过", log.toString())
+                    DeployResult(false, deployedVersion, "服务启动后健康检查/鉴权校验未通过（token 是否正确写入？）", log.toString())
                 )
             }
 
@@ -395,9 +401,11 @@ class CloudAgentServerManager @Inject constructor(
      *   3) pull 失败（国内网络）→ 从 GitHub Release 下载镜像 tar + docker load 兜底。
      * 业务 jar 由 [buildDownloadCommand] 单独从 Release 下载后挂载，故基座镜像低频更新。
      */
-    private fun buildInstallCommand(releaseTag: String): String {
+    private fun buildInstallCommand(releaseTag: String, token: String = ""): String {
         val tarUrl = "https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$releaseTag/$BASE_IMAGE_TAR"
         val q = shellQuote(tarUrl)
+        // token 为空时不写环境变量 → 服务端保持不校验（兼容旧行为/本地测试）；非空则 shell 引号包裹后注入，防注入。
+        val tokenEnv = if (token.isBlank()) "" else " -e MINIME_TOKEN=${shellQuote(token)}"
         return listOf(
             "set -e",
             "D=\"\$HOME/$INSTALL_DIR\"",
@@ -421,21 +429,30 @@ class CloudAgentServerManager @Inject constructor(
             "docker rm -f $SERVICE_NAME >/dev/null 2>&1 || true",
             "docker run -d --name $SERVICE_NAME --restart unless-stopped -p $SERVER_PORT:$SERVER_PORT " +
                 "-v \"\$D:/data/agent-server\" -v \"\$WS:/workspace\" " +
-                "-e MINIME_DB=/data/agent-server/events.db -e MINIME_WORKSPACE=/workspace -e MINIME_PORT=$SERVER_PORT " +
+                "-e MINIME_DB=/data/agent-server/events.db -e MINIME_WORKSPACE=/workspace -e MINIME_PORT=$SERVER_PORT$tokenEnv " +
                 "$BASE_IMAGE java -jar /data/agent-server/agent-server.jar >/dev/null",
             "echo \"service=docker container=$SERVICE_NAME image=$BASE_IMAGE\""
         ).joinToString("\n")
     }
 
-    private fun buildVerifyCommand(): String = listOf(
-        "OK=0",
-        "for i in \$(seq 1 20); do",
-        "  V=\$(curl -fsS --max-time 2 http://127.0.0.1:$SERVER_PORT/version 2>/dev/null || true)",
-        "  if [ -n \"\$V\" ]; then echo \"VERSION_JSON=\$V\"; OK=1; break; fi",
-        "  sleep 1",
-        "done",
-        "if [ \"\$OK\" = \"1\" ]; then echo 'health-ok'; else echo 'health-failed'; exit 1; fi"
-    ).joinToString("\n")
+    private fun buildVerifyCommand(token: String = ""): String {
+        // 鉴权校验：token 非空时必须能带 Bearer 读到 /policy（受保护端点），否则说明 token 没写进服务端。
+        // token 为空时只探测无需鉴权的 /version，保持向后兼容。
+        val authFlag = if (token.isBlank()) "" else " -H \"Authorization: Bearer ${token.replace("\"", "")}\""
+        return listOf(
+            "OK=0",
+            "P=000",
+            "for i in \$(seq 1 20); do",
+            "  V=\$(curl -fsS --max-time 2$authFlag http://127.0.0.1:$SERVER_PORT/version 2>/dev/null || true)",
+            if (token.isNotBlank())
+                "  P=\$(curl -s -o /dev/null -w '%{http_code}' --max-time 2$authFlag http://127.0.0.1:$SERVER_PORT/policy 2>/dev/null || true)"
+            else "  P=200",
+            "  if [ -n \"\$V\" ] && [ \"\$P\" = \"200\" ]; then echo \"VERSION_JSON=\$V\"; OK=1; break; fi",
+            "  sleep 1",
+            "done",
+            "if [ \"\$OK\" = \"1\" ]; then echo 'health-ok'; else echo 'health-failed'; exit 1; fi"
+        ).joinToString("\n")
+    }
 
     /**
      * 检测脚本：输出两类标记行供 App 解析——

@@ -30,10 +30,17 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -58,6 +65,8 @@ internal fun CloudAgentSettingsBody(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val scroll = rememberScrollState()
+    val clipboardManager = LocalClipboardManager.current
+    val copied = remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -206,6 +215,77 @@ internal fun CloudAgentSettingsBody(
                                 stringResource(R.string.cloud_agent_inspect_unknown) to MaterialTheme.semanticColors.warning
                         }
                         Text(insText, style = MaterialTheme.typography.bodySmall, color = insColor)
+                    }
+                }
+            }
+
+            // 访问令牌：部署前自定义或生成，服务端 MINIME_TOKEN 与客户端 Bearer 共用同一值
+            val tokenVisible = remember { mutableStateOf(false) }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(Radius.md),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(Spacing.md)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        MiniMeIcon(MiniMeIcons.Key, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(Spacing.sm))
+                        Text(
+                            stringResource(R.string.cloud_agent_token_section),
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Text(
+                        stringResource(R.string.cloud_agent_token_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(Spacing.sm))
+                    OutlinedTextField(
+                        value = state.token,
+                        onValueChange = { viewModel.setToken(it) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        label = { Text(stringResource(R.string.cloud_agent_token)) },
+                        placeholder = { Text(stringResource(R.string.cloud_agent_token_hint)) },
+                        visualTransformation = if (tokenVisible.value) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            androidx.compose.material3.IconButton(onClick = { tokenVisible.value = !tokenVisible.value }) {
+                                MiniMeIcon(
+                                    if (tokenVisible.value) MiniMeIcons.EyeOff else MiniMeIcons.Eye,
+                                    contentDescription = stringResource(R.string.cloud_agent_token_toggle_visible),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    )
+                    // 弱令牌提示：短于阈值时警告（自定义短串服务端仍接受，但安全性不足）
+                    if (state.token.isNotBlank() && state.token.length < com.minime.code.feature.settings.data.repository.CloudAgentSettingsRepository.MIN_TOKEN_LENGTH) {
+                        Spacer(Modifier.height(Spacing.xs))
+                        Text(
+                            stringResource(R.string.cloud_agent_token_weak),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.semanticColors.warning
+                        )
+                    }
+                    Spacer(Modifier.height(Spacing.sm))
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                        OutlinedButton(onClick = { viewModel.regenerateToken() }) {
+                            MiniMeIcon(MiniMeIcons.RefreshCw, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(stringResource(R.string.cloud_agent_token_regenerate))
+                        }
+                        if (state.token.isNotBlank()) {
+                            OutlinedButton(onClick = {
+                                clipboardManager.setText(AnnotatedString(state.token))
+                                copied.value = true
+                            }) {
+                                MiniMeIcon(MiniMeIcons.Copy, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(stringResource(if (copied.value) R.string.cloud_agent_token_copied else R.string.cloud_agent_token_copy))
+                            }
+                        }
                     }
                 }
             }

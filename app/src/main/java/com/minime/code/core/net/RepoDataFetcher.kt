@@ -138,16 +138,8 @@ class RepoDataFetcher(
      * 2. jsDelivr (通用 CDN)
      * 3. raw.githubusercontent.com (GitHub 官方直连兜底)
      */
-    fun buildCandidateUrls(path: String): List<String> = listOf(
-        // Fastly 加速的 jsDelivr 节点
-        "https://fastly.jsdelivr.net/gh/$owner/$repo@$branch/$path",
-        // 通用 CDN 镜像
-        "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/$path",
-        // jsDelivr GCore 节点
-        "https://gcore.jsdelivr.net/gh/$owner/$repo@$branch/$path",
-        // GitHub 源站兜底
-        "https://raw.githubusercontent.com/$owner/$repo/$branch/$path"
-    )
+    fun buildCandidateUrls(path: String): List<String> =
+        candidateUrls(owner, repo, branch, path)
 
     /**
      * 同步读取磁盘缓存（不发网络）：存在则返回文本，否则 null。
@@ -184,9 +176,24 @@ class RepoDataFetcher(
         private const val TAG = "RepoDataFetcher"
         private const val CACHE_DIR_NAME = "repo_data_cache"
 
-        const val DEFAULT_OWNER = "jieapi"
-        const val DEFAULT_REPO = "minimecode"
+        // 运行时数据（供应商预设 / 模型元数据 / 容器镜像目录）从本项目自身的仓库拉取。
+        // 历史遗留值 jieapi/minimecode 在 GitHub 上并不存在，导致三处拉取恒失败仅靠磁盘缓存兜底。
+        // 实际资源位于本仓库：data 分支的 data/container-images.json、data/models.json，
+        // 以及 main 分支的 data/providers.json（各调用方按需传 branch）。
+        const val DEFAULT_OWNER = "Lisir2002"
+        const val DEFAULT_REPO = "MiniMe-AIBot"
         const val DEFAULT_BRANCH = "main"
+
+        /**
+         * 生成候选节点 URL（纯函数，便于单测锁定数据源归属）：
+         * jsDelivr 三节点加速 + GitHub raw 源站兜底。
+         */
+        fun candidateUrls(owner: String, repo: String, branch: String, path: String): List<String> = listOf(
+            "https://fastly.jsdelivr.net/gh/$owner/$repo@$branch/$path",
+            "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/$path",
+            "https://gcore.jsdelivr.net/gh/$owner/$repo@$branch/$path",
+            "https://raw.githubusercontent.com/$owner/$repo/$branch/$path"
+        )
 
         /** 默认缓存 12 小时 */
         const val DEFAULT_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000L

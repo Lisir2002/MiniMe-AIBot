@@ -103,6 +103,19 @@ sealed class AgentEvent {
         val argsPreview: String,
         val sessionId: String
     ) : AgentEvent()
+
+    /**
+     * 云端 Agent 的 browser 工具撞到登录墙时挂起，等待用户在手机上的云端浏览器登录（完全云端模式专用）。
+     * App 收到后弹出「云端登录面板」：显示云端 Chromium 的实时画面、转发触摸/键盘输入，
+     * 全程只传像素与坐标，不读取/搬运 Cookie 或 token。登录成功后由 CloudAgentWorkflow 重跑工具续跑。
+     */
+    data class LoginRequired(
+        val loginId: String,
+        val url: String,
+        val reason: String,
+        val taskId: String,
+        val sessionId: String
+    ) : AgentEvent()
 }
 
 interface AgentWorkflow {
