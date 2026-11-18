@@ -95,17 +95,22 @@ jobs:
 
       # 构建合并基座镜像（Java + 完整工具链），推到 ghcr.io（docker pull 主通道），
       # 同时导出 tar 作为 Release 资产（国内 pull 失败时 docker load 兜底）。
-      # 镜像 tag 固定为 :base（低频更新），jar 仍外挂走 Release，故每次发版重推内容基本不变、层缓存命中很快。
+      # 镜像 tag 必须随版本变化（:base-<version>），否则 App 升级时本地同名 tag 命中会跳过 pull，
+      # 导致镜像（含 iptables 等系统能力）永远停在旧版。同时保留固定 :base 别名兼容旧客户端。
       - name: Build & push unified agent-server image (ghcr.io)
         run: |
           set -e
-          IMAGE="ghcr.io/lisir2002/minimecode-agent-server:base"
+          VER="${GITHUB_REF_NAME:-manual}"; VER="${VER#v}"
+          REPO="ghcr.io/lisir2002/minimecode-agent-server"
+          VERSIONED="$REPO:base-$VER"
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          docker build -t "$IMAGE" -f docker/agent-server/Dockerfile .
-          docker push "$IMAGE"
-          # 导出镜像 tar 供 Release 兜底（gzip 压缩减小体积）
+          # 一次构建打两个 tag：版本化（新 App 强制 pull）+ 固定别名（旧 App 兼容）
+          docker build -t "$VERSIONED" -t "$REPO:base" -f docker/agent-server/Dockerfile .
+          docker push "$VERSIONED"
+          docker push "$REPO:base"
+          # 导出带版本 tag 的镜像供 Release 兜底：load 后即为 :base-<version>，App 可直接用
           mkdir -p dist
-          docker save "$IMAGE" | gzip -c > "dist/agent-server-base.tar.gz"
+          docker save "$VERSIONED" | gzip -c > "dist/agent-server-base.tar.gz"
 
       # 产物重命名为「包名-架构-版本」格式，并保留 R8 混淆映射（mapping.txt）用于崩溃堆栈反混淆。
       - name: Rename APK & collect mapping

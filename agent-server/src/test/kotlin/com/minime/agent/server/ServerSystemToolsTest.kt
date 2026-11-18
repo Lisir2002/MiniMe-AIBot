@@ -98,8 +98,28 @@ class ServerSystemToolsTest {
             val s = fw.enable()
             assertTrue(s.enabled)          // 策略层标记为已启用
             assertFalse(s.kernelApplied)   // 内核层如实反映未生效
-            assertTrue(s.note.contains("CAP_NET_ADMIN"))
+            // 降级文案要给出可操作的精确原因：未安装 iptables 或缺能力，二者之一
+            assertTrue(
+                s.note.contains("CAP_NET_ADMIN") || s.note.contains("iptables") || s.note.contains("镜像")
+            )
         }
+    }
+
+    @Test
+    fun `高危端口禁止加入白名单黑名单`() {
+        val fw = FirewallManager(tempHome().absolutePath)
+        // 用户明确要求禁止的高危端口
+        for (p in listOf(22, 80, 8888, 3304, 3306, 3389)) {
+            assertTrue("端口 $p 应被拒绝", fw.validateRule(FirewallManager.Rule(port = p)) != null)
+        }
+        // 443 是 HTTPS 基础通道，不在保护列表（enable 默认放行）
+        assertNull(fw.validateRule(FirewallManager.Rule(port = 443)))
+        // 普通端口允许
+        assertNull(fw.validateRule(FirewallManager.Rule(port = 20000)))
+        // 高危端口通过工具添加也不能绕过
+        val before = fw.status().allow.size
+        fw.addRule("allow", FirewallManager.Rule(port = 22))
+        assertEquals(before, fw.status().allow.size)
     }
 
     @Test

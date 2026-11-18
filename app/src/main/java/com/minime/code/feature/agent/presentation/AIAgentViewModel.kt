@@ -78,6 +78,7 @@ import com.minime.code.feature.terminal.domain.TerminalSessionProvider
 import com.minime.code.feature.terminal.domain.takeTailLines
 import com.minime.code.feature.workspace.domain.FileAccessProvider
 import com.minime.code.feature.workspace.domain.FileEntry
+import com.minime.code.feature.workspace.domain.LocalFileAccess
 import com.minime.code.feature.workspace.domain.WorkspacePathMapper
 import com.minime.code.feature.workspace.domain.isValidFileEntryName
 import com.minime.code.feature.agent.domain.workflow.AgentEvent
@@ -196,6 +197,8 @@ class AIAgentViewModel @Inject constructor(
     private val agentDefinitionRepository: AgentDefinitionRepository,
     private val todoItemDao: TodoItemDao,
     val fileAccess: FileAccessProvider,
+    /** 纯本地文件访问器：侧边栏在本机运行时用它，绕开 DelegatingFileAccess 的残留远程 SSH 转发。 */
+    private val localFileAccess: LocalFileAccess,
     private val fileChangeHub: FileChangeHub,
     @param:ApplicationContext private val context: Context
 ) : ViewModel(), SlashCommandContext {
@@ -600,10 +603,17 @@ class AIAgentViewModel @Inject constructor(
         val target: String?
     )
 
-    /** 按当前会话执行目标构造侧边栏文件访问器；云端目标用 HTTP 读该服务器 workspace。 */
+    /**
+     * 按当前会话执行目标构造侧边栏文件访问器：
+     * - 本机运行 → 纯本地 [localFileAccess]（PRoot 容器/宿主工作区），**绝不用** [fileAccess]。
+     *   [fileAccess] 是 DelegatingFileAccess，会按「容器与镜像」残留的 REMOTE_SSH 执行模式把
+     *   listFiles 转发到那台 SSH 容器——那正是「对话页选了本机、侧边栏却仍是云端目录」的病根。
+     *   文件面板是只读浏览，走纯本地源不影响工具执行链，也不改全局 activeProfile/执行模式。
+     * - 云端目标 → 用该服务器 agent-server 的 HTTP API 读其 workspace。
+     */
     private suspend fun browseFsFor(sessionId: String?): BrowseFs {
         val target = cloudTargetResolver.resolve(sessionId)
-        if (target == null) return BrowseFs.local(fileAccess)
+        if (target == null) return BrowseFs.local(localFileAccess)
         val baseUrl = target.baseUrl
         val auth = if (target.token.isBlank()) "" else "Bearer ${target.token}"
         // 这些 lambda 由 buildBrowseTree 在 Dispatchers.IO 的 flow 中同步调用，
@@ -636,10 +646,29 @@ class AIAgentViewModel @Inject constructor(
         }
         .distinctUntilChanged()
 
+    /** 当前会话是否本机运行（文件面板据此选纯本地源 or 委托源）。 */
+    private val browseIsLocal: StateFlow<Boolean> = browseTargetConnectionId
+        .map { it == null }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    /** 文件面板读写统一入口：本机=纯本地源（无视残留 SSH 执行模式），云端=委托源。 */
+    private fun browseFileAccess(): FileAccessProvider =
+        if (browseIsLocal.value) localFileAccess else fileAccess
+
     val browseState: StateFlow<FileBrowseState> = combine(
         _expandedPaths, containerRootNode, _currentSessionId, browseTargetConnectionId
     ) { expanded, root, sessionId, target -> BrowseQuery(expanded, root, sessionId, target) }
-        .flatMapLatest { (expanded, root, sessionId) ->
+        .flatMapLatest { query ->
+            val (expanded, activeRoot, sessionId, target) = query
+            // 本机运行时，容器根节点必须显示本地容器（硬盘图标），不能沿用「容器与镜像」里
+            // 残留的远程 SSH profile（那会显示成「测试」+ Server 图标，误导为云端目录）。
+            val root = if (target == null) {
+                FileTreeRoot.Container(
+                    label = if (activeRoot.remote) "内置 Alpine" else activeRoot.label,
+                    osId = if (activeRoot.remote) null else activeRoot.osId,
+                    remote = false
+                )
+            } else activeRoot
             val watched = expanded + WorkspacePathMapper.CONTAINER_ROOT
             val triggers = merge(
                 watched.map { fileChangeHub.watchWorkspace(it).asDirtySignal() }.merge().debounce(BROWSE_DEBOUNCE_MS),
@@ -647,7 +676,7 @@ class AIAgentViewModel @Inject constructor(
                 _browseRefresh.drop(1).map { }
             )
             flow {
-                // 每次重建按「当前会话的执行目标」选文件源：选本机=本地文件，选云端=该服务器 workspace。
+                // 每次重建按「当前会话的执行目标」选文件源：选本机=纯本地文件，选云端=该服务器 workspace。
                 // 目标变化作为外层 combine 输入触发本层重建，从而重新解析出正确的 fs。
                 val fs = browseFsFor(sessionId)
                 // 首次产出前由 stateIn 初值 Loading 占位；后续展开/折叠/刷新不再回到 Loading，
@@ -795,10 +824,11 @@ class AIAgentViewModel @Inject constructor(
     fun createBrowseFile(parent: String, name: String, onResult: (Boolean) -> Unit) {
         val target = browseChildPath(parent, name)
         mutateBrowse(busyPaths = target?.let { setOf(it) } ?: emptySet(), onResult = onResult) {
-            if (target == null || fileAccess.exists(target)) {
+            val fs = browseFileAccess()
+            if (target == null || fs.exists(target)) {
                 false
             } else {
-                fileAccess.writeFile(target, "", overwrite = false)
+                fs.writeFile(target, "", overwrite = false)
                 true
             }
         }
@@ -808,11 +838,12 @@ class AIAgentViewModel @Inject constructor(
     fun createBrowseFolder(parent: String, name: String, onResult: (Boolean) -> Unit) {
         val target = browseChildPath(parent, name)
         mutateBrowse(busyPaths = target?.let { setOf(it) } ?: emptySet(), onResult = onResult) {
-            if (target == null || fileAccess.exists(target)) {
+            val fs = browseFileAccess()
+            if (target == null || fs.exists(target)) {
                 false
             } else {
-                fileAccess.mkdirs(target)
-                fileAccess.isDirectory(target)
+                fs.mkdirs(target)
+                fs.isDirectory(target)
             }
         }
     }
@@ -824,7 +855,7 @@ class AIAgentViewModel @Inject constructor(
             if (parent.isEmpty() || !isValidFileEntryName(newName)) {
                 false
             } else {
-                fileAccess.rename(path, "$parent/${newName.trim()}")
+                browseFileAccess().rename(path, "$parent/${newName.trim()}")
                 true
             }
         }
@@ -832,7 +863,7 @@ class AIAgentViewModel @Inject constructor(
     /** 删除条目；目录连同内容递归删除。 */
     fun deleteBrowseEntry(path: String, onResult: (Boolean) -> Unit) =
         mutateBrowse(busyPaths = setOf(path), onResult = onResult) {
-            fileAccess.deleteRecursively(path)
+            browseFileAccess().deleteRecursively(path)
             true
         }
 
@@ -872,7 +903,7 @@ class AIAgentViewModel @Inject constructor(
         if (target == clip.sourcePath || target.startsWith("${clip.sourcePath.trimEnd('/')}/")) {
             return@launch onResult(false)
         }
-        if (withContext(Dispatchers.IO) { fileAccess.exists(target) }) {
+        if (withContext(Dispatchers.IO) { browseFileAccess().exists(target) }) {
             _pasteConflict.value = clip.sourcePath to target
             return@launch
         }
@@ -899,11 +930,12 @@ class AIAgentViewModel @Inject constructor(
             if (success) _browseClipboard.value = null
             onResult(success)
         }) {
+            val fs = browseFileAccess()
             if (clip.isCut) {
-                fileAccess.move(clip.sourcePath, target, overwrite)
+                fs.move(clip.sourcePath, target, overwrite)
                 true
             } else {
-                fileAccess.copy(clip.sourcePath, target, overwrite)
+                fs.copy(clip.sourcePath, target, overwrite)
                 true
             }
         }

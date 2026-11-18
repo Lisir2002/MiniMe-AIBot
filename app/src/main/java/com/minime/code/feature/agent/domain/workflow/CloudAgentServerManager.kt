@@ -41,7 +41,7 @@ class CloudAgentServerManager @Inject constructor(
     private val privateKeyStore: SshPrivateKeyStore,
     private val settings: CloudAgentSettingsRepository
 ) {
-    private companion object {
+    companion object {
         const val TAG = "CloudAgentServerManager"
         const val REPO_OWNER = "Lisir2002"
         const val REPO_NAME = "MiniMe-AIBot"
@@ -51,11 +51,19 @@ class CloudAgentServerManager @Inject constructor(
         /**
          * 合并基座镜像（Java + 完整工具链）：一期起替代薄 JRE 镜像。
          * 推到 GitHub Container Registry（CI 用 GITHUB_TOKEN，无需额外账号）；国内 pull 失败时兜底 Release tar。
-         * 业务 jar 仍从 GitHub Release 下载后挂载（见 buildDownloadCommand），因此基座镜像低频更新。
+         *
+         * 镜像 tag 必须**随版本变化**（`:base-<version>`，如 :base-1.0.0-rc19），
+         * 绝不能用固定 :base —— 否则老用户本地已有同名 tag，`docker image inspect` 命中后
+         * 升级脚本会跳过 pull，导致 jar 更新了、镜像（含 iptables 等系统依赖）永远是旧版。
+         * 见 [buildInstallCommand]。
          */
-        const val BASE_IMAGE = "ghcr.io/lisir2002/minimecode-agent-server:base"
+        const val BASE_IMAGE_REPO = "ghcr.io/lisir2002/minimecode-agent-server"
         /** 兜底镜像 tar 的 Release asset 名（CI 随每次发版上传，供 docker pull 失败时 load）。 */
         const val BASE_IMAGE_TAR = "agent-server-base.tar.gz"
+
+        /** 由 Release tag（含 v）推导版本化镜像全名：v1.0.0-rc19 → ...:base-1.0.0-rc19。 */
+        fun baseImageFor(releaseTag: String): String =
+            "$BASE_IMAGE_REPO:base-${releaseTag.removePrefix("v")}"
     }
 
     private val gson = Gson()
@@ -399,13 +407,20 @@ class CloudAgentServerManager @Inject constructor(
 
     /**
      * 用合并基座镜像跑 agent-server（Java + 完整工具链）。
-     * 镜像获取策略（用户选定的 a 主 + b 兜底）：
-     *   1) 本地已有该镜像 → 直接用；
-     *   2) 否则 docker pull（ghcr.io，最快、分层增量）；
+     *
+     * 镜像获取策略（版本化 tag + 强制更新）：
+     *   1) 镜像名带版本 `:base-<version>`，每次发版必然是新 tag，避免命中本地旧缓存；
+     *   2) **无条件 docker pull**（分层增量很快），确保拿到该版本对应的镜像；
      *   3) pull 失败（国内网络）→ 从 GitHub Release 下载镜像 tar + docker load 兜底。
-     * 业务 jar 由 [buildDownloadCommand] 单独从 Release 下载后挂载，故基座镜像低频更新。
+     *
+     * 为什么必须强制 pull：基座镜像内含 iptables 等系统依赖（防火墙工具要用），
+     * 若沿用固定 :base 且仅在本地缺失时拉取，老用户升级只会更新外挂 jar，
+     * 镜像永远停在首次安装版本 → 新系统能力无法生效（rc18 的真实故障）。
+     *
+     * 业务 jar 由 [buildDownloadCommand] 单独从 Release 下载后挂载。
      */
     private fun buildInstallCommand(releaseTag: String, token: String = ""): String {
+        val image = baseImageFor(releaseTag)
         val tarUrl = "https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$releaseTag/$BASE_IMAGE_TAR"
         val q = shellQuote(tarUrl)
         // token 为空时不写环境变量 → 服务端保持不校验（兼容旧行为/本地测试）；非空则 shell 引号包裹后注入，防注入。
@@ -416,26 +431,22 @@ class CloudAgentServerManager @Inject constructor(
             "WS=\"\$HOME/minimecode-workspace\"",
             "mkdir -p \"\$D\" \"\$WS\"",
             "if ! command -v docker >/dev/null 2>&1; then echo '未检测到 Docker，请先安装 Docker'; exit 1; fi",
-            // 基座镜像：本地 → pull → tar 兜底
-            "if ! docker image inspect $BASE_IMAGE >/dev/null 2>&1; then",
-            "  echo '拉取云端运行环境镜像（$BASE_IMAGE）…'",
-            "  if docker pull $BASE_IMAGE >/dev/null 2>&1; then",
-            "    echo '镜像拉取成功'",
-            "  else",
-            "    echo '镜像仓库不可达，改用 Release 镜像包兜底…'",
-            "    curl -fsSL --retry 3 --connect-timeout 15 $q -o \"\$D/base.tar.new\"",
-            "    test -s \"\$D/base.tar.new\" || { echo '镜像包下载失败'; exit 1; }",
-            "    mv -f \"\$D/base.tar.new\" \"\$D/base.tar\"",
-            "    docker load -i \"\$D/base.tar\" >/dev/null",
-            "    echo '镜像包载入成功'",
-            "  fi",
+            // 基座镜像：无条件 pull（版本化 tag）→ 失败则 tar 兜底。绝不在本地命中时跳过。
+            "echo '拉取云端运行环境镜像（$image）…'",
+            "if ! docker pull $image >/dev/null 2>&1; then",
+            "  echo '镜像仓库不可达，改用 Release 镜像包兜底…'",
+            "  curl -fsSL --retry 3 --connect-timeout 15 $q -o \"\$D/base.tar.new\"",
+            "  test -s \"\$D/base.tar.new\" || { echo '镜像包下载失败'; exit 1; }",
+            "  mv -f \"\$D/base.tar.new\" \"\$D/base.tar\"",
+            "  docker load -i \"\$D/base.tar\" >/dev/null",
+            "  echo '镜像包载入成功'",
             "fi",
             "docker rm -f $SERVICE_NAME >/dev/null 2>&1 || true",
             "docker run -d --name $SERVICE_NAME --restart unless-stopped --cap-add NET_ADMIN -p $SERVER_PORT:$SERVER_PORT " +
                 "-v \"\$D:/data/agent-server\" -v \"\$WS:/workspace\" " +
                 "-e MINIME_DB=/data/agent-server/events.db -e MINIME_WORKSPACE=/workspace -e MINIME_PORT=$SERVER_PORT$tokenEnv " +
-                "$BASE_IMAGE java -jar /data/agent-server/agent-server.jar >/dev/null",
-            "echo \"service=docker container=$SERVICE_NAME image=$BASE_IMAGE\""
+                "$image java -jar /data/agent-server/agent-server.jar >/dev/null",
+            "echo \"service=docker container=$SERVICE_NAME image=$image\""
         ).joinToString("\n")
     }
 

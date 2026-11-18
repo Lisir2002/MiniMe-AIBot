@@ -3,6 +3,7 @@ package com.minime.code.feature.agent.domain.workflow
 import com.minime.code.feature.agent.domain.workflow.CloudAgentServerManager.Inspection.Action
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -77,5 +78,24 @@ class CloudAgentServerManagerTest {
     fun unknownWithoutContainer_isStillUnknown() {
         // 连最新版本都取不到时，即使没容器也不该盲目 INSTALL（版本号未知）。
         assertEquals(Action.UNKNOWN, decideInspection("EMPTY", null, null).action)
+    }
+
+    @Test
+    fun versionedImageTag_derivedFromReleaseTag() {
+        // 镜像 tag 必须随版本变化，否则升级时本地同名 tag 命中会跳过 pull，
+        // 导致镜像（含 iptables 等系统能力）永远停在旧版。
+        assertEquals(
+            "ghcr.io/lisir2002/minimecode-agent-server:base-1.0.0-rc19",
+            CloudAgentServerManager.baseImageFor("v1.0.0-rc19")
+        )
+        assertEquals(
+            "ghcr.io/lisir2002/minimecode-agent-server:base-1.0.0-rc19",
+            CloudAgentServerManager.baseImageFor("1.0.0-rc19")
+        )
+        // 不同版本必须产生不同 tag
+        assertNotEquals(
+            CloudAgentServerManager.baseImageFor("v1.0.0-rc18"),
+            CloudAgentServerManager.baseImageFor("v1.0.0-rc19")
+        )
     }
 }
