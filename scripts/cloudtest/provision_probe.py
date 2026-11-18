@@ -32,7 +32,7 @@ APPLY_ACTIONS = {
         "|| echo '未识别发行版，请手动安装 Docker'; fi; docker --version 2>&1"),
     "docker.image": "(docker image inspect {image} >/dev/null 2>&1 && echo '镜像已存在') || docker pull {image}",
     "docker.run": ("docker rm -f minimecode-ai >/dev/null 2>&1 || true; "
-        "docker run -d --name minimecode-ai --restart unless-stopped "
+        "docker run -d --name minimecode-ai --restart unless-stopped --cap-add NET_ADMIN "
         "-v \"$HOME/.minimecode:/root/.minimecode\" -v \"$HOME/minimecode-workspace:/workspace\" {image} "
         "&& sleep 2 && docker exec minimecode-ai sh -c 'echo container-ok; git --version 2>/dev/null || true' "
         "&& echo 'AI 容器已启动'"),

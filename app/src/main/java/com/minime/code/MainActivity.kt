@@ -269,7 +269,8 @@ class MainActivity : ComponentActivity() {
                         AgreementGate(repository = agreementRepository) { agreementAccepted ->
                             AppNavigation(
                                 onboardingRepository = onboardingRepository,
-                                agreementAccepted = agreementAccepted
+                                agreementAccepted = agreementAccepted,
+                                browserManager = browserManager
                             )
                             if (agreementAccepted) {
                                 // 全局凭据弹窗：覆盖所有页面，命令行 git 缺凭据在任意页面都能弹。
@@ -354,7 +355,8 @@ private const val MAX_PANE_SPLIT = 0.7f
 @Composable
 fun AppNavigation(
     onboardingRepository: com.minime.code.feature.onboarding.data.OnboardingRepository,
-    agreementAccepted: Boolean
+    agreementAccepted: Boolean,
+    browserManager: com.minime.code.feature.agent.domain.tool.browser.BrowserManager
 ) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -661,10 +663,20 @@ fun AppNavigation(
                 // 聊天区内覆盖 LocalUriHandler：Markdown 链接点击默认经此 handler 派发。
                 // 文件路径类链接（无 scheme 或 file://）拦下来跳编辑器，其余（http/https 等）仍走系统浏览器。
                 val defaultUriHandler = androidx.compose.ui.platform.LocalUriHandler.current
-                val fileUriHandler = remember(defaultUriHandler, expanded) {
-                    FileAwareUriHandler(defaultUriHandler) { filePath, line ->
-                        openFile(filePath, line, false)
-                    }
+                // 偏好：对话网址是否用外部浏览器打开（关闭则走应用内浏览器）。
+                val openLinksExternal by settingsViewModel.openLinksExternalBrowser.collectAsStateWithLifecycle()
+                val fileUriHandler = remember(defaultUriHandler, expanded, openLinksExternal) {
+                    FileAwareUriHandler(
+                        delegate = defaultUriHandler,
+                        onOpenFile = { filePath, line -> openFile(filePath, line, false) },
+                        openExternal = openLinksExternal,
+                        onOpenInApp = { url ->
+                            scope.launch {
+                                runCatching { browserManager.navigate(url) }
+                                openWorkbench(WorkbenchPaneKind.BROWSER)
+                            }
+                        }
+                    )
                 }
                 val paneOpen = expanded && paneKind != WorkbenchPaneKind.NONE
                 // 拖动把手时要把位移像素换算成分栏比例，所以记下容器实测宽度与左栏宽度。
@@ -1049,16 +1061,28 @@ private fun toastFileOpFailed(context: android.content.Context, messageRes: Int)
  */
 private class FileAwareUriHandler(
     private val delegate: androidx.compose.ui.platform.UriHandler,
-    private val onOpenFile: (path: String, line: Int) -> Unit
+    private val onOpenFile: (path: String, line: Int) -> Unit,
+    /** 偏好开关：网址是否用外部浏览器打开；关闭时走 [onOpenInApp]。 */
+    private val openExternal: Boolean = true,
+    /** 应用内浏览器打开网址的回调（由调用方 navigate + 打开浏览器面板）。 */
+    private val onOpenInApp: (url: String) -> Unit = {}
 ) : androidx.compose.ui.platform.UriHandler {
     override fun openUri(uri: String) {
         val filePath = asChatFilePath(uri)
-        if (filePath == null) {
-            delegate.openUri(uri)
+        if (filePath != null) {
+            // 文件路径链接始终在应用内打开编辑器，不受"外部浏览器"开关影响。
+            val (path, line) = splitPathAndLine(filePath)
+            onOpenFile(path, line)
             return
         }
-        val (path, line) = splitPathAndLine(filePath)
-        onOpenFile(path, line)
+        // 网址（http/https/mailto/tel 等）：按偏好决定外部浏览器 or 应用内浏览器。
+        // mailto/tel 等非 http 链接没有应用内浏览器语义，始终委托系统（外部）。
+        val isWebUrl = uri.startsWith("http://", ignoreCase = true) || uri.startsWith("https://", ignoreCase = true)
+        if (openExternal || !isWebUrl) {
+            delegate.openUri(uri)
+        } else {
+            onOpenInApp(uri)
+        }
     }
 }
 

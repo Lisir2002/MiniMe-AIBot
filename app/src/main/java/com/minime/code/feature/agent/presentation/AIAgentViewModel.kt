@@ -38,6 +38,8 @@ import com.minime.code.feature.settings.data.repository.AgentSoundSettingsReposi
 import com.minime.code.feature.settings.data.repository.ContainerSettingsRepository
 import com.minime.code.feature.settings.data.repository.DefaultModelSettingsRepository
 import com.minime.code.feature.settings.data.repository.ExecutionMode
+import com.minime.code.feature.settings.data.repository.ExecutionModeHolder
+import com.minime.code.feature.settings.data.repository.ExecutionModeRepository
 import com.minime.code.feature.settings.data.repository.GeneralSettingsRepository
 import com.minime.code.feature.settings.data.repository.KeepaliveSettingsRepository
 import com.minime.code.feature.settings.data.repository.LiveNotificationSettingsRepository
@@ -180,6 +182,8 @@ class AIAgentViewModel @Inject constructor(
     private val skillConfigRepository: com.minime.code.feature.agent.domain.skill.SkillConfigRepository,
     private val containerSettingsRepository: ContainerSettingsRepository,
     private val containerOsDetector: ContainerOsDetector,
+    private val executionModeHolder: ExecutionModeHolder,
+    private val executionModeRepository: ExecutionModeRepository,
     private val generalSettingsRepository: GeneralSettingsRepository,
     private val keepaliveSettings: KeepaliveSettingsRepository,
     private val liveNotificationSettings: LiveNotificationSettingsRepository,
@@ -1267,10 +1271,33 @@ class AIAgentViewModel @Inject constructor(
         setAgentState(sessionId, AgentUIState.Idle)
         // 4) 落库新目标
         sessionUseCase.setSessionCloudTarget(sessionId, connectionId)
+        // 4.1) 切回本机时同步复位执行模式（详见 ensureLocalExecution）。
+        if (connectionId == null) ensureLocalExecution()
         // 5) 联动刷新：侧边栏文件树按新目标重新取数（本机=本地文件，云端=该服务器 workspace）
         refreshBrowse()
         // 6) 联动：skill 与工具授权/信任档随执行目标切换（按 connectionId 隔离）
         onExecutionTargetChanged(connectionId)
+    }
+
+    /**
+     * 确保本地执行环境真正生效：把残留的 REMOTE_SSH 执行模式复位为本地容器。
+     *
+     * 执行模式（LOCAL_PROOT/REMOTE_SSH）是与会话目标独立的一套状态，决定本地路径上
+     * DelegatingCommandEngine / FileAccess / Terminal 走本地容器还是远程 SSH。此前对话页
+     * 切「本机运行」只清了会话的云端绑定，没动执行模式——若之前在「容器与镜像」里选过
+     * 远程 SSH 容器，executionMode 仍是 REMOTE_SSH，于是"选了本机却还在 SSH 跑"。
+     *
+     * 由对话页「本机运行」卡片无条件调用（即使会话已处于本机，用于自救存量），以及
+     * [switchSessionTarget] 切回本机时调用。[setMode] 同步执行让工具引擎下一轮立即生效，
+     * 落库异步进行，不阻塞 UI。
+     */
+    fun ensureLocalExecution() {
+        if (executionModeHolder.currentMode() == ExecutionMode.REMOTE_SSH) {
+            executionModeHolder.setMode(ExecutionMode.LOCAL_PROOT)
+            viewModelScope.launch(Dispatchers.IO) {
+                executionModeRepository.setExecutionMode(ExecutionMode.LOCAL_PROOT)
+            }
+        }
     }
 
     /**

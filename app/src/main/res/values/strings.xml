@@ -103,6 +103,8 @@
     <string name="settings_general_input">输入</string>
     <string name="settings_enter_to_send">回车键发送消息</string>
     <string name="settings_enter_to_send_desc">关闭后回车换行，需点发送按钮发送</string>
+    <string name="settings_open_external_browser">链接打开外部浏览器</string>
+    <string name="settings_open_external_browser_desc">开启时对话中的网址用系统浏览器打开；关闭则在应用内浏览器打开</string>
     <string name="settings_compaction_threshold">自动压缩阈值</string>
     <string name="settings_compaction_threshold_desc">上下文占用达到窗口的该比例时自动压缩</string>
     <string name="settings_percent_value">%1$d%%</string>

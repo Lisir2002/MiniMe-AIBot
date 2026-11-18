@@ -253,6 +253,19 @@ object EventKind {
     const val TASK_CANCELLED = "task_cancelled"
 }
 
+// ---------- 云端设置 ----------
+
+/** 更新云端设置的局部 patch：字段为 null 表示保持原值。 */
+@Serializable
+data class SettingsUpdateRequest(
+    val maxIterations: Int? = null,
+    val goalMaxTurns: Int? = null,
+    val goalMaxTokens: Int? = null,
+    val sendFileMaxSizeMb: Int? = null,
+    val compactionThresholdPercent: Int? = null,
+    val language: String? = null
+)
+
 // ---------- 任务状态 ----------
 
 object TaskStatus {

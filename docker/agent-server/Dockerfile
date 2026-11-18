@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         bash ca-certificates curl wget git ripgrep \
         python3 python3-pip python3-venv nodejs npm \
         jq unzip zip gzip tar less procps file tree vim-tiny \
-        openssh-client \
+        openssh-client iptables \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /data/agent-server /workspace /root/.minimecode \
     && git config --global --add safe.directory '*' \

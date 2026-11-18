@@ -7,6 +7,7 @@ import com.minime.code.feature.agent.domain.tool.ToolCapability
 import com.minime.code.feature.agent.domain.tool.ToolParameter
 import com.minime.code.feature.agent.domain.tool.ToolPermissionPolicy
 import com.minime.code.feature.agent.domain.tool.ToolResult
+import com.minime.code.feature.agent.domain.tool.stringArray
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -66,7 +67,11 @@ private fun guessMimeType(fileName: String): String = when (fileName.substringAf
 }
 
 /** sendFile：服务端把容器内文件打包成 App SendFileCard 需要的 files[] 结构；local_path 即容器内绝对路径。 */
-class ServerSendFileTool(private val workspaceRoot: String) : AgentTool() {
+class ServerSendFileTool(
+    private val workspaceRoot: String,
+    /** 单文件大小上限 MB，来自云端设置 sendfile_max_size_mb（对齐 App 默认 100）。 */
+    private val maxSizeMb: Int = 100
+) : AgentTool() {
     override val name = "sendFile"
     override val description = "把工作区文件发送给用户（在聊天区生成可下载/可查看的文件卡片）。"
     override val capabilities = setOf(ToolCapability.READ_WORKSPACE)
@@ -77,20 +82,31 @@ class ServerSendFileTool(private val workspaceRoot: String) : AgentTool() {
     )
 
     override suspend fun execute(args: Map<String, JsonElement>): ToolResult {
-        val paths = (args["paths"] as? JsonArray)?.mapNotNull { it.jsonPrimitive.contentOrNull }
-        if (paths.isNullOrEmpty()) return ToolResult.Error("缺少 paths", "MISSING_PATHS")
-        val names = (args["names"] as? JsonArray)?.map { it.jsonPrimitive.contentOrNull }
+        // 兼容文本形态调用：paths 可能是 JsonArray，也可能是被包成字符串的数组/单值。
+        val paths = args.stringArray("paths")
+        if (paths.isEmpty()) return ToolResult.Error("缺少 paths", "MISSING_PATHS")
+        val names = args.stringArray("names")
+        // 原子校验（对齐 App）：文件必须存在且不超过设置上限，任一失败整体失败。
+        val maxBytes = maxSizeMb.coerceAtLeast(1) * 1024L * 1024L
+        val failures = mutableListOf<String>()
+        val resolved = paths.map { path -> mirrorResolve(path, workspaceRoot) }
+        resolved.forEachIndexed { index, file ->
+            when {
+                !file.isFile -> failures.add("文件不存在：${paths[index]}")
+                file.length() > maxBytes -> failures.add("文件超过 ${maxSizeMb}MB 限制：${paths[index]}")
+            }
+        }
+        if (failures.isNotEmpty()) return ToolResult.Error(failures.joinToString("；"), "INVALID_FILE")
         val files = buildJsonArray {
-            paths.forEachIndexed { index, path ->
-                val file = mirrorResolve(path, workspaceRoot)
-                if (!file.isFile) return@forEachIndexed
+            resolved.forEachIndexed { index, file ->
+                val path = paths[index]
                 val rawName = file.name.ifBlank { path }
-                val displayName = names?.getOrNull(index)?.takeIf { it?.isNotBlank() == true } ?: rawName
+                val displayName = names.getOrNull(index)?.takeIf { it.isNotBlank() } ?: rawName
                 val mime = guessMimeType(rawName)
                 add(buildJsonObject {
                     put("path", JsonPrimitive(path.trim()))
                     put("local_path", JsonPrimitive(file.absolutePath))
-                    put("name", JsonPrimitive(displayName ?: rawName))
+                    put("name", JsonPrimitive(displayName))
                     put("mime_type", JsonPrimitive(mime))
                     put("size_bytes", JsonPrimitive(file.length()))
                     put("is_image", JsonPrimitive(mime.startsWith("image/")))
@@ -118,8 +134,8 @@ class ServerViewImageTool(private val workspaceRoot: String) : AgentTool() {
     private val maxBytes = 8 * 1024 * 1024
 
     override suspend fun execute(args: Map<String, JsonElement>): ToolResult {
-        val paths = (args["images"] as? JsonArray)?.mapNotNull { it.jsonPrimitive.contentOrNull }
-        if (paths.isNullOrEmpty()) return ToolResult.Error("缺少 images", "MISSING_IMAGES")
+        val paths = args.stringArray("images")
+        if (paths.isEmpty()) return ToolResult.Error("缺少 images", "MISSING_IMAGES")
         val encoded = mutableListOf<AgentImage>()
         val okPaths = mutableListOf<String>()
         for (path in paths) {
@@ -281,7 +297,13 @@ class ServerShizukuTool(private val workspaceRoot: String) : AgentTool() {
 }
 
 /** 服务端终端会话：tabId → 后台进程 + 输出缓冲，实现 start/send/read/close 的等价语义。 */
-class ServerTerminalTool(private val workspaceRoot: String) : AgentTool() {
+class ServerTerminalTool(
+    private val workspaceRoot: String,
+    /** 进程生命周期管理器：登记后台进程，使其在过期后被自动回收（持久化例外）。 */
+    private val lifecycle: ProcessLifecycleManager? = null,
+    /** 端口池：start 时把命令中已分配的端口绑定到 tab id，进程退出后自动归还。 */
+    private val portPool: com.minime.agent.server.modules.PortPoolManager? = null
+) : AgentTool() {
     override val name = "terminal"
     override val description = "在服务端环境启动/管理后台终端会话，适合耗时任务与常驻服务。支持 start/send/read/close。"
     override val permissionPolicy = ToolPermissionPolicy.ASK
@@ -318,11 +340,23 @@ class ServerTerminalTool(private val workspaceRoot: String) : AgentTool() {
                     }
                     reader.isDaemon = true; reader.start()
                     sessions[id] = Session(proc, buf, args["title"]?.jsonPrimitive?.contentOrNull ?: id, proc.outputStream)
+                    // 登记到生命周期管理器：按命令分类 TTL（编译长、服务更长、普通短），到期自动回收。
+                    lifecycle?.register(
+                        id = id, pid = proc.pid(), command = command,
+                        label = args["title"]?.jsonPrimitive?.contentOrNull ?: id,
+                        kind = ProcessLifecycleManager.KIND_TERMINAL, process = proc
+                    )
+                    // 把命令里出现的、已分配的端口绑定到该终端进程；进程退出/回收时按 owner 自动归还。
+                    val boundPorts = portPool?.bindPortsInCommand(command, id).orEmpty()
                     Thread.sleep(300)
                     ToolResult.Success(buildJsonObject {
                         put("tab_id", JsonPrimitive(id))
                         put("running", JsonPrimitive(proc.isAlive))
                         put("output", JsonPrimitive(snapshot(buf)))
+                        if (boundPorts.isNotEmpty()) {
+                            put("bound_ports", JsonArray(boundPorts.map { JsonPrimitive(it) }))
+                            put("port_note", JsonPrimitive("这些端口已绑定到本进程，进程退出后自动归还端口池。"))
+                        }
                     })
                 } catch (e: Exception) {
                     ToolResult.Error("启动失败: ${e.message}", "TERM_START_ERROR")
@@ -335,7 +369,9 @@ class ServerTerminalTool(private val workspaceRoot: String) : AgentTool() {
                     return ToolResult.Success(buildJsonObject { put("tabs", tabs); put("content", JsonPrimitive("当前 ${sessions.size} 个终端标签。")) })
                 }
                 val s = sessions[id] ?: return ToolResult.Error("终端标签不存在: $id", "TERM_NOT_FOUND")
+                lifecycle?.heartbeat(id) // 正在读取视为活跃，续期避免误杀
                 var text = snapshot(s.output)
+                lifecycle?.noteOutput(id, text.length.toLong())
                 args["filter"]?.jsonPrimitive?.contentOrNull?.let { pattern ->
                     text = runCatching { Regex(pattern).findAll(text).joinToString("\n") { it.value } }.getOrDefault(text)
                 }
@@ -346,6 +382,7 @@ class ServerTerminalTool(private val workspaceRoot: String) : AgentTool() {
                 val s = sessions[id] ?: return ToolResult.Error("终端标签不存在: $id", "TERM_NOT_FOUND")
                 val input = args["input"]?.jsonPrimitive?.contentOrNull ?: return ToolResult.Error("send 缺少 input", "MISSING_INPUT")
                 try { s.writer.write((input + "\n").toByteArray()); s.writer.flush() } catch (e: Exception) { return ToolResult.Error("发送失败: ${e.message}", "TERM_SEND_ERROR") }
+                lifecycle?.heartbeat(id)
                 Thread.sleep(200)
                 ToolResult.Success(buildJsonObject { put("tab_id", JsonPrimitive(id)); put("running", JsonPrimitive(s.process.isAlive)); put("output", JsonPrimitive(snapshot(s.output))) })
             }
@@ -353,7 +390,10 @@ class ServerTerminalTool(private val workspaceRoot: String) : AgentTool() {
                 val ids = mutableSetOf<String>()
                 args["tab_id"]?.jsonPrimitive?.contentOrNull?.let { ids.add(it) }
                 (args["tab_ids"] as? JsonArray)?.forEach { ids.add(it.jsonPrimitive.contentOrNull ?: return@forEach) }
-                ids.forEach { sessions.remove(it)?.let { s -> s.process.destroyForcibly() } }
+                ids.forEach { id ->
+                    sessions.remove(id)?.let { s -> s.process.destroyForcibly() }
+                    lifecycle?.unregister(id)
+                }
                 ToolResult.Success(JsonPrimitive("已关闭终端标签 ${ids.joinToString(", ")}。"))
             }
             else -> ToolResult.Error("不支持的 action: $action", "UNKNOWN_ACTION")

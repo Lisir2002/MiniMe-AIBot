@@ -36,7 +36,9 @@ private val SERVER_TOOL_NAMES = listOf(
     "loadSkill", "memory", "websearch", "webfetch", "task",
     "askUserQuestion", "planMode", "goalStatus", "messageParent",
     // 镜像补全：与 App 本地工具集完全对齐
-    "sendFile", "viewImage", "generateImage", "Shizuku", "terminal", "manageMcp", "browser"
+    "sendFile", "viewImage", "generateImage", "Shizuku", "terminal", "manageMcp", "browser",
+    // 系统级能力：出口防火墙 + 进程生命周期管理 + 冷门端口池
+    "firewall", "process", "port"
 )
 
 fun Application.configureServer(
@@ -44,7 +46,15 @@ fun Application.configureServer(
     runner: AgentRunner,
     token: String,
     fileAccess: LocalFileAccessProvider,
-    skillRepository: ServerSkillRepository
+    skillRepository: ServerSkillRepository,
+    settingsRepository: com.minime.agent.server.modules.ServerSettingsRepository =
+        com.minime.agent.server.modules.ServerSettingsRepository(),
+    firewallManager: com.minime.agent.server.modules.FirewallManager =
+        com.minime.agent.server.modules.FirewallManager(),
+    processManager: com.minime.agent.server.modules.ProcessLifecycleManager =
+        com.minime.agent.server.modules.ProcessLifecycleManager(),
+    portPool: com.minime.agent.server.modules.PortPoolManager =
+        com.minime.agent.server.modules.PortPoolManager()
 ) {
     val log = LoggerFactory.getLogger("AgentServer")
     install(ContentNegotiation) {
@@ -122,6 +132,113 @@ fun Application.configureServer(
         get("/policy") {
             if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@get }
             call.respond(PolicyResponse(tools = SERVER_TOOL_NAMES.map { ToolPolicyEntry(it) }))
+        }
+
+        // 云端设置：App 设置页读取/修改云端 agent 偏好（语言、迭代上限、goal 预算、sendFile 上限等）。
+        // 读取无需重新加载——仓库内已缓存且 env 覆盖每次生效；修改即时落盘，下一轮 agent loop 生效。
+        get("/settings") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@get }
+            call.respond(settingsRepository.get())
+        }
+
+        post("/settings") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@post }
+            val req = call.receive<SettingsUpdateRequest>()
+            val next = settingsRepository.update { cur ->
+                cur.copy(
+                    maxIterations = req.maxIterations?.coerceIn(1, 500) ?: cur.maxIterations,
+                    goalMaxTurns = req.goalMaxTurns?.coerceAtLeast(1) ?: cur.goalMaxTurns,
+                    goalMaxTokens = req.goalMaxTokens?.coerceAtLeast(1000) ?: cur.goalMaxTokens,
+                    sendFileMaxSizeMb = req.sendFileMaxSizeMb?.coerceAtLeast(1) ?: cur.sendFileMaxSizeMb,
+                    compactionThresholdPercent = req.compactionThresholdPercent?.coerceIn(1, 100)
+                        ?: cur.compactionThresholdPercent,
+                    language = req.language?.trim() ?: cur.language
+                )
+            }
+            call.respond(next)
+        }
+
+        // ---- 系统级能力：出口防火墙 + 进程生命周期（App 侧边栏/设置可用） --------------------
+        get("/firewall") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@get }
+            call.respond(firewallManager.status())
+        }
+
+        post("/firewall") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@post }
+            val action = call.request.queryParameters["action"] ?: "status"
+            val state = when (action) {
+                "enable" -> firewallManager.enable()
+                "disable" -> firewallManager.disable()
+                "reset" -> firewallManager.reset()
+                else -> firewallManager.status()
+            }
+            call.respond(state)
+        }
+
+        get("/processes") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@get }
+            call.respond(mapOf(
+                "count" to processManager.list().size,
+                "processes" to processManager.list().map { r ->
+                    mapOf(
+                        "id" to r.id, "pid" to r.pid, "kind" to r.kind, "label" to r.label,
+                        "command" to r.command.take(200), "ttlMinutes" to r.ttlMs / 60000,
+                        "idleMinutes" to (System.currentTimeMillis() - r.lastHeartbeat) / 60000,
+                        "persistent" to r.persistent, "alive" to (r.process?.isAlive ?: true)
+                    )
+                }
+            ))
+        }
+
+        post("/processes/{id}/persist") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@post }
+            val id = call.parameters["id"] ?: run {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse("missing id")); return@post
+            }
+            val value = call.request.queryParameters["value"]?.toBooleanStrictOrNull() ?: true
+            val ok = processManager.setPersistent(id, value)
+            call.respond(OkResponse(ok = ok))
+        }
+
+        post("/processes/{id}/kill") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@post }
+            val id = call.parameters["id"] ?: run {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse("missing id")); return@post
+            }
+            val killed = processManager.kill(id) is com.minime.agent.server.modules.ProcessLifecycleManager.KillOutcome.Killed
+            call.respond(OkResponse(ok = killed))
+        }
+
+        // ---- 冷门端口池：查询 / 分配 / 归还（App 侧边栏可用） --------------------
+        get("/ports") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@get }
+            call.respond(mapOf(
+                "stats" to portPool.stats(),
+                "ports" to portPool.list().records.sortedBy { it.port }.map { r ->
+                    mapOf(
+                        "port" to r.port, "inUse" to r.inUse, "owner" to r.owner,
+                        "note" to r.note, "useCount" to r.useCount
+                    )
+                }
+            ))
+        }
+
+        post("/ports/acquire") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@post }
+            val owner = call.request.queryParameters["owner"]?.trim().orEmpty()
+            val note = call.request.queryParameters["note"]?.trim().orEmpty()
+            val preferred = call.request.queryParameters["port"]?.toIntOrNull() ?: 0
+            val r = portPool.acquire(owner = owner, note = note, preferredPort = preferred)
+            if (r == null) call.respond(HttpStatusCode.Conflict, ErrorResponse("no available port"))
+            else call.respond(mapOf("port" to r.port, "owner" to r.owner, "inUse" to r.inUse, "useCount" to r.useCount))
+        }
+
+        post("/ports/release") {
+            if (!authorized(call)) { call.respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized")); return@post }
+            val port = call.request.queryParameters["port"]?.toIntOrNull()
+            if (port == null) { call.respond(HttpStatusCode.BadRequest, ErrorResponse("missing port")); return@post }
+            call.respond(OkResponse(ok = portPool.release(port)))
         }
 
         post("/sessions") {

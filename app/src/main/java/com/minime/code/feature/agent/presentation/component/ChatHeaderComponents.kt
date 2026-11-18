@@ -77,8 +77,10 @@ internal fun ChatHeader(
     connectionState: com.minime.code.feature.agent.domain.container.ConnectionState? = null,
     /** 只读运行环境标签（如「阿里云-生产」「本机运行」），有值时在顶栏第二行显示徽标。 */
     environmentLabel: String? = null,
-    /** 生效后端是云服务器（true=云图标，false=本机图标）。 */
+    /** 生效后端是云服务器（true=云图标，false=本机/远程 SSH 图标）。 */
     environmentIsCloud: Boolean = true,
+    /** 非云端但执行模式为远程 SSH 时显示服务器图标（优先级低于 environmentIsCloud）。 */
+    environmentIsRemote: Boolean = false,
     /** 云端服务端版本过旧、信任档位不生效时，在环境徽标上给出警示。 */
     environmentTrustWarning: Boolean = false,
     showMenuButton: Boolean = true,
@@ -183,7 +185,9 @@ internal fun ChatHeader(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 MiniMeIcon(
-                                    imageVector = if (environmentIsCloud) MiniMeIcons.Cloud else MiniMeIcons.Smartphone,
+                                    imageVector = if (environmentIsCloud) MiniMeIcons.Cloud
+                                        else if (environmentIsRemote) MiniMeIcons.Server
+                                        else MiniMeIcons.Smartphone,
                                     contentDescription = null,
                                     tint = if (environmentTrustWarning) {
                                         MaterialTheme.colorScheme.onErrorContainer

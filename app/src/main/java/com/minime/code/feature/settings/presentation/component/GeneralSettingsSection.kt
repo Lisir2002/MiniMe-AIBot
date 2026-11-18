@@ -56,6 +56,8 @@ internal fun GeneralSettingsSection(
     onSetMaxNetworkRetries: (Int) -> Unit,
     enterToSend: Boolean,
     onToggleEnterToSend: (Boolean) -> Unit,
+    openLinksExternalBrowser: Boolean,
+    onToggleOpenLinksExternalBrowser: (Boolean) -> Unit,
     compactionThresholdPercent: Int,
     onSetCompactionThresholdPercent: (Int) -> Unit,
     sendFileMaxSizeMb: Int,
@@ -151,6 +153,18 @@ internal fun GeneralSettingsSection(
                     AppSwitch(
                         checked = enterToSend,
                         onCheckedChange = onToggleEnterToSend
+                    )
+                }
+            )
+            SettingsDivider()
+            SettingsRow(
+                icon = null,
+                title = stringResource(R.string.settings_open_external_browser),
+                subtitle = stringResource(R.string.settings_open_external_browser_desc),
+                trailing = {
+                    AppSwitch(
+                        checked = openLinksExternalBrowser,
+                        onCheckedChange = onToggleOpenLinksExternalBrowser
                     )
                 }
             )

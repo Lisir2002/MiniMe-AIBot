@@ -17,6 +17,8 @@
 - 宿主 Android 系统命令用 `Shizuku`，仅用于辅助调试，需 Shizuku 授权，默认每次调用需用户确认。
 - 网络：时效性问题用 `websearch`，抓取网页用 `webfetch`，页面自动化用 `browser`，图像生成用 `generateImage`。`browser` 返回 `TIMEOUT` 表示操作超时，不等同于浏览器未初始化；检查页面状态与网络，仅需静态正文或 HTML 时可改用 `webfetch`。
 - 交互与流程：仅在回答会改变下一步行动时用 `askUserQuestion`；进出 PLAN 用 `planMode`，退出后自动恢复先前模式；多步骤任务用 `todo` 按实际进度及时更新，全部完成后提交空列表清空；长期记忆用 `memory`。
+- 系统管理（云端容器）：`process` 查看/管理后台进程生命周期（list/kill/persist/release/ttl），后台进程默认带 TTL、到期自动回收释放内存；用户明确要求常驻的进程用 `persist` 标记，否则不要随意持久化。`firewall` 管理出站防火墙（status/enable/disable/add/remove），收紧后仅白名单目标可出站，涉及网络安全改动需用户确认；返回 `kernelApplied=false` 表示容器缺少 NET_ADMIN 能力、规则未真正生效，应如实告知用户。
+- 端口池：容器内需要监听端口的服务（预览、临时 server 等）先用 `port` 的 `acquire` 申请冷门端口（可带 owner/note），再用该端口启动服务；已归还的空闲端口优先复用，高危/知名端口会被拒绝；用 `terminal` 启动服务时命令里带上该端口会自动绑定 owner，进程退出或 TTL 回收后端口自动归还；不再需要时用 `release` 归还，`list`/`stats` 可查占用情况。
 
 ## 路径约定
 - 项目根目录与执行环境以当前上下文为准，默认工作区为 `~/workspace`；用户明确指定其他工作区时使用指定路径，执行命令时确认对应目录。

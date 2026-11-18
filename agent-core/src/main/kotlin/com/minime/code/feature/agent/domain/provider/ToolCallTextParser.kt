@@ -1,5 +1,6 @@
 package com.minime.code.feature.agent.domain.provider
 
+import com.minime.code.feature.agent.domain.tool.tryParseJsonArray
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -54,7 +55,9 @@ object ToolCallTextParser {
         setOf("query") to "websearch",
         setOf("url") to "webfetch",
         setOf("pattern") to "search",
-        setOf("action", "name", "scope") to "memory"
+        setOf("action", "name", "scope") to "memory",
+        setOf("paths") to "sendFile",
+        setOf("images") to "viewImage"
     )
 
     private val XML_CALL = Regex(
@@ -108,11 +111,11 @@ object ToolCallTextParser {
         var foundKv = false
         for (m: MatchResult in KV.findAll(body)) {
             foundKv = true
-            args[unescape(m.groupValues[1].trim())] = JsonPrimitive(unescape(m.groupValues[2]))
+            args[unescape(m.groupValues[1].trim())] = coerceValue(unescape(m.groupValues[2]))
         }
         if (!foundKv) {
             for (m: MatchResult in PARAM.findAll(body)) {
-                args[unescape(m.groupValues[1].trim())] = JsonPrimitive(unescape(m.groupValues[2]).trim())
+                args[unescape(m.groupValues[1].trim())] = coerceValue(unescape(m.groupValues[2]).trim())
             }
         }
         if (!foundKv && args.isEmpty()) {
@@ -164,6 +167,20 @@ object ToolCallTextParser {
             if (entry.first.all { it in keySet }) return entry.second
         }
         return null
+    }
+
+    /**
+     * 把文本参数值还原为合适的 [JsonElement]：
+     * - 合法 JSON 数组（如 `["/workspace/a.txt"]`）升级为 [JsonArray]，使 tools 的 `as? JsonArray` 直接可用；
+     * - 其余（含自由格式 `[a, b]`、普通字符串）保留为 [JsonPrimitive]，由工具的 stringArray 兜底。
+     * 宁可保守也误伤正文：仅当整段能被解析为 JSON 数组时才升级。
+     */
+    private fun coerceValue(raw: String): JsonElement {
+        val trimmed = raw.trim()
+        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+            trimmed.tryParseJsonArray()?.let { return it }
+        }
+        return JsonPrimitive(raw)
     }
 
     private fun unescape(s: String): String = s

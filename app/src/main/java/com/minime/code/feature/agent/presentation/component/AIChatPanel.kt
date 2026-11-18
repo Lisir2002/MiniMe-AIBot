@@ -1612,13 +1612,15 @@ fun AIChatPanel(
                 currentMode = currentMode,
                 onToggleMode = { viewModel.setSessionMode(it) },
                 connectionState = null, // 顶栏不再显示本地 SSH 状态：远程工具执行模式已移除
-                environmentLabel = if (sessionIsOnCloud) {
-                    currentCloudTarget?.displayLabel
+                environmentLabel = when {
+                    sessionIsOnCloud -> currentCloudTarget?.displayLabel
                         ?: stringResource(R.string.runtime_card_env_cloud)
-                } else {
-                    stringResource(R.string.runtime_card_env_local)
+                    // 非云端但执行模式仍是远程 SSH：如实标注，不再谎称「本机运行」。
+                    isRemote -> stringResource(R.string.container_remote_ssh)
+                    else -> stringResource(R.string.runtime_card_env_local)
                 },
                 environmentIsCloud = sessionIsOnCloud,
+                environmentIsRemote = isRemote,
                 environmentTrustWarning = trustWarningOnHeader,
                 showMenuButton = showMenuButton,
                 terminalActive = terminalActive,
@@ -1665,7 +1667,12 @@ fun AIChatPanel(
                         currentConnectionId = currentCloudConnectionId,
                         trustLevel = trustLevel,
                         discovering = discoveringCloudTargets,
-                        onSelectTarget = { cid -> currentSessionId?.let { viewModel.switchSessionTarget(it, cid) } },
+                        onSelectTarget = { cid ->
+                            // 选「本机运行」时无条件复位执行模式：会话目标可能已是本机（点卡片不会触发
+                            // switchSessionTarget），但执行模式仍残留 REMOTE_SSH 导致"选了本机还在 SSH 跑"。
+                            if (cid == null) viewModel.ensureLocalExecution()
+                            currentSessionId?.let { viewModel.switchSessionTarget(it, cid) }
+                        },
                         onAddServer = onNavigateToRuntimeConnection.takeIf { it != null },
                         onRefreshTargets = { viewModel.refreshCloudTargets() },
                         onTrustLevelChange = settingsViewModel?.let { svm -> { level -> svm.setTrustLevel(level) } }

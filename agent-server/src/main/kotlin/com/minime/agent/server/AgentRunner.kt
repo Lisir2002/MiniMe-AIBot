@@ -78,7 +78,27 @@ class AgentRunner(
         com.minime.agent.server.modules.LocalFileAccessProvider()
     ),
     private val memoryRepository: ServerMemoryRepository = ServerMemoryRepository(),
-    private val promptBuilder: ServerPromptBuilder = ServerPromptBuilder(skillRepository, memoryRepository),
+    private val promptBuilder: ServerPromptBuilder = ServerPromptBuilder(
+        skillRepository, memoryRepository,
+        catalog = com.minime.agent.server.modules.ServerPromptFragmentCatalog(
+            workspacePath = System.getenv("MINIME_WORKSPACE") ?: "/workspace"
+        )
+    ),
+    // 云端设置仓库：agent loop 上限、语言等用户偏好从 ~/.minimecode/settings.json 读取（env 可覆盖）。
+    private val settingsRepository: com.minime.agent.server.modules.ServerSettingsRepository =
+        com.minime.agent.server.modules.ServerSettingsRepository(),
+    // 系统级能力：防火墙 + 进程生命周期。单例注入，保证跨轮/跨任务状态一致（工具每轮 new，manager 长驻）。
+    private val firewallManager: com.minime.agent.server.modules.FirewallManager =
+        com.minime.agent.server.modules.FirewallManager(),
+    private val processManager: com.minime.agent.server.modules.ProcessLifecycleManager =
+        com.minime.agent.server.modules.ProcessLifecycleManager(),
+    // 冷门端口池：单例共享，进程退出/TTL 回收时自动归还其占用端口。
+    private val portPool: com.minime.agent.server.modules.PortPoolManager =
+        com.minime.agent.server.modules.PortPoolManager(firewall = firewallManager),
+    // 终端工具单例化：sessions 跨轮次保留，进程登记进 processManager 后才能被 TTL 守护回收；
+    // 同时把命令中的已分配端口绑定到进程，退出后自动归还端口池。
+    private val terminalTool: com.minime.agent.server.modules.ServerTerminalTool =
+        com.minime.agent.server.modules.ServerTerminalTool(workspaceRoot, processManager, portPool),
     // 浏览器驱动：默认从环境变量读取微服务地址；未配置时 remote 健康检查失败，读操作自动降级本地只读。
     // 显式注入可让单测用 mock 驱动，也让 Main 统一构造并共享给登录会话端点。
     private val browserDriver: BrowserDriver = BrowserDriverRouter(
@@ -87,6 +107,14 @@ class AgentRunner(
 ) {
     /** 供登录会话端点访问同一驱动实例（启动登录、拉帧、注入输入、查状态）。 */
     fun browserDriver(): BrowserDriver = browserDriver
+
+    init {
+        // 进程生命周期守护：定期回收到期进程释放内存（persistent 例外）。幂等，多实例仅各自启动一条。
+        processManager.startJanitor(scope)
+        // 进程退出（手动 kill / TTL 回收 / 自然退出）→ 自动归还其占用的端口。
+        processManager.onExit { id -> portPool.releaseByOwner(id) }
+    }
+
     private val log = LoggerFactory.getLogger(AgentRunner::class.java)
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
@@ -232,13 +260,17 @@ class AgentRunner(
             ServerGoalStatusTool(),
             ServerMessageParentTool(),
             // 镜像补全：App 有但服务端此前缺失的 7 个工具，使云端工具集与本地完全对齐
-            ServerSendFileTool(workspaceRoot),
+            ServerSendFileTool(workspaceRoot, maxSizeMb = settingsRepository.get().sendFileMaxSizeMb),
             ServerViewImageTool(workspaceRoot),
             ServerGenerateImageTool(workspaceRoot),
             ServerShizukuTool(workspaceRoot),
-            ServerTerminalTool(workspaceRoot),
+            terminalTool,
             ServerManageMcpTool(),
-            ServerBrowserTool(browserDriver, profileId = sessionId)
+            ServerBrowserTool(browserDriver, profileId = sessionId),
+            // 系统级能力：出口防火墙 + 进程生命周期 + 冷门端口池。
+            com.minime.agent.server.modules.ServerFirewallTool(firewallManager),
+            com.minime.agent.server.modules.ServerProcessTool(processManager),
+            com.minime.agent.server.modules.ServerPortTool(portPool)
         )
         // 一期不需要完整 AgentContext 能力；工具只用 projectRoot 等少量字段，给合理默认即可。
         val agentContext = AgentContext(
@@ -249,7 +281,8 @@ class AgentRunner(
             sessionId = sessionId
         )
 
-        val maxIterations = 30
+        // 单任务工具循环上限从云端设置读取（默认 30，支持 env 覆盖），让用户可按需放宽/收紧。
+        val maxIterations = settingsRepository.get().maxIterations
         var iteration = startIteration
         while (iteration < maxIterations) {
             // 续跑检测：若 checkpoint 恰好停在「assistant 已回填、工具未执行完」（常见于审批挂起时崩溃），
@@ -257,8 +290,12 @@ class AgentRunner(
             val last = messages.lastOrNull()
             val resumeCalls = if (last is AgentMessage.AssistantMessage && last.toolCalls.isNotEmpty()) last.toolCalls else null
             if (resumeCalls == null) {
+                // 用户设置的回复语言作为一条稳定指令注入（env/文件可配，不改模板本身以保住 KV Cache 前缀）。
+                val basePrompt = promptBuilder.build(agentContext)
+                val languageLine = settingsRepository.languageInstruction()
+                val systemPrompt = if (languageLine == null) basePrompt else "$basePrompt\n\n$languageLine"
                 val response = provider.complete(
-                    systemPrompt = promptBuilder.build(),
+                    systemPrompt = systemPrompt,
                     messages = messages,
                     tools = tools
                 )

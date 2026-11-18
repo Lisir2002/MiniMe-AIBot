@@ -1,6 +1,8 @@
 package com.minime.agent.server
 
 import com.minime.code.feature.agent.domain.provider.ToolCallTextParser
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -60,6 +62,25 @@ class ToolCallTextParserTest {
         assertEquals("websearch", r.toolCalls.first().name)
         assertEquals("玻璃质感 设计", r.toolCalls.first().arguments["query"]?.toString()?.trim('"'))
         assertTrue(!r.cleanText.contains("```json"), "json 块应被剥离")
+    }
+
+    @Test
+    fun parse_sendFileJsonArray_upgradesToJsonArray() {
+        // 复现截图：spark-x2.6 文本调用 sendFile，paths 是合法 JSON 数组，必须从源头升级为 JsonArray。
+        val text = """<tool_call name="sendFile"><arg_key>names</arg_key><arg_value>["个人主页.html"]</arg_value><arg_key>paths</arg_key><arg_value>["/workspace/personal-homepage/index.html"]</arg_value></tool_call>"""
+        val r = parser.parse(text)
+        val call = r.toolCalls.first()
+        assertEquals("sendFile", call.name)
+        assertTrue(call.arguments["paths"] is kotlinx.serialization.json.JsonArray, "paths 应升级为 JsonArray")
+        assertEquals("/workspace/personal-homepage/index.html", call.arguments["paths"]!!.jsonArray[0].jsonPrimitive.content)
+    }
+
+    @Test
+    fun parse_sendFileGuessName_fromPaths() {
+        // 模型未给 name 属性时，仅凭 paths 键也应推断为 sendFile。
+        val text = """<tool_call><arg_key>paths</arg_key><arg_value>/workspace/a.html</arg_value></tool_call>"""
+        val r = parser.parse(text)
+        assertEquals("sendFile", r.toolCalls.first().name)
     }
 
     @Test

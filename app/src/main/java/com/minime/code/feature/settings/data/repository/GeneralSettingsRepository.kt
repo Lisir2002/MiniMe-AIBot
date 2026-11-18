@@ -49,6 +49,8 @@ class GeneralSettingsRepository @Inject constructor(
         val STREAM_IDLE_TIMEOUT_SEC_KEY = intPreferencesKey("stream_idle_timeout_sec")
         val MAX_NETWORK_RETRIES_KEY = intPreferencesKey("max_network_retries")
         val ENTER_TO_SEND_KEY = booleanPreferencesKey("enter_to_send")
+        /** 对话中的 http/https 链接是否用外部浏览器打开；关闭则改走应用内浏览器。 */
+        val OPEN_LINKS_EXTERNAL_BROWSER_KEY = booleanPreferencesKey("open_links_external_browser")
         val COMPACTION_THRESHOLD_PERCENT_KEY = intPreferencesKey("compaction_threshold_percent")
         val SENDFILE_MAX_SIZE_MB_KEY = intPreferencesKey("sendfile_max_size_mb")
         val GOAL_MAX_TURNS_KEY = intPreferencesKey("goal_max_turns")
@@ -175,6 +177,19 @@ class GeneralSettingsRepository @Inject constructor(
     suspend fun setEnterToSend(enabled: Boolean) {
         context.generalDataStore.edit { it[ENTER_TO_SEND_KEY] = enabled }
     }
+
+    /** 对话中的 http/https 链接是否用外部浏览器打开；默认开启（维持既有行为），关闭则走应用内浏览器。 */
+    val openLinksExternalBrowserFlow: Flow<Boolean> =
+        context.generalDataStore.data.map { it[OPEN_LINKS_EXTERNAL_BROWSER_KEY] ?: true }
+
+    suspend fun setOpenLinksExternalBrowser(enabled: Boolean) {
+        context.generalDataStore.edit { it[OPEN_LINKS_EXTERNAL_BROWSER_KEY] = enabled }
+    }
+
+    /** 备份快照：链接是否用外部浏览器打开。 */
+    suspend fun openLinksExternalBrowserSnapshot(): Boolean = openLinksExternalBrowserFlow.first()
+
+    suspend fun restoreOpenLinksExternalBrowser(enabled: Boolean) = setOpenLinksExternalBrowser(enabled)
 
     /** 自动压缩触发阈值（上下文窗口的百分比）；默认 90，限定 1..100。 */
     val compactionThresholdPercentFlow: Flow<Int> = context.generalDataStore.data.map {

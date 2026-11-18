@@ -595,6 +595,9 @@ class SettingsViewModel @Inject constructor(
     private val _enterToSend = MutableStateFlow(false)
     val enterToSend: StateFlow<Boolean> = _enterToSend.asStateFlow()
 
+    private val _openLinksExternalBrowser = MutableStateFlow(true)
+    val openLinksExternalBrowser: StateFlow<Boolean> = _openLinksExternalBrowser.asStateFlow()
+
     private val _compactionThresholdPercent = MutableStateFlow(85)
     val compactionThresholdPercent: StateFlow<Int> = _compactionThresholdPercent.asStateFlow()
 
@@ -1013,6 +1016,12 @@ class SettingsViewModel @Inject constructor(
             launch {
                 generalSettingsRepository.enterToSendFlow.collectLatest {
                     _enterToSend.value = it
+                }
+            }
+
+            launch {
+                generalSettingsRepository.openLinksExternalBrowserFlow.collectLatest {
+                    _openLinksExternalBrowser.value = it
                 }
             }
 
@@ -2191,6 +2200,13 @@ class SettingsViewModel @Inject constructor(
     fun setEnterToSend(enabled: Boolean) {
         viewModelScope.launch {
             generalSettingsRepository.setEnterToSend(enabled)
+        }
+    }
+
+    /** 对话中的链接是否用外部浏览器打开。 */
+    fun setOpenLinksExternalBrowser(enabled: Boolean) {
+        viewModelScope.launch {
+            generalSettingsRepository.setOpenLinksExternalBrowser(enabled)
         }
     }
 

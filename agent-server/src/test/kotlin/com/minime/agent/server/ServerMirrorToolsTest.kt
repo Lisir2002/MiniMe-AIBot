@@ -70,6 +70,19 @@ class ServerMirrorToolsTest {
     }
 
     @Test
+    fun sendFile_stringPaths_fromTextCall_stillWorks() = runBlocking {
+        // 复现截图 bug：文本形态调用让 paths 变成字符串，工具必须兼容，不能误报"缺少 paths"。
+        val f = File(ws, "glass.html"); f.writeText("<h1>glass</h1>")
+        val r = ServerSendFileTool(ws).execute(mapOf(
+            "paths" to js("\"/workspace/glass.html\""),
+            "names" to js("\"[玻璃主页.html]\"")
+        ))
+        val data = dataOf(r)
+        assertEquals(1, data["file_count"]?.jsonPrimitive?.intOrNull)
+        assertEquals("玻璃主页.html", data["files"]!!.jsonArray[0].jsonObject["name"]?.jsonPrimitive?.content)
+    }
+
+    @Test
     fun viewImage_nonImage_errors() = runBlocking {
         val f = File(ws, "bad.png"); f.writeText("not a real png but has image ext")
         // 有 image 扩展名就会尝试编码，这里内容任意也能编码成功（工具不做像素校验），应返回 loaded_to_context

@@ -103,6 +103,8 @@
     <string name="settings_general_input">Input</string>
     <string name="settings_enter_to_send">Enter key sends message</string>
     <string name="settings_enter_to_send_desc">When off, Enter inserts a newline and you send with the button</string>
+    <string name="settings_open_external_browser">Open links in external browser</string>
+    <string name="settings_open_external_browser_desc">When on, links in chat open in the system browser; when off, they open in the in-app browser</string>
     <string name="settings_compaction_threshold">Auto-compaction threshold</string>
     <string name="settings_compaction_threshold_desc">Compact context once it reaches this share of the window</string>
     <string name="settings_percent_value">%1$d%%</string>

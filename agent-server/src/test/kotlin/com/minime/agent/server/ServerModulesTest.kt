@@ -72,7 +72,7 @@ class ServerModulesTest {
     }
 
     @Test
-    fun `prompt 注入 skill 与 memory 清单 格式对齐App`() {
+    fun `prompt 用19模板注入 skill 与 memory 清单 格式对齐App`() {
         val home = tempDir("home"); val ws = tempDir("ws")
         val provider = LocalFileAccessProvider(home.absolutePath, ws.absolutePath)
         writeSkill(File(home, ".minimecode/skills"), "review", "---\nname: review\ndescription: code review\n---\nbody")
@@ -80,10 +80,16 @@ class ServerModulesTest {
         val mem = ServerMemoryRepository(home.absolutePath, ws.absolutePath)
         mem.save("prefs", "user prefs", "body", "global")
 
-        val prompt = ServerPromptBuilder(skills, mem).build()
-        assertTrue(prompt.contains("## Available skills"))
+        val catalog = com.minime.agent.server.modules.ServerPromptFragmentCatalog(
+            homePath = home.absolutePath, workspacePath = ws.absolutePath
+        )
+        val prompt = ServerPromptBuilder(skills, mem, catalog, home.absolutePath).build()
+        // 19 模板的 99-runtime-context 片段带这些变量，注入后应含技能/记忆清单。
+        assertTrue(prompt.contains("## 可用技能"))
         assertTrue(prompt.contains("- review: code review"))
-        assertTrue(prompt.contains("## Long-term memory (global)"))
+        assertTrue(prompt.contains("### 全局记忆"))
         assertTrue(prompt.contains("- prefs: user prefs"))
+        // 变量占位符应被全部展开，不应残留。
+        assertFalse(prompt.contains("{{MINIMECODE_"))
     }
 }

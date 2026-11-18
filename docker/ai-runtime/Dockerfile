@@ -30,6 +30,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         file \
         tree \
         vim-tiny \
+        iptables \
     && rm -rf /var/lib/apt/lists/*
 
 # git 安全目录（容器内挂载的 workspace 归属可能与 root 不同）与工作目录。

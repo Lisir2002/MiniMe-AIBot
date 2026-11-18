@@ -431,7 +431,7 @@ class CloudAgentServerManager @Inject constructor(
             "  fi",
             "fi",
             "docker rm -f $SERVICE_NAME >/dev/null 2>&1 || true",
-            "docker run -d --name $SERVICE_NAME --restart unless-stopped -p $SERVER_PORT:$SERVER_PORT " +
+            "docker run -d --name $SERVICE_NAME --restart unless-stopped --cap-add NET_ADMIN -p $SERVER_PORT:$SERVER_PORT " +
                 "-v \"\$D:/data/agent-server\" -v \"\$WS:/workspace\" " +
                 "-e MINIME_DB=/data/agent-server/events.db -e MINIME_WORKSPACE=/workspace -e MINIME_PORT=$SERVER_PORT$tokenEnv " +
                 "$BASE_IMAGE java -jar /data/agent-server/agent-server.jar >/dev/null",

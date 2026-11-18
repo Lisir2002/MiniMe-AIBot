@@ -6,6 +6,7 @@ import com.minime.code.feature.agent.domain.tool.ParameterType
 import com.minime.code.feature.agent.domain.tool.ToolCapability
 import com.minime.code.feature.agent.domain.tool.ToolParameter
 import com.minime.code.feature.agent.domain.tool.ToolResult
+import com.minime.code.feature.agent.domain.tool.stringArray
 import com.minime.code.feature.workspace.domain.FileAccessProvider
 import com.minime.code.feature.settings.data.repository.GeneralSettingsRepository
 import kotlinx.coroutines.CoroutineScope
@@ -76,19 +77,14 @@ class SendFileTool @Inject constructor(
 
     override suspend fun execute(args: Map<String, JsonElement>): ToolResult {
         return try {
-            val paths = (args["paths"] as? JsonArray)?.mapNotNull { it.jsonPrimitive.contentOrNull }
-                ?.map { it.trim() }
-                ?.filter { it.isNotBlank() }
-                .orEmpty()
+            val paths = args.stringArray("paths")
             if (paths.isEmpty()) {
                 return ToolResult.Error("缺少必需参数：paths", "MISSING_PATHS")
             }
             if (paths.size > MAX_FILES) {
                 return ToolResult.Error("一次最多发送 $MAX_FILES 个文件，当前 ${paths.size} 个", "TOO_MANY_FILES")
             }
-            val names = (args["names"] as? JsonArray)?.mapNotNull { it.jsonPrimitive.contentOrNull }
-                ?.map { it.trim() }
-                .orEmpty()
+            val names = args.stringArray("names")
             if (names.isNotEmpty() && names.size != paths.size) {
                 return ToolResult.Error("names 数量（${names.size}）与 paths 数量（${paths.size}）不一致", "ARGS_MISMATCH")
             }
