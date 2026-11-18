@@ -64,6 +64,27 @@ class CloudAgentServerManager @Inject constructor(
         /** 由 Release tag（含 v）推导版本化镜像全名：v1.0.0-rc19 → ...:base-1.0.0-rc19。 */
         fun baseImageFor(releaseTag: String): String =
             "$BASE_IMAGE_REPO:base-${releaseTag.removePrefix("v")}"
+
+        /**
+         * 从 releases.atom 解析最新 tag：取第一个 /releases/tag/<tag> 链接（feed 按时间倒序，第一条最新）。
+         *  purified 为纯函数便于单测；atom 含 prerelease（所有 rc），已实测确认。
+         */
+        fun parseLatestTagFromAtom(atomXml: String): String? =
+            Regex("""/releases/tag/([^"<>\s]+)""").find(atomXml)?.groupValues?.get(1)
+
+        /** 403/429 限流的可读文案（方案 D）：区分限流与封禁，给出可操作建议。 */
+        fun rateLimitMessage(code: Int, retryAfter: String?, resetAt: String?, rawBody: String): String {
+            val isRateLimit = rawBody.contains("rate limit", ignoreCase = true) || code == 429
+            return if (isRateLimit) {
+                val whenStr = retryAfter?.let { "${it}秒后" }
+                    ?: resetAt?.let { "约 $it" }
+                    ?: "稍后"
+                "GitHub API 请求过于频繁（未认证配额 60 次/小时，共享网络/VPN 出口 IP 会被共同计入）。" +
+                    "请 $whenStr 重试，或关闭 VPN 后重试。"
+            } else {
+                "GitHub 拒绝访问（HTTP $code），可能是网络或代理限制。"
+            }
+        }
     }
 
     private val gson = Gson()
@@ -116,40 +137,97 @@ class CloudAgentServerManager @Inject constructor(
     val expectedVersion: String get() = BuildConfig.VERSION_NAME
 
     /**
-     * 从 GitHub Releases API 获取最新版本，构造 jar 下载地址。
-     * 注意：本项目所有 rc 版本都是 prerelease，GitHub 的 /releases/latest 不含 prerelease（返回 404），
-     * 因此必须用 /releases 列表取第一条（按创建时间倒序，即最新），它包含 prerelease。
+     * 获取最新版本，构造 jar 下载地址。双通道 + 友好降级：
+     *
+     * 主通道 [latestReleaseFromAtom]：抓 github.com 的 releases.atom（RSS）。
+     *   - 不走 api.github.com 的 60 次/小时未认证限流池（共享 VPN 出口 IP 极易被打满 → 403）；
+     *   - atom 包含 prerelease（所有 rc 都在），第一条即最新，实测确认。
+     * 兜底 [latestReleaseFromApi]：atom 失败（网络/解析）才用 Releases API，能拿到精确资产名。
+     *
+     * 本项目所有 rc 都是 prerelease，/releases/latest 不含 prerelease（404），故 API 通道用列表接口。
      */
     suspend fun latestRelease(): Result<ReleaseInfo> = withContext(Dispatchers.IO) {
-        runCatching {
-            val req = Request.Builder()
-                .url("https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases?per_page=10")
-                .header("Accept", "application/vnd.github+json")
-                .header("User-Agent", "MiniMe-Agent")
-                .get().build()
-            http.newCall(req).execute().use { resp ->
-                if (!resp.isSuccessful) throw IllegalStateException("GitHub Releases HTTP ${resp.code}")
-                val body = resp.body?.string().orEmpty()
-                val type = object : com.google.gson.reflect.TypeToken<ArrayList<GitHubRelease>>() {}.type
-                val list = gson.fromJson<ArrayList<GitHubRelease>>(body, type)
-                    ?: throw IllegalStateException("解析 GitHub Release 失败")
-                // 只取带 agent-server-*.jar 资产的最新版本：rc9 及之前无 jar 资产需跳过，
-                // GitHub 按创建时间倒序，列表里第一个含 jar 的即最新可用版本。
-                val rel = list.firstOrNull { r -> r.assets.any { it.name.startsWith("agent-server-") && it.name.endsWith(".jar") } }
-                    ?: throw IllegalStateException("暂无包含 agent-server.jar 的 Release，请先发布服务端版本")
-                val tag = rel.tagName
-                val version = tag.removePrefix("v")
-                // CI 里资产命名用完整 tag（含 v）：agent-server-v1.0.0-rc10.jar。
-                // 必须从 Release 的实际 assets 名取，不能用去 v 的 version 拼（会 404）。
-                val assetName = rel.assets.first { it.name.startsWith("agent-server-") && it.name.endsWith(".jar") }.name
-                ReleaseInfo(
-                    tag = tag,
-                    version = version,
-                    jarUrl = "https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$tag/$assetName",
-                    htmlUrl = rel.htmlUrl
-                )
+        // A：主通道 atom，无 API 限流；成功直接返回
+        val atom = latestReleaseFromAtom()
+        if (atom.isSuccess) return@withContext atom
+        // 兜底 D：atom 失败才用 API（403 有可读限流提示）
+        latestReleaseFromApi()
+    }
+
+    /** 主通道：解析 releases.atom。 jar 资产名按 CI 固定规则 agent-server-<tag>.jar 推导。 */
+    private fun latestReleaseFromAtom(): Result<ReleaseInfo> = runCatching {
+        val url = "https://github.com/$REPO_OWNER/$REPO_NAME/releases.atom"
+        val body = httpGetWithRetry(url, accept = "application/atom+xml")
+        val tag = parseLatestTagFromAtom(body)
+            ?: throw IllegalStateException("Atom 中未找到 Release tag")
+        val jarName = "agent-server-$tag.jar" // CI 固定命名：dist/agent-server-${ver}.jar（ver 含 v）
+        ReleaseInfo(
+            tag = tag,
+            version = tag.removePrefix("v"),
+            jarUrl = "https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$tag/$jarName",
+            htmlUrl = "https://github.com/$REPO_OWNER/$REPO_NAME/releases/tag/$tag"
+        )
+    }
+
+    /** 兜底通道：Releases API，能拿到精确资产名；403 限流给可读提示。 */
+    private fun latestReleaseFromApi(): Result<ReleaseInfo> = runCatching {
+        val url = "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases?per_page=10"
+        val resp = httpGetWithRetryRaw(url, accept = "application/vnd.github+json")
+        resp.use { r ->
+            if (r.code == 403 || r.code == 429) {
+                val retryAfter = r.header("Retry-After")
+                val msg = r.body?.string().orEmpty()
+                val resetAt = r.header("X-RateLimit-Reset")?.toLongOrNull()?.let { sec ->
+                    runCatching { java.time.Instant.ofEpochSecond(sec).toString() }.getOrNull()
+                }
+                throw IllegalStateException(rateLimitMessage(r.code, retryAfter, resetAt, msg))
             }
+            if (!r.isSuccessful) throw IllegalStateException("GitHub Releases HTTP ${r.code}")
+            val body = r.body?.string().orEmpty()
+            val type = object : com.google.gson.reflect.TypeToken<ArrayList<GitHubRelease>>() {}.type
+            val list = gson.fromJson<ArrayList<GitHubRelease>>(body, type)
+                ?: throw IllegalStateException("解析 GitHub Release 失败")
+            val rel = list.firstOrNull { it.assets.any { a -> a.name.startsWith("agent-server-") && a.name.endsWith(".jar") } }
+                ?: throw IllegalStateException("暂无包含 agent-server.jar 的 Release，请先发布服务端版本")
+            val tag = rel.tagName
+            val assetName = rel.assets.first { it.name.startsWith("agent-server-") && it.name.endsWith(".jar") }.name
+            ReleaseInfo(
+                tag = tag,
+                version = tag.removePrefix("v"),
+                jarUrl = "https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$tag/$assetName",
+                htmlUrl = rel.htmlUrl
+            )
         }
+    }
+
+    /** 带重试的 GET（返回字符串）；网络抖动/5xx 最多重试 2 次。 */
+    private fun httpGetWithRetry(url: String, accept: String, attempts: Int = 3): String {
+        var lastErr: Throwable? = null
+        repeat(attempts) { i ->
+            try {
+                httpGetWithRetryRaw(url, accept).use { r ->
+                    if (r.isSuccessful) return r.body?.string().orEmpty()
+                    // 4xx（如 403 限流）重试无意义，直接抛给调用方解析
+                    if (r.code in 400..499) throw IllegalStateException("HTTP ${r.code}")
+                    lastErr = IllegalStateException("HTTP ${r.code}")
+                }
+            } catch (e: IllegalStateException) {
+                throw e // 4xx 不重试
+            } catch (e: Exception) {
+                lastErr = e
+            }
+            if (i < attempts - 1) Thread.sleep(500L * (i + 1))
+        }
+        throw lastErr ?: IllegalStateException("请求失败：$url")
+    }
+
+    /** 单次 GET，返回原始 Response（调用方负责 close）。 */
+    private fun httpGetWithRetryRaw(url: String, accept: String): okhttp3.Response {
+        val req = Request.Builder().url(url)
+            .header("Accept", accept)
+            .header("User-Agent", "MiniMe-Agent")
+            .get().build()
+        return http.newCall(req).execute()
     }
 
     /** 读取服务端版本（HTTP /version），供设置页对比。 */
@@ -247,7 +325,7 @@ class CloudAgentServerManager @Inject constructor(
             safeProgress("解析最新服务端版本…\n")
             val rel = latestRelease().getOrElse {
                 return@withContext Result.success(
-                    DeployResult(false, "", "获取最新版本失败：${it.message ?: "未知错误"}（请检查网络）", "")
+                    DeployResult(false, "", "获取最新版本失败：${it.message ?: "未知错误"}", "")
                 )
             }
             safeProgress("最新版本 ${rel.version}，准备连接 ${conn.host}:${conn.port} …\n")

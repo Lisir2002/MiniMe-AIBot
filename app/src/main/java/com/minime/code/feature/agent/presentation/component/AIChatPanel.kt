@@ -87,6 +87,7 @@ import com.minime.code.feature.agent.domain.tool.question.UserQuestionAnswer
 import com.minime.code.feature.agent.presentation.AgentUIMessage
 import com.minime.code.feature.agent.presentation.AgentUIState
 import com.minime.code.feature.agent.presentation.AIAgentViewModel
+import com.minime.code.feature.agent.presentation.LocalContainerOption
 import com.minime.code.feature.agent.presentation.MessageRole
 import com.minime.code.feature.agent.presentation.QueuedRequest
 import com.minime.code.feature.agent.presentation.hasVisibleContent
@@ -1477,6 +1478,29 @@ fun AIChatPanel(
     val currentCloudConnectionId by viewModel.currentCloudConnectionId.collectAsStateWithLifecycle()
     val currentCloudTarget = availableCloudTargets.firstOrNull { it.connectionId == currentCloudConnectionId }
     val sessionIsOnCloud = currentCloudConnectionId != null
+    // 本地容器组：内置 Alpine + 用户导入的本地镜像（仅 LOCAL_PROOT），供空会话运行环境卡罗列。
+    val containerProfilesState = settingsViewModel?.profiles?.collectAsStateWithLifecycle()
+    val containerProfiles = containerProfilesState?.value ?: emptyList()
+    val localContainerOptions = remember(containerProfiles) {
+        val local = containerProfiles.filter {
+            it.mode == com.minime.code.feature.settings.data.repository.ExecutionMode.LOCAL_PROOT
+        }
+        val builtin = local.firstOrNull { it.isBuiltin }
+        val custom = local.filterNot { it.isBuiltin }.sortedByDescending { it.createdAt }
+        buildList {
+            if (builtin != null) {
+                add(LocalContainerOption(builtin.id, builtin.name, true))
+            } else {
+                add(LocalContainerOption(
+                    com.minime.code.feature.agent.domain.container.ContainerProfile.BUILTIN_ID,
+                    com.minime.code.feature.agent.domain.container.ContainerProfile.BUILTIN_ALPINE.name,
+                    true
+                ))
+            }
+            custom.forEach { add(LocalContainerOption(it.id, it.name, false)) }
+        }
+    }
+    val currentLocalContainerId by viewModel.currentLocalContainerId.collectAsStateWithLifecycle()
     // 云端服务端过旧且用户选了非默认信任档位时，顶栏环境徽标警示"信任档位不生效"。
     // 探测中/版本未知时先不警示，避免服务器刚添加、尚未读到版本就误报。
     val trustWarningOnHeader = sessionIsOnCloud &&
@@ -1665,13 +1689,20 @@ fun AIChatPanel(
                         modifier = Modifier.fillMaxSize(),
                         availableTargets = availableCloudTargets,
                         currentConnectionId = currentCloudConnectionId,
+                        localContainers = localContainerOptions,
+                        currentLocalContainerId = currentLocalContainerId,
                         trustLevel = trustLevel,
                         discovering = discoveringCloudTargets,
                         onSelectTarget = { cid ->
-                            // 选「本机运行」时无条件复位执行模式：会话目标可能已是本机（点卡片不会触发
-                            // switchSessionTarget），但执行模式仍残留 REMOTE_SSH 导致"选了本机还在 SSH 跑"。
+                            // 选云端服务器：cid 非 null。本机运行统一走 onSelectLocalContainer。
                             if (cid == null) viewModel.ensureLocalExecution()
                             currentSessionId?.let { viewModel.switchSessionTarget(it, cid) }
+                        },
+                        onSelectLocalContainer = { containerId ->
+                            // 选某个本地容器：会话绑定该容器，联动全局 activeProfile/执行模式/文件面板。
+                            currentSessionId?.let {
+                                viewModel.switchSessionEnvironment(it, null, containerId)
+                            }
                         },
                         onAddServer = onNavigateToRuntimeConnection.takeIf { it != null },
                         onRefreshTargets = { viewModel.refreshCloudTargets() },

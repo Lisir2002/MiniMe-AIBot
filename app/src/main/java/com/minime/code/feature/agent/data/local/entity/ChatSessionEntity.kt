@@ -37,6 +37,8 @@ data class ChatSessionEntity(
     val isPinned: Boolean = false,
     /** 本会话绑定的云端执行目标（远程服务器连接 id）；null 表示本机运行。 */
     val cloudConnectionId: String? = null,
+    /** 本会话绑定的本地容器 profile id；仅 cloudConnectionId==null 时有意义，null=内置 Alpine。 */
+    val localContainerId: String? = null,
     /** 子代理会话：父会话 id；null 表示普通根会话。 */
     val parentId: String? = null,
     /** 子代理会话：派生子代理的类型（如 coder / researcher）；null 表示普通根会话。 */
@@ -63,6 +65,7 @@ data class ChatSessionEntity(
         lastInputTokens = lastInputTokens,
         isPinned = isPinned,
         cloudConnectionId = cloudConnectionId,
+        localContainerId = localContainerId,
         parentId = parentId,
         subagentType = subagentType
     )
@@ -89,6 +92,7 @@ data class ChatSessionEntity(
             lastInputTokens = session.lastInputTokens,
             isPinned = session.isPinned,
             cloudConnectionId = session.cloudConnectionId,
+            localContainerId = session.localContainerId,
             parentId = session.parentId,
             subagentType = session.subagentType
         )

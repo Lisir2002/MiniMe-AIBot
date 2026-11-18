@@ -208,6 +208,8 @@ data class ChatSessionDto(
     val isPinned: Boolean = false,
     /** 会话绑定的云端执行目标（远程连接 id）；null=本机。 */
     val cloudConnectionId: String? = null,
+    /** 本机会话绑定的本地容器 profile id；null=内置 Alpine。备份恢复后保持「一会话一环境」。 */
+    val localContainerId: String? = null,
     /** 子代理会话的父会话 id；丢了它恢复后子会话会变成一堆根会话。 */
     val parentId: String? = null,
     val subagentType: String? = null

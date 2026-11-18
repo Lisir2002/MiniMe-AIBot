@@ -54,6 +54,40 @@ data class FileTreeNode(
     val ignored: Boolean = false
 )
 
+/**
+ * 运行环境卡「本地容器」分组里的一项。
+ * [id] 是 ContainerProfile.id（内置为 builtin-alpine），[isBuiltin] 决定是否显示「内置」提示。
+ */
+@Immutable
+data class LocalContainerOption(
+    val id: String,
+    val name: String,
+    val isBuiltin: Boolean
+)
+
+/**
+ * 一个会话绑定的「执行环境」在 UI 层的展示模型。
+ *
+ * 一个会话一个环境，三态互斥：
+ * - [kind]=CLOUD：[cloudName] 为云服务器显示名；
+ * - [kind]=LOCAL：[containerName] 为某个本地容器显示名（内置 Alpine 或自定义镜像）；
+ * - [kind]=DEFAULT：本机默认（内置 Alpine），[containerName] 通常也给出。
+ *
+ * 用于侧边栏会话行的环境小标签（本地/云端 + 容器/服务器名）。
+ */
+@Immutable
+data class SessionEnvironment(
+    val kind: Kind,
+    val containerName: String = "",
+    val cloudName: String = ""
+) {
+    enum class Kind { LOCAL, CLOUD, DEFAULT }
+
+    /** 行尾小字：云端显示服务器名，本地显示容器名。 */
+    val displayName: String get() = if (kind == Kind.CLOUD) cloudName else containerName
+    val isCloud: Boolean get() = kind == Kind.CLOUD
+}
+
 /** 文件浏览剪切板：一次只能持有一项，复制或剪切后待粘贴。 */
 @Immutable
 data class BrowseClipboard(

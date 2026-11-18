@@ -55,6 +55,7 @@ import com.minime.code.core.ui.SegmentedTabs
 import com.minime.code.feature.agent.domain.model.AgentMode
 import com.minime.code.feature.agent.domain.model.TrustLevel
 import com.minime.code.feature.agent.domain.workflow.CloudTargetDiscovery
+import com.minime.code.feature.agent.presentation.LocalContainerOption
 import com.minime.code.feature.onboarding.domain.OnboardingStep
 import com.minime.code.feature.onboarding.presentation.onboardingTarget
 import com.minime.code.feature.settings.presentation.component.ModelLogoIcon
@@ -347,9 +348,12 @@ internal fun WelcomeState(
     modifier: Modifier = Modifier,
     availableTargets: List<CloudTargetDiscovery.AvailableTarget> = emptyList(),
     currentConnectionId: String? = null,
+    localContainers: List<LocalContainerOption> = emptyList(),
+    currentLocalContainerId: String? = null,
     trustLevel: TrustLevel = TrustLevel.BASIC,
     discovering: Boolean = false,
     onSelectTarget: ((String?) -> Unit)? = null,
+    onSelectLocalContainer: ((String) -> Unit)? = null,
     onAddServer: (() -> Unit)? = null,
     onRefreshTargets: (() -> Unit)? = null,
     onTrustLevelChange: ((TrustLevel) -> Unit)? = null
@@ -389,9 +393,12 @@ internal fun WelcomeState(
                 RuntimeEnvironmentCard(
                     availableTargets = availableTargets,
                     currentConnectionId = currentConnectionId,
+                    localContainers = localContainers,
+                    currentLocalContainerId = currentLocalContainerId,
                     trustLevel = trustLevel,
                     discovering = discovering,
                     onSelectTarget = onSelectTarget,
+                    onSelectLocalContainer = onSelectLocalContainer,
                     onAddServer = onAddServer,
                     onRefreshTargets = onRefreshTargets,
                     onTrustLevelChange = onTrustLevelChange
@@ -410,9 +417,12 @@ internal fun WelcomeState(
 private fun RuntimeEnvironmentCard(
     availableTargets: List<CloudTargetDiscovery.AvailableTarget>,
     currentConnectionId: String?,
+    localContainers: List<LocalContainerOption>,
+    currentLocalContainerId: String?,
     trustLevel: TrustLevel,
     discovering: Boolean,
     onSelectTarget: (String?) -> Unit,
+    onSelectLocalContainer: ((String) -> Unit)?,
     onAddServer: (() -> Unit)?,
     onRefreshTargets: (() -> Unit)?,
     onTrustLevelChange: (TrustLevel) -> Unit
@@ -425,6 +435,8 @@ private fun RuntimeEnvironmentCard(
         stringResource(R.string.runtime_card_trust_strict)
     )
     val localSelected = currentConnectionId == null
+    // 本机选中的容器：未指定（含存量会话）视为内置 Alpine。
+    val selectedLocalId = currentLocalContainerId ?: com.minime.code.feature.agent.domain.container.ContainerProfile.BUILTIN_ID
     // 选中的云端服务端版本是否支持三档信任：选中本机或版本达标时为 true（无需提示）。
     val selectedTarget = availableTargets.firstOrNull { it.connectionId == currentConnectionId }
     val trustSupportedHere = localSelected || selectedTarget?.trustLevelSupported ?: true
@@ -470,23 +482,47 @@ private fun RuntimeEnvironmentCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            // 本机运行（单选）
-            TargetRow(
-                icon = MiniMeIcons.Smartphone,
-                label = stringResource(R.string.runtime_card_env_local),
-                selected = localSelected,
-                onClick = { if (!localSelected) onSelectTarget(null) }
-            )
-
-            // 每台云服务器（单选，带版本）
-            availableTargets.forEach { t ->
+            // ── 分组一：本地容器（每个本地容器一项，带「本地」小标签）──
+            if (localContainers.isNotEmpty()) {
+                SectionLabel(text = stringResource(R.string.runtime_card_group_local))
+                localContainers.forEach { c ->
+                    TargetRow(
+                        icon = MiniMeIcons.HardDrive,
+                        label = c.name,
+                        subtitle = if (c.isBuiltin) stringResource(R.string.runtime_card_builtin_hint) else null,
+                        tag = stringResource(R.string.runtime_card_tag_local),
+                        selected = localSelected && selectedLocalId == c.id,
+                        onClick = {
+                            if (!localSelected || selectedLocalId != c.id) {
+                                if (onSelectLocalContainer != null) onSelectLocalContainer(c.id)
+                                else onSelectTarget(null)
+                            }
+                        }
+                    )
+                }
+            } else {
+                // 无本地容器列表（兼容旧调用）：保留一个笼统的「本机运行」入口。
                 TargetRow(
-                    icon = MiniMeIcons.Cloud,
-                    label = t.displayLabel,
-                    subtitle = stringResource(R.string.runtime_card_target_version, t.version),
-                    selected = currentConnectionId == t.connectionId,
-                    onClick = { if (currentConnectionId != t.connectionId) onSelectTarget(t.connectionId) }
+                    icon = MiniMeIcons.Smartphone,
+                    label = stringResource(R.string.runtime_card_env_local),
+                    selected = localSelected,
+                    onClick = { if (!localSelected) onSelectTarget(null) }
                 )
+            }
+
+            // ── 分组二：云端服务器（每台一项，带「云端」小标签）──
+            if (availableTargets.isNotEmpty()) {
+                SectionLabel(text = stringResource(R.string.runtime_card_group_cloud))
+                availableTargets.forEach { t ->
+                    TargetRow(
+                        icon = MiniMeIcons.Cloud,
+                        label = t.displayLabel,
+                        subtitle = stringResource(R.string.runtime_card_target_version, t.version),
+                        tag = stringResource(R.string.runtime_card_tag_cloud),
+                        selected = currentConnectionId == t.connectionId,
+                        onClick = { if (currentConnectionId != t.connectionId) onSelectTarget(t.connectionId) }
+                    )
+                }
             }
 
             // 无可用服务器 → 引导入口
@@ -551,12 +587,24 @@ private fun RuntimeEnvironmentCard(
     }
 }
 
-/** 运行环境单选行：图标 + 名称（+可选副标题）+ 单选圆点。 */
+/** 运行环境分组小标题（本地容器 / 云端服务器）。 */
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = Spacing.sm, start = Spacing.xs)
+    )
+}
+
+/** 运行环境单选行：图标 + 名称（+可选副标题/环境小标签）+ 单选圆点。 */
 @Composable
 private fun TargetRow(
     icon: ImageVector,
     label: String,
     subtitle: String? = null,
+    tag: String? = null,
     selected: Boolean,
     onClick: () -> Unit
 ) {
@@ -582,11 +630,31 @@ private fun TargetRow(
             modifier = Modifier.size(20.dp)
         )
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                if (tag != null) {
+                    Spacer(Modifier.width(Spacing.xs))
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = tag,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
             if (subtitle != null) {
                 Text(
                     text = subtitle,

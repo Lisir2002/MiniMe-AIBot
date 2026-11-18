@@ -69,6 +69,15 @@ interface ChatSessionDao {
     @Query("UPDATE chat_sessions SET cloudConnectionId = :connectionId, updatedAt = :updatedAt WHERE id = :id")
     suspend fun updateCloudConnectionId(id: String, connectionId: String?, updatedAt: Long)
 
+    /**
+     * 一次性设置会话执行环境：云端服务器 或 本地容器，二者互斥。
+     * [cloudConnectionId] 非 null 时 [localContainerId] 应传 null（走云端）；
+     * [cloudConnectionId] 为 null 时 [localContainerId] 指定本地容器（null=内置 Alpine）。
+     * 必须同条 UPDATE 写入，避免两步更新之间被 Flow 观测到不一致的中间态。
+     */
+    @Query("UPDATE chat_sessions SET cloudConnectionId = :cloudConnectionId, localContainerId = :localContainerId, updatedAt = :updatedAt WHERE id = :id")
+    suspend fun updateSessionEnvironment(id: String, cloudConnectionId: String?, localContainerId: String?, updatedAt: Long)
+
     @Query("DELETE FROM chat_sessions WHERE id = :id")
     suspend fun delete(id: String)
 

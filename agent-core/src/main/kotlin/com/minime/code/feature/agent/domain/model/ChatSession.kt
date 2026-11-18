@@ -73,6 +73,15 @@ data class ChatSession(
      * 非 null 时该会话的 Agent 循环在对应云服务器上执行；同一 App 的不同会话可绑定不同服务器。
      */
     val cloudConnectionId: String? = null,
+    /**
+     * 本会话绑定的本地容器 profile id；仅当 [cloudConnectionId] == null（本机运行）时有意义。
+     * null 表示使用内置 Alpine；非 null 指向某个本地容器 profile（内置或自定义镜像）。
+     * 与 cloudConnectionId 一起表达「一个会话一个执行环境」：
+     * - cloudConnectionId != null → 该云端服务器；
+     * - cloudConnectionId == null && localContainerId != null → 指定本地容器；
+     * - 两者皆 null → 内置 Alpine（默认本机）。
+     */
+    val localContainerId: String? = null,
     /** 子代理会话：父会话 id；null 表示普通根会话。 */
     val parentId: String? = null,
     /** 子代理会话：派生子代理的类型（如 coder / researcher）；null 表示普通根会话。 */

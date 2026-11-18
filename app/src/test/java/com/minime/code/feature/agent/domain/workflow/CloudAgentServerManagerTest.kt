@@ -98,4 +98,37 @@ class CloudAgentServerManagerTest {
             CloudAgentServerManager.baseImageFor("v1.0.0-rc19")
         )
     }
+
+    @Test
+    fun atomFeed_parsesLatestTag() {
+        // 模拟 releases.atom：按文档顺序第一条即最新，且含 prerelease
+        val atom = """<?xml version="1.0"?>
+        <feed xmlns="http://www.w3.org/2005/Atom">
+          <entry><title>Release v1.0.0-rc19</title>
+            <link rel="alternate" href="https://github.com/Lisir2002/MiniMe-AIBot/releases/tag/v1.0.0-rc19"/>
+          </entry>
+          <entry><title>Release v1.0.0-rc18</title>
+            <link rel="alternate" href="https://github.com/Lisir2002/MiniMe-AIBot/releases/tag/v1.0.0-rc18"/>
+          </entry>
+        </feed>""".trimIndent()
+        assertEquals("v1.0.0-rc19", CloudAgentServerManager.parseLatestTagFromAtom(atom))
+        // 没有 tag 链接时返回 null
+        assertNull(CloudAgentServerManager.parseLatestTagFromAtom("<feed></feed>"))
+    }
+
+    @Test
+    fun rateLimitMessage_isActionable() {
+        // 403 限流：给出配额原因 + 关闭 VPN/稍后重试建议，不再是误导的「检查网络」
+        val limited = CloudAgentServerManager.rateLimitMessage(
+            403, null, null, "API rate limit exceeded for 1.2.3.4."
+        )
+        assertTrue(limited.contains("60 次/小时"))
+        assertTrue(limited.contains("VPN"))
+        assertTrue(limited.contains("重试"))
+        // 429 即使 body 无关键字也识别为限流
+        assertTrue(CloudAgentServerManager.rateLimitMessage(429, "30", null, "").contains("30秒后"))
+        // 非限流的 403：给出通用拒绝提示
+        val blocked = CloudAgentServerManager.rateLimitMessage(403, null, null, "Forbidden by policy")
+        assertTrue(blocked.contains("拒绝访问"))
+    }
 }

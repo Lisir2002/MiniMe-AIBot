@@ -533,6 +533,12 @@
     <string name="runtime_card_title">运行与权限</string>
     <string name="runtime_card_env_label">运行环境</string>
     <string name="runtime_card_env_local">本机运行</string>
+    <!-- 运行环境卡分组两段：本地容器组 / 云端服务器组，及每项的小标签 -->
+    <string name="runtime_card_group_local">本地容器</string>
+    <string name="runtime_card_group_cloud">云端服务器</string>
+    <string name="runtime_card_tag_local">本地</string>
+    <string name="runtime_card_tag_cloud">云端</string>
+    <string name="runtime_card_builtin_hint">内置</string>
     <string name="runtime_card_env_cloud">完全云端</string>
     <string name="runtime_card_trust_label">工具审批</string>
     <string name="runtime_card_trust_full">完全信任</string>

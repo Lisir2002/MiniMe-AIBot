@@ -30,6 +30,7 @@ import com.minime.code.feature.agent.data.local.entity.AgentMessageEntity
 import com.minime.code.feature.agent.data.local.entity.ChatSessionEntity
 import com.minime.code.feature.agent.domain.container.ContainerInitState
 import com.minime.code.feature.agent.domain.container.ContainerOsDetector
+import com.minime.code.feature.agent.domain.container.ContainerProfile
 import com.minime.code.feature.agent.domain.container.LinuxContainerEngine
 import com.minime.code.feature.settings.domain.model.ProviderType
 import com.minime.code.feature.settings.domain.service.ModelCostCalculator
@@ -558,10 +559,36 @@ class AIAgentViewModel @Inject constructor(
     private val _browseRefresh = MutableStateFlow(0)
 
     /**
-     * 当前容器根节点的显示名与图标来源：名称取当前 profile，系统类型取已检测缓存，[FileTreeRoot.Container.remote] 看其执行模式。
+     * 当前会话绑定的本地容器 profile（「一个会话一个环境」）。
+     * - 会话处于云端 → null（文件面板走 HTTP，不用本地容器节点）；
+     * - 本机会话且在 [profiles] 里能按 localContainerId 找到 → 该容器；
+     * - 本机会话未绑定 / 绑定已失效 → 回退全局 activeProfile（兼容存量会话，内置 Alpine）。
+     */
+    private val currentSessionLocalProfile: Flow<ContainerProfile> = combine(
+        _currentSessionId
+            .flatMapLatest { id ->
+                if (id == null) flowOf(null)
+                else chatSessionDao.getByIdFlow(id)
+            },
+        containerSettingsRepository.customProfilesFlow,
+        containerSettingsRepository.activeProfileFlow
+    ) { sessionEntity, customProfiles, activeProfile ->
+        val all = listOf(ContainerProfile.BUILTIN_ALPINE) + customProfiles
+        if (sessionEntity != null && sessionEntity.cloudConnectionId == null &&
+            !sessionEntity.localContainerId.isNullOrBlank()
+        ) {
+            all.firstOrNull { it.id == sessionEntity.localContainerId } ?: activeProfile
+        } else {
+            activeProfile
+        }
+    }
+
+    /**
+     * 当前容器根节点的显示名与图标来源：名称取「当前会话绑定的本地容器」，系统类型取已检测缓存，
+     * [FileTreeRoot.Container.remote] 看其执行模式。这样切到某个本地容器会话时，节点名与图标随之切换。
      */
     private val containerRootNode: Flow<FileTreeRoot.Container> = combine(
-        containerSettingsRepository.activeProfileFlow,
+        currentSessionLocalProfile,
         containerOsDetector.osMap
     ) { profile, osMap ->
         FileTreeRoot.Container(
@@ -659,16 +686,10 @@ class AIAgentViewModel @Inject constructor(
         _expandedPaths, containerRootNode, _currentSessionId, browseTargetConnectionId
     ) { expanded, root, sessionId, target -> BrowseQuery(expanded, root, sessionId, target) }
         .flatMapLatest { query ->
-            val (expanded, activeRoot, sessionId, target) = query
-            // 本机运行时，容器根节点必须显示本地容器（硬盘图标），不能沿用「容器与镜像」里
-            // 残留的远程 SSH profile（那会显示成「测试」+ Server 图标，误导为云端目录）。
-            val root = if (target == null) {
-                FileTreeRoot.Container(
-                    label = if (activeRoot.remote) "内置 Alpine" else activeRoot.label,
-                    osId = if (activeRoot.remote) null else activeRoot.osId,
-                    remote = false
-                )
-            } else activeRoot
+            val (expanded, root, sessionId) = query
+            // 容器根节点名/图标来自 containerRootNode：它已按「当前会话绑定的本地容器」解析，
+            // 本机=会话选中的本地容器（硬盘/系统图标），云端=该云服务器的容器 profile。
+            // 不再写死「内置 Alpine」——那会让多本地容器的文件面板一律显示错误名字与空白内容。
             val watched = expanded + WorkspacePathMapper.CONTAINER_ROOT
             val triggers = merge(
                 watched.map { fileChangeHub.watchWorkspace(it).asDirtySignal() }.merge().debounce(BROWSE_DEBOUNCE_MS),
@@ -980,6 +1001,12 @@ class AIAgentViewModel @Inject constructor(
         .map { it?.cloudConnectionId }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    /** 当前会话绑定的本地容器 profile id（本机运行时有效；null=内置 Alpine 或云端会话）。 */
+    val currentLocalContainerId: StateFlow<String?> = currentSessionState
+        .map { if (it?.cloudConnectionId == null) it?.localContainerId else null }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+
     /** 已安装 agent-server、可作为执行目标的云服务器列表。 */
     private val _availableCloudTargets = MutableStateFlow<List<CloudTargetDiscovery.AvailableTarget>>(emptyList())
     val availableCloudTargets: StateFlow<List<CloudTargetDiscovery.AvailableTarget>> = _availableCloudTargets.asStateFlow()
@@ -987,6 +1014,45 @@ class AIAgentViewModel @Inject constructor(
     /** 是否正在探测云服务器。 */
     private val _discoveringCloudTargets = MutableStateFlow(false)
     val discoveringCloudTargets: StateFlow<Boolean> = _discoveringCloudTargets.asStateFlow()
+
+    /**
+     * 会话 id → 执行环境展示模型，供侧边栏会话行显示「本地/云端」图标 + 容器/服务器名小字。
+     * 覆盖根会话与子会话（子会话继承父的环境字段）。云端名取自已发现的服务器列表，取不到时用连接 id 占位。
+     */
+    val sessionEnvironments: StateFlow<Map<String, SessionEnvironment>> = combine(
+        sessions,
+        subSessionsByParent,
+        _availableCloudTargets,
+        containerSettingsRepository.customProfilesFlow
+    ) { rootSessions, subMap, targets, customProfiles ->
+        val allProfiles = listOf(ContainerProfile.BUILTIN_ALPINE) + customProfiles
+        buildMap {
+            fun putSession(s: ChatSession) = put(s.id, resolveEnvironment(s, targets, allProfiles))
+            rootSessions.forEach { putSession(it) }
+            subMap.values.flatten().forEach { putSession(it) }
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    /** 把会话的执行环境字段解析成 UI 展示模型。 */
+    private fun resolveEnvironment(
+        session: ChatSession,
+        targets: List<CloudTargetDiscovery.AvailableTarget>,
+        allProfiles: List<ContainerProfile>
+    ): SessionEnvironment {
+        val cloudId = session.cloudConnectionId
+        if (cloudId != null) {
+            val name = targets.firstOrNull { it.connectionId == cloudId }?.displayLabel ?: cloudId
+            return SessionEnvironment(SessionEnvironment.Kind.CLOUD, cloudName = name)
+        }
+        val profile = allProfiles.firstOrNull { it.id == session.localContainerId }
+            ?: ContainerProfile.BUILTIN_ALPINE
+        val kind = if (session.localContainerId.isNullOrBlank()) {
+            SessionEnvironment.Kind.DEFAULT
+        } else {
+            SessionEnvironment.Kind.LOCAL
+        }
+        return SessionEnvironment(kind, containerName = profile.name)
+    }
 
     /** 刷新可用云服务器列表（空会话卡片进入/下拉时调用）。 */
     fun refreshCloudTargets() = viewModelScope.launch(Dispatchers.IO) {
@@ -1314,28 +1380,52 @@ class AIAgentViewModel @Inject constructor(
      * 切换前先取消该会话的在途任务/跟随协程、清理旧服务器上的云端上下文映射，避免串台。
      * 仅空会话界面提供该入口（有消息的会话需保持上下文连续，不允许中途换后端）。
      */
-    fun switchSessionTarget(sessionId: String, connectionId: String?) = viewModelScope.launch(Dispatchers.IO) {
-        val current = chatSessionDao.getById(sessionId)?.cloudConnectionId
-        if (current == connectionId) return@launch
-
-        // 1) 取消在途任务与跟随轮询
-        sessionJobs.remove(sessionId)?.cancel()
-        cloudFollowJobs.remove(sessionId)?.cancel()
-        // 2) 清旧目标上的云端 session/游标映射（换服务器后不能沿用旧上下文）
-        runCatching { cloudTargetResolver.clearSessionMapping(sessionId) }
-        // 3) 清运行态与残留审批卡片/登录面板
-        _cloudPendingDecisions.value = _cloudPendingDecisions.value - sessionId
-        _cloudLoginRequests.value = _cloudLoginRequests.value - sessionId
-        setAgentState(sessionId, AgentUIState.Idle)
-        // 4) 落库新目标
-        sessionUseCase.setSessionCloudTarget(sessionId, connectionId)
-        // 4.1) 切回本机时同步复位执行模式（详见 ensureLocalExecution）。
-        if (connectionId == null) ensureLocalExecution()
-        // 5) 联动刷新：侧边栏文件树按新目标重新取数（本机=本地文件，云端=该服务器 workspace）
-        refreshBrowse()
-        // 6) 联动：skill 与工具授权/信任档随执行目标切换（按 connectionId 隔离）
-        onExecutionTargetChanged(connectionId)
+    /**
+     * 切换会话执行目标（旧入口，保持兼容）：connectionId==null 表示切回本机默认容器。
+     * 新的「一会话一环境」入口见 [switchSessionEnvironment]。
+     */
+    fun switchSessionTarget(sessionId: String, connectionId: String?) {
+        switchSessionEnvironment(sessionId, connectionId, null)
     }
+
+    /**
+     * 「一个会话一个环境」的统一切换入口，三者互斥：
+     * - [cloudConnectionId] != null → 该云端服务器；
+     * - [cloudConnectionId] == null 且 [localContainerId] != null → 指定本地容器；
+     * - 两者皆 null → 本机内置 Alpine。
+     */
+    fun switchSessionEnvironment(sessionId: String, cloudConnectionId: String?, localContainerId: String?) =
+        viewModelScope.launch(Dispatchers.IO) {
+            val current = chatSessionDao.getById(sessionId)
+            if (current?.cloudConnectionId == cloudConnectionId &&
+                (cloudConnectionId != null || current?.localContainerId == localContainerId)
+            ) {
+                // 目标未变，但仍要保证本地容器联动（存量会话修复）
+                if (cloudConnectionId == null && current != null) applySessionLocalContainer(current.toDomain())
+                return@launch
+            }
+
+            // 1) 取消在途任务与跟随轮询
+            sessionJobs.remove(sessionId)?.cancel()
+            cloudFollowJobs.remove(sessionId)?.cancel()
+            // 2) 清旧目标上的云端 session/游标映射（换服务器后不能沿用旧上下文）
+            runCatching { cloudTargetResolver.clearSessionMapping(sessionId) }
+            // 3) 清运行态与残留审批卡片/登录面板
+            _cloudPendingDecisions.value = _cloudPendingDecisions.value - sessionId
+            _cloudLoginRequests.value = _cloudLoginRequests.value - sessionId
+            setAgentState(sessionId, AgentUIState.Idle)
+            // 4) 一次性落库新环境（云端 / 本地容器互斥）
+            sessionUseCase.setSessionEnvironment(sessionId, cloudConnectionId, localContainerId)
+            // 4.1) 切回本机：应用会话绑定的本地容器到全局（activeProfile + 执行模式），并复位残留 SSH。
+            if (cloudConnectionId == null) {
+                chatSessionDao.getById(sessionId)?.toDomain()?.let { applySessionLocalContainer(it) }
+                ensureLocalExecution()
+            }
+            // 5) 联动刷新：侧边栏文件树按新目标重新取数
+            refreshBrowse()
+            // 6) 联动：skill 与工具授权/信任档随执行目标切换（按目标 key 隔离）
+            onExecutionTargetChanged(cloudConnectionId)
+        }
 
     /**
      * 确保本地执行环境真正生效：把残留的 REMOTE_SSH 执行模式复位为本地容器。
@@ -1356,6 +1446,39 @@ class AIAgentViewModel @Inject constructor(
                 executionModeRepository.setExecutionMode(ExecutionMode.LOCAL_PROOT)
             }
         }
+    }
+
+    /**
+     * 把「某个本机会话」绑定的本地容器应用为全局 activeProfile，令执行引擎 / 终端 / rootfs 映射 /
+     * 侧边栏文件源全部指向该容器（WorkspacePathMapper 与 LinuxContainerEngine 都监听 activeProfileIdFlow）。
+     * 「一个会话一个环境」的关键联动：切到某会话时，它绑定哪个本地容器，全局就切到哪个容器。
+     *
+     * 仅当会话是本机运行（cloudConnectionId==null）时生效；云端会话不动本地容器。
+     * 目标容器为 SSH profile 时，同步切执行模式为 REMOTE_SSH；否则复位为 LOCAL_PROOT。
+     */
+    private suspend fun applySessionLocalContainer(session: ChatSession) {
+        if (session.cloudConnectionId != null) return
+        val boundId = session.localContainerId
+        val wanted = if (boundId.isNullOrBlank()) ContainerProfile.BUILTIN_ID else boundId
+        // 校验目标 profile 真实存在（含内置），失效则回退内置 Alpine，避免文件面板指向不存在的 rootfs。
+        val custom = containerSettingsRepository.customProfilesFlow.first()
+        val exists = wanted == ContainerProfile.BUILTIN_ID || custom.any { it.id == wanted }
+        val finalId = if (exists) wanted else ContainerProfile.BUILTIN_ID
+        val finalProfile = if (finalId == ContainerProfile.BUILTIN_ID) {
+            ContainerProfile.BUILTIN_ALPINE
+        } else {
+            custom.first { it.id == finalId }
+        }
+        if (containerSettingsRepository.activeProfileIdFlow.first() != finalId) {
+            containerSettingsRepository.setActiveProfile(finalId)
+        }
+        val wantedMode = finalProfile.mode
+        if (executionModeHolder.currentMode() != wantedMode) {
+            executionModeHolder.setMode(wantedMode)
+            executionModeRepository.setExecutionMode(wantedMode)
+        }
+        // profile 变化后文件面板需要重新解析 rootfs 与节点名
+        refreshBrowse()
     }
 
     /**
@@ -1663,6 +1786,19 @@ class AIAgentViewModel @Inject constructor(
                 // 更新云端环境桥接（skill/授权列表按目标取数）；本机则清空。
                 cloudEnvironmentBridge.setTarget(cloudTargetResolver.resolve(_currentSessionId.value))
                 skillConfigRepository.notifyExecutionTargetChanged(key)
+            }
+        }
+
+        // 「一个会话一个环境」统一联动：当前会话（含冷启动恢复、工作区切换、删除兜底等所有设置
+        // _currentSessionId 的路径）一旦确定，就把全局 activeProfile/执行模式切到它绑定的本地容器，
+        // 使文件面板 rootfs、终端、工具执行都指向同一环境。云端会话不需要动本地容器。
+        // 与 selectSession/switchSessionEnvironment 中的显式调用重复是幂等的（内部比较后跳过）。
+        viewModelScope.launch(Dispatchers.IO) {
+            _currentSessionId.flatMapLatest { id ->
+                if (id == null) flowOf(null)
+                else chatSessionDao.getByIdFlow(id)
+            }.distinctUntilChanged().collect { entity ->
+                if (entity != null) applySessionLocalContainer(entity.toDomain())
             }
         }
 
@@ -3449,8 +3585,13 @@ class AIAgentViewModel @Inject constructor(
     fun selectSession(id: String) {
         if (_currentSessionId.value == id) return
         _currentSessionId.value = id
-        // 切到某会话时补拉该会话云端积压事件（幂等）
-        viewModelScope.launch(Dispatchers.IO) { syncCloudSession(id) }
+        viewModelScope.launch(Dispatchers.IO) {
+            // 「一个会话一个环境」：切会话时把全局 activeProfile / 执行模式切到该会话绑定的本地容器，
+            // 使文件面板、终端、工具执行都指向同一环境；云端会话则由补拉走 HTTP，不动本地容器。
+            chatSessionDao.getById(id)?.toDomain()?.let { applySessionLocalContainer(it) }
+            // 切到某会话时补拉该会话云端积压事件（幂等）
+            syncCloudSession(id)
+        }
     }
 
     fun deleteSessions(ids: Set<String>) = viewModelScope.launch {
@@ -3657,14 +3798,19 @@ class AIAgentViewModel @Inject constructor(
         } else {
             ReasoningEffort.MEDIUM.name
         }
-        // 新会话默认执行目标：用户在设置页选过默认云服务器则预填，否则本机。
+        // 新会话默认执行目标：用户在设置页选过默认云服务器则预填，否则本机并绑定当前本地容器。
+        // 「一个会话一个环境」——本机会话记住创建时选中的本地容器，之后切走再切回仍回到该容器。
         val defaultCloudId = cloudAgentSettings.defaultConnectionId().takeIf { it.isNotBlank() }
+        val defaultLocalContainerId = if (defaultCloudId == null) {
+            containerSettingsRepository.activeProfileIdFlow.first().takeIf { it.isNotBlank() }
+        } else null
         return sessionUseCase.newSessionEntity(
             workspacePath = workspacePath,
             providerId = providerId,
             model = model,
             reasoningEffort = effort,
-            cloudConnectionId = defaultCloudId
+            cloudConnectionId = defaultCloudId,
+            localContainerId = defaultLocalContainerId
         )
     }
 

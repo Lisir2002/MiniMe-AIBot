@@ -48,7 +48,8 @@ class SessionUseCase @Inject constructor(
         providerId: String? = null,
         model: String? = null,
         reasoningEffort: String = ReasoningEffort.MEDIUM.name,
-        cloudConnectionId: String? = null
+        cloudConnectionId: String? = null,
+        localContainerId: String? = null
     ): ChatSessionEntity {
         val now = System.currentTimeMillis()
         return ChatSessionEntity(
@@ -60,7 +61,8 @@ class SessionUseCase @Inject constructor(
             providerId = providerId,
             model = model,
             reasoningEffort = reasoningEffort,
-            cloudConnectionId = cloudConnectionId
+            cloudConnectionId = cloudConnectionId,
+            localContainerId = if (cloudConnectionId == null) localContainerId else null
         )
     }
 
@@ -154,6 +156,7 @@ class SessionUseCase @Inject constructor(
             reasoningEffort = reasoningEffort ?: parent.reasoningEffort,
             // 子代理必须在父会话的执行目标上运行（本机的子代理不能在云端跑，反之亦然）
             cloudConnectionId = parent.cloudConnectionId,
+            localContainerId = parent.localContainerId,
             parentId = parentId,
             subagentType = subagentType
         )
@@ -218,6 +221,20 @@ class SessionUseCase @Inject constructor(
      */
     suspend fun setSessionCloudTarget(sessionId: String, connectionId: String?) {
         chatSessionDao.updateCloudConnectionId(sessionId, connectionId, System.currentTimeMillis())
+    }
+
+    /**
+     * 一次性设置会话执行环境（一个会话一个环境）：
+     * - [cloudConnectionId] != null：该云端服务器，本地容器字段清空；
+     * - [cloudConnectionId] == null：本机运行，[localContainerId] 指定本地容器（null=内置 Alpine）。
+     */
+    suspend fun setSessionEnvironment(sessionId: String, cloudConnectionId: String?, localContainerId: String?) {
+        chatSessionDao.updateSessionEnvironment(
+            sessionId,
+            cloudConnectionId,
+            if (cloudConnectionId == null) localContainerId else null,
+            System.currentTimeMillis()
+        )
     }
 
     /**
