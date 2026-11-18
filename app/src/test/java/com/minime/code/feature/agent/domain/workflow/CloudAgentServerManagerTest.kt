@@ -153,6 +153,28 @@ class CloudAgentServerManagerTest {
     }
 
     @Test
+    fun portCleanupScript_releasesPortByFeatureMatch_notByFixedName() {
+        // 一键安装退出码 125 根因：只 docker rm -f 固定名容器，删不掉占 8080 的旧服务。
+        // 修复后按端口查找占用者，且只清理带本服务特征的容器/进程。
+        val s = CloudAgentServerManager.buildPortCleanupCommand()
+        // 按发布端口找容器（而非固定名字）
+        assertTrue(s.contains("docker ps -a --filter 'publish=8080'"))
+        // 特征匹配，避免误杀用户其它服务
+        assertTrue(s.contains("*minime*"))
+        assertTrue(s.contains("*agent-server*"))
+        assertTrue(s.contains("未自动删除"))
+        // 宿主机进程按端口探 PID + cmdline 特征
+        assertTrue(s.contains("ss -ltnp"))
+        assertTrue(s.contains("lsof -tiTCP:8080"))
+        assertTrue(s.contains("/proc/"))
+        assertTrue(s.contains("kill -9"))
+        // 复核端口仍被占则 exit 1 阻断
+        assertTrue(s.contains("STILL=0"))
+        assertTrue(s.contains("端口 8080 仍被占用"))
+        assertTrue(s.contains("exit 1"))
+    }
+
+    @Test
     fun rateLimitMessage_isActionable() {
         // 403 限流：给出配额原因 + 关闭 VPN/稍后重试建议，不再是误导的「检查网络」
         val limited = CloudAgentServerManager.rateLimitMessage(

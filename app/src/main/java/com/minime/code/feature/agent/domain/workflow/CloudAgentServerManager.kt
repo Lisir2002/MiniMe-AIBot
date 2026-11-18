@@ -143,6 +143,67 @@ class CloudAgentServerManager @Inject constructor(
             "if [ \"\$OK\" != '1' ]; then echo 'Docker 安装后仍无法启动，请查看 journalctl -u docker 或重启服务器后重试'; exit 1; fi",
             "echo \"前置环境就绪：\$(\$SUDO docker --version)\""
         ).joinToString("\n")
+
+        /**
+         * 端口占用清理脚本（纯函数便于单测）：安装前释放 SERVER_PORT，解决
+         * 「docker rm -f 只删固定名容器，删不掉占端口的旧服务 → docker run 报 address already in use（退出码 125）」。
+         *
+         * 背景：旧版一键安装只 `docker rm -f minime-agent-server`，若 8080 被历史容器（名字/镜像不同）
+         * 或宿主机直接起的旧 agent 进程占用，就清不掉，新容器绑端口必然失败。
+         *
+         * 安全原则（绝不误杀用户其它服务）：
+         *  1) docker 容器：按 `publish=$SERVER_PORT` 找出占用者，名字/镜像/启动命令含
+         *     minime|minimecode|agent-server 特征才删，否则仅提示；
+         *  2) 宿主机进程：ss/lsof/fuser 探到 PID 后读 /proc/<pid>/cmdline，含 agent-server 特征才 kill，
+         *     否则仅提示；
+         *  3) 复核：若端口仍被占用则 exit 1 阻断部署并给出明确指引，不带着冲突往下走。
+         */
+        fun buildPortCleanupCommand(): String = listOf(
+            "SUDO=''",
+            "if [ \"\$(id -u)\" != \"0\" ] && command -v sudo >/dev/null 2>&1; then SUDO='sudo'; fi",
+            "echo '检查端口 $SERVER_PORT 占用…'",
+            // 1) docker 容器：按发布端口找，特征匹配才删
+            "if command -v docker >/dev/null 2>&1; then",
+            "  for cid in \$(\$SUDO docker ps -a --filter 'publish=$SERVER_PORT' -q 2>/dev/null); do",
+            "    INFO=\$(\$SUDO docker inspect --format '{{.Name}} {{.Config.Image}} {{.Config.Cmd}}' \"\$cid\" 2>/dev/null)",
+            "    case \"\$INFO\" in",
+            "      *minime*|*minimecode*|*agent-server*|*agent_server*)",
+            "        echo \"移除占用 $SERVER_PORT 的旧 agent 容器：\$INFO\"",
+            "        \$SUDO docker rm -f \"\$cid\" >/dev/null 2>&1 || true",
+            "        ;;",
+            "      *) echo \"端口 $SERVER_PORT 被其它容器占用（\$INFO），未自动删除，请先手动停止\" ;;",
+            "    esac",
+            "  done",
+            "fi",
+            // 2) 宿主机进程：按端口探 PID，特征匹配才 kill
+            "PIDS=''",
+            "if command -v ss >/dev/null 2>&1; then",
+            "  PIDS=\$(\$SUDO ss -ltnp 'sport = :$SERVER_PORT' 2>/dev/null | grep -oE 'pid=[0-9]+' | cut -d= -f2 | sort -u)",
+            "elif command -v lsof >/dev/null 2>&1; then",
+            "  PIDS=\$(lsof -tiTCP:$SERVER_PORT -sTCP:LISTEN 2>/dev/null)",
+            "elif command -v fuser >/dev/null 2>&1; then",
+            "  PIDS=\$(\$SUDO fuser -n tcp $SERVER_PORT 2>/dev/null)",
+            "fi",
+            "for pid in \$PIDS; do",
+            "  CMD=\$(tr '\\0' ' ' < /proc/\$pid/cmdline 2>/dev/null || true)",
+            "  case \"\$CMD\" in",
+            "    *agent-server*|*minimecode*|*minime*)",
+            "      echo \"停止占用 $SERVER_PORT 的旧 agent 进程（pid=\$pid）\"",
+            "      kill -9 \"\$pid\" 2>/dev/null || true",
+            "      ;;",
+            "    *) echo \"端口 $SERVER_PORT 被其它进程占用（pid=\$pid: \$(echo \"\$CMD\" | cut -c1-80)），未自动停止\" ;;",
+            "  esac",
+            "done",
+            // 3) 复核端口，仍被占则阻断
+            "STILL=0",
+            "if command -v ss >/dev/null 2>&1; then",
+            "  if [ -n \"\$(ss -ltn 'sport = :$SERVER_PORT' 2>/dev/null | grep LISTEN)\" ]; then STILL=1; fi",
+            "elif command -v lsof >/dev/null 2>&1; then",
+            "  if lsof -iTCP:$SERVER_PORT -sTCP:LISTEN >/dev/null 2>&1; then STILL=1; fi",
+            "fi",
+            "if [ \"\$STILL\" != '0' ]; then echo '端口 $SERVER_PORT 仍被占用，请先手动停止占用程序后重试'; exit 1; fi",
+            "echo '端口 $SERVER_PORT 已释放'"
+        ).joinToString("\n")
     }
 
     private val gson = Gson()
@@ -401,6 +462,18 @@ class CloudAgentServerManager @Inject constructor(
             if (rBoot.exitCode != null && rBoot.exitCode != 0) {
                 return@withContext Result.success(
                     DeployResult(false, "", "前置环境准备失败（缺少 Docker 且无法自动安装）", log.toString())
+                )
+            }
+
+            // 0.5) 端口清理：按端口释放 $SERVER_PORT（只清本服务的旧容器/旧进程，不误杀其它服务）。
+            //      必须在 docker run 之前——旧逻辑只删固定名容器，旧服务占端口会导致退出码 125。
+            safeProgress("检查并释放端口 $SERVER_PORT…\n")
+            val portCmd = buildPortCleanupCommand()
+            val rPort = exec(client, portCmd, safeProgress)
+            log.append(mask(rPort.output))
+            if (rPort.exitCode != null && rPort.exitCode != 0) {
+                return@withContext Result.success(
+                    DeployResult(false, "", "端口 $SERVER_PORT 释放失败（被其它服务占用，请手动停止）", log.toString())
                 )
             }
 
