@@ -126,6 +126,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
@@ -591,6 +592,14 @@ class AIAgentViewModel @Inject constructor(
         }
     }
 
+    /** [browseState] 外层 combine 的输入：第 4 项 [target] 仅作目标切换的重建信号，不直接参与列目录。 */
+    private data class BrowseQuery(
+        val expanded: Set<String>,
+        val root: FileTreeRoot.Container,
+        val sessionId: String?,
+        val target: String?
+    )
+
     /** 按当前会话执行目标构造侧边栏文件访问器；云端目标用 HTTP 读该服务器 workspace。 */
     private suspend fun browseFsFor(sessionId: String?): BrowseFs {
         val target = cloudTargetResolver.resolve(sessionId)
@@ -611,9 +620,25 @@ class AIAgentViewModel @Inject constructor(
         )
     }
 
+    /**
+     * 当前会话执行目标（云端连接 id；null=本机）的变化流，直接读会话表。
+     *
+     * 必须纳入 [browseState] 的外层 combine：否则「同一会话内切换容器/切回本机」时，
+     * 外层三个输入（展开集、容器根节点、会话 id）都不变，flatMapLatest 不会重建，
+     * [browseFsFor] 也不会重算，文件面板就一直沿用切换前的旧文件源——
+     * 典型症状就是切到本机后侧边栏仍显示云端 workspace 目录。
+     * 改用会话表而非[currentCloudConnectionId]（后者声明在本属性之后，初始化顺序上不可用）。
+     */
+    private val browseTargetConnectionId: Flow<String?> = _currentSessionId
+        .flatMapLatest { id ->
+            if (id == null) flowOf(null)
+            else chatSessionDao.getByIdFlow(id).map { it?.cloudConnectionId }
+        }
+        .distinctUntilChanged()
+
     val browseState: StateFlow<FileBrowseState> = combine(
-        _expandedPaths, containerRootNode, _currentSessionId
-    ) { expanded, root, sessionId -> Triple(expanded, root, sessionId) }
+        _expandedPaths, containerRootNode, _currentSessionId, browseTargetConnectionId
+    ) { expanded, root, sessionId, target -> BrowseQuery(expanded, root, sessionId, target) }
         .flatMapLatest { (expanded, root, sessionId) ->
             val watched = expanded + WorkspacePathMapper.CONTAINER_ROOT
             val triggers = merge(
@@ -623,6 +648,7 @@ class AIAgentViewModel @Inject constructor(
             )
             flow {
                 // 每次重建按「当前会话的执行目标」选文件源：选本机=本地文件，选云端=该服务器 workspace。
+                // 目标变化作为外层 combine 输入触发本层重建，从而重新解析出正确的 fs。
                 val fs = browseFsFor(sessionId)
                 // 首次产出前由 stateIn 初值 Loading 占位；后续展开/折叠/刷新不再回到 Loading，
                 // StateFlow 保留上一份 Success 直到新树就绪，避免闪加载动画与滚动位置丢失。
