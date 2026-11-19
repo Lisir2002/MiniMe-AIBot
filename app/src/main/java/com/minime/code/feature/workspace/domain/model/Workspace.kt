@@ -25,5 +25,10 @@ data class Workspace(
     /** 工作区类型，默认内部工作区，保持旧构造兼容。 */
     val type: WorkspaceType = WorkspaceType.INTERNAL,
     /** 工作区当前是否可用（外部本地目录被移动/删除时为 false），默认可用。 */
-    val available: Boolean = true
+    val available: Boolean = true,
+    /**
+     * 归属容器/服务器的可读名（如「内置 Alpine」「Ubuntu 22.04」「server@1.2.3.4」）。
+     * 用于 UI 直观呈现「工作区属于哪个容器」的绑定关系；空串表示不展示（如外部本地目录）。
+     */
+    val ownerLabel: String = ""
 )

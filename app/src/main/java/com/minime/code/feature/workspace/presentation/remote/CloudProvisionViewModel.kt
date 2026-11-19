@@ -86,7 +86,7 @@ class CloudProvisionViewModel @Inject constructor(
             RemoteAuth.Password(f.password)
         }
         val ws = f.workspacePath.ifBlank { "~/minimecode-workspace" }
-        val image = f.imageName.ifBlank { "minimecode/ai-runtime:latest" }
+        val image = f.imageName.ifBlank { CloudProvisioner.DEFAULT_IMAGE }
         return ProvisionParams(host, port, f.username.ifBlank { "root" }, auth, ws, image)
     }
 
@@ -185,6 +185,6 @@ class CloudProvisionViewModel @Inject constructor(
         val keyPath: String = "",
         val keyPassphrase: String = "",
         val workspacePath: String = "~/minimecode-workspace",
-        val imageName: String = "minimecode/ai-runtime:latest"
+        val imageName: String = CloudProvisioner.DEFAULT_IMAGE
     )
 }

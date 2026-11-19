@@ -226,6 +226,7 @@ private fun WorkspaceSelectionHost(
             workspaces = workspaces,
             current = current,
             isLocalMode = isLocalMode,
+            ownerLabel = current?.ownerLabel ?: "",
             onAddExternal = {
                 if (externalWarningDismissed) folderLauncher.launch(null)
                 else showExternalWarning = true
@@ -307,6 +308,7 @@ private fun WorkspaceSheet(
     workspaces: List<Workspace>,
     current: Workspace?,
     isLocalMode: Boolean,
+    ownerLabel: String,
     onAddExternal: () -> Unit,
     onSelect: (Workspace) -> Unit,
     onCreate: (String) -> Unit,
@@ -354,6 +356,31 @@ private fun WorkspaceSheet(
                     MiniMeIcon(MiniMeIcons.Plus, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(Spacing.xs))
                     Text(createWorkspaceLabel)
+                }
+            }
+
+            // 三层绑定关系提示：工作区隶属于当前容器，切容器即整组替换。
+            if (ownerLabel.isNotBlank()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = Spacing.sm)
+                        .clip(RoundedCornerShape(Radius.sm))
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    MiniMeIcon(MiniMeIcons.Box,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(Spacing.xs))
+                    Text(
+                        text = stringResource(R.string.workspace_owner_hint, ownerLabel),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
                 }
             }
 
@@ -436,10 +463,11 @@ private fun WorkspaceRow(
 ) {
     val external = workspace.type == WorkspaceType.EXTERNAL_LOCAL
     val disabled = !workspace.available
-    val displayPath = when (workspace.type) {
-        WorkspaceType.INTERNAL -> "projects/${workspace.name}"
-        WorkspaceType.EXTERNAL_LOCAL, WorkspaceType.REMOTE -> workspace.path
-    }
+    // 内部工作区显示真实相对路径（自定义容器落在 projects_local_<id>/ 下，不再硬编码 projects/）。
+    val displayPath = if (workspace.type == WorkspaceType.INTERNAL) {
+        workspace.path.substringAfterLast("/projects", workspace.path)
+            .let { if (it == workspace.path) workspace.path else "projects$it" }
+    } else workspace.path
     Row(
         modifier = Modifier
             .fillMaxWidth()

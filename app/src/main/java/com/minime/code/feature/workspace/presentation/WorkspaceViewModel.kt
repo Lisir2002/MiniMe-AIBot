@@ -3,6 +3,7 @@ package com.minime.code.feature.workspace.presentation
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.minime.code.feature.settings.data.repository.ContainerSettingsRepository
 import com.minime.code.feature.settings.data.repository.ExecutionMode
 import com.minime.code.feature.settings.data.repository.ExecutionModeHolder
 import com.minime.code.feature.workspace.data.repository.WorkspaceRepository
@@ -20,7 +21,8 @@ import javax.inject.Inject
 @HiltViewModel
 class WorkspaceViewModel @Inject constructor(
     private val repository: WorkspaceRepository,
-    private val executionModeHolder: ExecutionModeHolder
+    private val executionModeHolder: ExecutionModeHolder,
+    private val containerSettingsRepository: ContainerSettingsRepository
 ) : ViewModel() {
 
     val workspaces: StateFlow<List<Workspace>> = repository.workspaces
@@ -60,6 +62,16 @@ class WorkspaceViewModel @Inject constructor(
         viewModelScope.launch {
             executionModeHolder.mode.drop(1).distinctUntilChanged().collect {
                 runCatching { repository.initialize() }
+            }
+        }
+        // 本地容器切换后重扫工作区：工作区按容器作用域隔离，切容器=整组换成该容器的工作区。
+        // 与模式监听各自 distinctUntilChanged；profile 切换且 mode 同时变化时会触发两次 initialize，
+        // 均幂等（第二次读到相同作用域、相同工作区），不影响正确性。
+        viewModelScope.launch {
+            containerSettingsRepository.activeProfileIdFlow.drop(1).distinctUntilChanged().collect {
+                if (executionModeHolder.currentMode() != ExecutionMode.REMOTE_SSH) {
+                    runCatching { repository.initialize() }
+                }
             }
         }
     }

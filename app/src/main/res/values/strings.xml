@@ -942,6 +942,7 @@
     <string name="container_resetting_message">正在删除「%1$s」的数据…\n已清理 %2$s 项</string>
     <string name="container_reset_confirm">将删除「%1$s」的 rootfs 目录（含已安装的工具与配置），下次使用时重新解压并初始化。是否继续？</string>
     <string name="container_builtin_badge">内置</string>
+    <string name="container_builtin_name">内置 Alpine</string>
     <string name="container_custom_badge">自定义</string>
     <string name="container_ssh_badge">SSH</string>
     <string name="container_empty">暂无容器与镜像</string>
@@ -1833,6 +1834,7 @@
 
     <!-- Workspace Picker -->
     <string name="workspace_select">选择工作区</string>
+    <string name="workspace_owner_hint">当前容器：%1$s · 以下工作区专属此容器</string>
     <string name="workspace_switch">切换工作区</string>
     <string name="workspace_switch_confirm">切换工作区会停止当前工作区所有正在运行的 AI 会话并关闭终端标签。确定要切换吗？</string>
     <string name="workspace_confirm">确定</string>

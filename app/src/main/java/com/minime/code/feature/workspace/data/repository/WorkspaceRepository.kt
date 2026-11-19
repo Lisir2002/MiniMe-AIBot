@@ -10,8 +10,10 @@ import com.minime.code.core.datastore.preferencesCorruptionHandler
 import com.minime.code.R
 import com.minime.code.core.util.FileLogger
 import com.minime.code.feature.agent.domain.container.ConnectionState
+import com.minime.code.feature.agent.domain.container.ContainerProfile
 import com.minime.code.feature.agent.domain.container.RemoteSshConnection
 import com.minime.code.feature.agent.domain.session.SessionUseCase
+import com.minime.code.feature.settings.data.repository.ContainerSettingsRepository
 import com.minime.code.feature.credentials.data.CredentialInjectSettingsRepository
 import com.minime.code.feature.credentials.domain.repository.CredentialRepository
 import com.minime.code.feature.settings.data.repository.ExecutionMode
@@ -62,7 +64,8 @@ class WorkspaceRepository @Inject constructor(
     private val sessionUseCase: SessionUseCase,
     private val generalSettingsRepository: GeneralSettingsRepository,
     private val credentialInjectSettings: CredentialInjectSettingsRepository,
-    private val credentialRepository: CredentialRepository
+    private val credentialRepository: CredentialRepository,
+    private val containerSettingsRepository: ContainerSettingsRepository
 ) {
     /** 校验失败时给 UI 的提示文案（如目录不可写/无法解析），消费后置 null。 */
     private val _addError = MutableStateFlow<String?>(null)
@@ -98,16 +101,42 @@ class WorkspaceRepository @Inject constructor(
             while ("$base ($i)" in existing) i++
             return "$base ($i)"
         }
+
+        /**
+         * 本地工作区根目录名（按容器作用域隔离）。内置容器沿用旧 `projects` 保证存量升级不丢；
+         * 自定义容器用 `projects_local_<清洗后的id>`，不同容器物理目录不同 → 工作区整组隔离。
+         */
+        internal fun projectsDirNameFor(profileId: String): String =
+            if (profileId == ContainerProfile.BUILTIN_ID || profileId.isBlank()) {
+                "projects"
+            } else {
+                "projects_local_${profileId.filter { it.isLetterOrDigit() || it == '_' || it == '-' }}"
+            }
+
+        /** 当前工作区选中态 key：内置容器用旧 key（存量兼容），自定义容器按 profileId 分开。 */
+        internal fun currentNameKeySuffixFor(profileId: String): String =
+            if (profileId == ContainerProfile.BUILTIN_ID || profileId.isBlank()) "" else "_local_$profileId"
     }
 
     private val currentNameKey = stringPreferencesKey("current_workspace_name")
 
     /**
-     * 当前工作区名按模式分开存：本地沿用原 key，远程按服务器（host:port）单独存。
-     * 共用一个 key 时，切到远程会把本地选中的工作区名覆盖成远程的，切回本地就丢了。
+     * 当前本地容器 profile id（作用域）。仅由 [initialize] 刷新，决定本地工作区的物理目录与选中态 key。
+     * 内置 Alpine 恒为 [ContainerProfile.BUILTIN_ID]，沿用旧路径/旧 key 保证存量升级不丢工作区与会话。
+     */
+    @Volatile
+    private var currentLocalProfileId: String = ContainerProfile.BUILTIN_ID
+
+    /**
+     * 当前工作区名按"容器作用域"分开存，实现「工作区归容器所有、切容器整组替换」：
+     * - 内置 Alpine：沿用原 key（存量兼容）；
+     * - 自定义本地容器：`current_workspace_name_local_<profileId>`，各容器记住自己的选择；
+     * - 远程 SSH：按服务器（host:port）单独存。
      */
     private fun currentNameKeyForMode(): androidx.datastore.preferences.core.Preferences.Key<String> {
-        if (isLocal()) return currentNameKey
+        if (isLocal()) {
+            return stringPreferencesKey("current_workspace_name${currentNameKeySuffixFor(currentLocalProfileId)}")
+        }
         val cfg = remoteSshConnection.config
         val suffix = if (cfg != null) "${cfg.host}:${cfg.port}" else ""
         return stringPreferencesKey("current_workspace_name_remote_$suffix")
@@ -130,9 +159,16 @@ class WorkspaceRepository @Inject constructor(
      * symlink()，npm/pnpm/yarn/git 建软链时会 `EACCES symlink` 而失败。filesDir 是 ext4，
      * symlink 原生可用，所有工具链零配置即可跑。对外可见性由 DocumentsProvider 暴露，不依赖物理位置。
      */
-    private val projectsRoot: File by lazy {
-        File(context.filesDir, "projects").apply { mkdirs() }
-    }
+    /**
+     * 所有项目的父目录，按【本地容器作用域】物理隔离：
+     * - 内置 Alpine 沿用旧 `filesDir/projects`（存量工作区与会话路径不变，升级不丢）；
+     * - 每个自定义本地容器用 `filesDir/projects_local_<profileId>`——切容器即整组换成该容器的工作区，
+     *   同名工作区在不同容器下是不同物理目录，会话 workspacePath 因路径不同而天然隔离。
+     *
+     * 仍是 ext4（filesDir 内），symlink 与工具链行为不变。目录名对 profileId 做安全化，避免路径穿越。
+     */
+    private val projectsRoot: File
+        get() = File(context.filesDir, projectsDirNameFor(currentLocalProfileId)).apply { mkdirs() }
 
     private val _workspaces = MutableStateFlow<List<Workspace>>(emptyList())
     val workspaces: StateFlow<List<Workspace>> = _workspaces.asStateFlow()
@@ -155,13 +191,18 @@ class WorkspaceRepository @Inject constructor(
 
     /** 扫描并恢复上次选中的工作区；首次启动本地模式会创建默认工作区。应在 App/ViewModel 启动时调用一次。 */
     suspend fun initialize() = withContext(Dispatchers.IO) {
+        // 本地模式：刷新容器作用域，工作区根目录与选中态 key 随之切换，实现「切容器=整组换工作区」。
+        // 必须在 refreshWorkspaces 之前——后者要用 currentLocalProfileId 计算 projectsRoot。
+        if (isLocal()) {
+            currentLocalProfileId = containerSettingsRepository.activeProfileIdFlow.first()
+        }
         // 远程模式：等 SSH 连接就绪后再列工作区，避免启动时序竞争
         if (!isLocal()) {
             waitForConnection()
             ensureRemoteWorkspaceRoot()
         }
-        // 清掉上一个模式遗留的当前工作区：它不属于本模式的列表，留着会让下面的可达性校验
-        // 误判为“当前工作区失效”而回退，并把本模式已保存的选择覆盖掉。
+        // 清掉上一个模式/容器遗留的当前工作区：它不属于本作用域的列表，留着会让下面的可达性校验
+        // 误判为“当前工作区失效”而回退，并把本作用域已保存的选择覆盖掉。
         _current.value = null
         refreshWorkspaces()
 
@@ -277,10 +318,27 @@ class WorkspaceRepository @Inject constructor(
         return _workspaces.value.firstOrNull { it.name == fallbackName && it.available }
     }
 
+    /**
+     * 当前容器作用域的可读名，用于工作区 UI 呈现归属绑定。
+     * 内置 Alpine 用资源名；自定义容器用 profile.name；远程 SSH 用 host:port。
+     */
+    private suspend fun currentOwnerLabel(): String {
+        if (!isLocal()) {
+            val cfg = remoteSshConnection.config
+            return cfg?.let { "${it.username}@${it.host}:${it.port}" } ?: ""
+        }
+        if (currentLocalProfileId == ContainerProfile.BUILTIN_ID || currentLocalProfileId.isBlank()) {
+            return context.getString(R.string.container_builtin_name)
+        }
+        return containerSettingsRepository.customProfilesFlow.first()
+            .firstOrNull { it.id == currentLocalProfileId }?.name ?: ""
+    }
+
     private suspend fun refreshLocalWorkspaces(): List<Workspace> {
+        val owner = currentOwnerLabel()
         val internal = projectsRoot.listFiles { f -> f.isDirectory }
             ?.sortedBy { it.name.lowercase() }
-            ?.map { Workspace(name = it.name, path = it.absolutePath) }
+            ?.map { Workspace(name = it.name, path = it.absolutePath, ownerLabel = owner) }
             ?: emptyList()
         // 外部本地工作区：失联（目录被移动/删除）时保留记录并标记不可用，目录恢复后自动重新可用
         val external = mapExternalWorkspaces(readExternalWorkspaces()) { File(it).isDirectory }

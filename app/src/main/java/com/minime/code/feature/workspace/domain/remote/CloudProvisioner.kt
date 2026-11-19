@@ -168,8 +168,8 @@ class CloudProvisioner @Inject constructor(
     data class ProvisionParams(
         val host: String, val port: Int, val username: String, val auth: RemoteAuth,
         val workspacePath: String = "~/minimecode-workspace",
-        /** AI 运行环境 Docker 镜像名；用户可填自建/私有镜像。 */
-        val imageName: String = "minimecode/ai-runtime:latest"
+        /** AI 运行环境 Docker 镜像名；默认已发布的公开基座镜像，用户可填自建/私有镜像。 */
+        val imageName: String = DEFAULT_IMAGE
     )
 
     private fun connect(params: ProvisionParams) {
@@ -402,11 +402,10 @@ class CloudProvisioner @Inject constructor(
             "prereq.git" -> "if command -v git >/dev/null 2>&1; then git --version; else echo 'git 缺失（将在容器阶段提供）'; fi"
             "prereq.bash" -> "command -v bash && bash --version | head -1 || echo 'bash 缺失'"
             "docker.install" -> "if command -v docker >/dev/null 2>&1; then echo 'Docker 已安装'; else (command -v apt-get >/dev/null && sudo apt-get update -qq && sudo apt-get install -y -qq docker.io) || (command -v dnf >/dev/null && sudo dnf install -y docker) || (command -v yum >/dev/null && sudo yum install -y docker) || echo '未识别发行版，请手动安装 Docker'; fi; docker --version 2>&1"
-            "docker.image" -> {
-                val image = shellQuote(params.imageName)
-                "(docker image inspect $image >/dev/null 2>&1 && echo '镜像已存在') || docker pull $image"
-            }
-            "docker.run" -> "docker rm -f minimecode-ai >/dev/null 2>&1 || true; docker run -d --name minimecode-ai --restart unless-stopped --cap-add NET_ADMIN -v \"\$HOME/.minimecode:/root/.minimecode\" -v $ws:/workspace ${shellQuote(params.imageName)} && sleep 2 && docker exec minimecode-ai sh -c 'echo container-ok; git --version 2>/dev/null || true; [ -L /root/workspace ] || ln -sfn /workspace /root/workspace' && printf 'container=minimecode-ai\\nimage=%s\\n' ${shellQuote(params.imageName)} > \"\$HOME/.minimecode/sandbox-mode.marker\" && echo 'AI 沙箱容器已启动并标记'"
+            "docker.image" -> buildDockerImageCommand(params.imageName)
+            // 基座镜像默认 CMD 是 java -jar agent-server.jar（本向导不挂载该 jar，会秒退）。
+            // 显式用 tail -f /dev/null 覆盖 CMD 让容器常驻，仅作为带完整工具链的执行沙箱。
+            "docker.run" -> "docker rm -f minimecode-ai >/dev/null 2>&1 || true; docker run -d --name minimecode-ai --restart unless-stopped --cap-add NET_ADMIN -v \"\$HOME/.minimecode:/root/.minimecode\" -v $ws:/workspace ${shellQuote(params.imageName)} tail -f /dev/null && sleep 2 && docker exec minimecode-ai sh -c 'echo container-ok; git --version 2>/dev/null || true; python3 --version 2>/dev/null || true; node --version 2>/dev/null || true; [ -L /root/workspace ] || ln -sfn /workspace /root/workspace' && printf 'container=minimecode-ai\\nimage=%s\\n' ${shellQuote(params.imageName)} > \"\$HOME/.minimecode/sandbox-mode.marker\" && echo 'AI 沙箱容器已启动并标记'"
             "native.runtime" -> "mkdir -p \"\$HOME/.local/bin\" && { command -v apt-get >/dev/null 2>&1 && sudo apt-get update -qq && sudo apt-get install -y -qq git curl ripgrep python3; } || { command -v dnf >/dev/null 2>&1 && sudo dnf install -y git curl ripgrep python3; } || echo '未识别发行版，请手动安装 git/curl/ripgrep/python3'; rm -f \"\$HOME/.minimecode/sandbox-mode.marker\"; echo '原生工具链安装结束'"
             "native.marker" -> "printf 'strategy=native\\ninstalled_at=%s\\n' \"\$(date +%s)\" > \"\$HOME/.minimecode/cloud-env.marker\" && echo '环境标记写入完成'"
             else -> "echo '未知动作 $actionId'; exit 1"
@@ -415,6 +414,44 @@ class CloudProvisioner @Inject constructor(
 
     companion object {
         private fun shellQuote(s: String) = "'" + s.replace("'", "'\\''") + "'"
+
+        /** 已发布的公开基座镜像仓库（Java + 完整工具链，CI 每个版本都推 :base 固定别名）。 */
+        const val DEFAULT_IMAGE_REPO = "ghcr.io/lisir2002/minimecode-agent-server"
+        const val DEFAULT_IMAGE = "$DEFAULT_IMAGE_REPO:base"
+        /** 离线兜底包：CI 随每次发版上传，docker load 后为 :base-<version>。 */
+        const val FALLBACK_TAR = "agent-server-base.tar.gz"
+        const val RELEASE_ATOM = "https://github.com/Lisir2002/MiniMe-AIBot/releases.atom"
+        const val RELEASE_DOWNLOAD = "https://github.com/Lisir2002/MiniMe-AIBot/releases/download"
+
+        /**
+         * 镜像拉取脚本（纯函数便于单测）：
+         * 1) 本地已存在 → 直接复用；
+         * 2) docker pull 主通道（GHCR 公开包，匿名可拉）；
+         * 3) 失败且是默认仓库镜像 → 从 releases.atom 解析最新版本 tag，下载 Release 离线包并
+         *    docker load + retag 到目标镜像名，覆盖国内 GHCR 不可达场景；
+         * 4) 用户自定义/私有镜像失败 → 明确提示需自行配置镜像源或 docker login，不误走我们的兜底包。
+         */
+        fun buildDockerImageCommand(imageName: String): String {
+            val image = shellQuote(imageName)
+            return listOf(
+                "if docker image inspect $image >/dev/null 2>&1; then echo '镜像已存在'; exit 0; fi",
+                "echo '从镜像仓库拉取运行环境镜像…'",
+                "if docker pull $image >/dev/null 2>&1; then echo '镜像拉取成功'; exit 0; fi",
+                "echo '仓库拉取失败，尝试从 Release 离线包恢复…'",
+                // 仅本项目的默认镜像走离线兜底；用户自建/私有镜像交还用户自己处理
+                "case $image in",
+                "  *$DEFAULT_IMAGE_REPO*) ;;",
+                "  *) echo '镜像拉取失败：请确认镜像名正确，私有仓库需先 docker login'; exit 1 ;;",
+                "esac",
+                "TAG=\$(curl -fsSL --max-time 20 $RELEASE_ATOM | grep -oE 'releases/tag/v[0-9a-z.-]+' | head -1 | sed 's|.*/||')",
+                "if [ -z \"\$TAG\" ]; then echo '离线包恢复失败：无法获取版本号，请检查网络或手动指定镜像'; exit 1; fi",
+                "TAR=\"\$HOME/.minimecode/$FALLBACK_TAR\"",
+                "curl -fsSL --retry 3 --connect-timeout 15 -o \"\$TAR\" \"$RELEASE_DOWNLOAD/\$TAG/$FALLBACK_TAR\" || { echo '离线包下载失败，请检查网络后重试'; exit 1; }",
+                "docker load -i \"\$TAR\" >/dev/null || { echo '离线包载入失败'; exit 1; }",
+                "IID=\$(docker images -q --filter=reference=$DEFAULT_IMAGE_REPO 2>/dev/null | head -1)",
+                "[ -n \"\$IID\" ] && docker tag \"\$IID\" $image && echo '离线镜像载入并标记成功' || { echo '离线镜像标记失败'; exit 1; }"
+            ).joinToString("\n")
+        }
     }
 
     private class ProvisionCancelled : Exception("cancelled")

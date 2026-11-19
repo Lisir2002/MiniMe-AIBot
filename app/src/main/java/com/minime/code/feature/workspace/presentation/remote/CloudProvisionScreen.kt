@@ -308,9 +308,9 @@ private fun ServerForm(
                 value = form.imageName,
                 onValueChange = { v -> onFormChange { f -> f.copy(imageName = v) } },
                 label = { Text("AI 运行环境镜像") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("minimecode/ai-runtime:latest 或你的私有镜像") }
+                placeholder = { Text(com.minime.code.feature.workspace.domain.remote.CloudProvisioner.DEFAULT_IMAGE + " 或你的私有镜像") }
             )
-            Text("Docker 方式会拉取该镜像；可填自己构建或私有仓库的镜像地址。",
+            Text("默认拉取已发布的公开基座镜像；国内不可达时自动用 Release 离线包恢复。可填自建/私有镜像（私有需先 docker login）。",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
